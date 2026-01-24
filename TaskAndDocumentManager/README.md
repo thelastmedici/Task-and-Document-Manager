@@ -4,11 +4,11 @@ A web application for managing tasks and documents, built with ASP.NET Core MVC.
 
 ## 🚀 Overview
 
-TaskAndDocumentManager is a .NET 9.0 MVC application designed to streamline the process of tracking tasks and managing associated documents. It leverages the power of ASP.NET Core for the backend and Bootstrap 5 for a responsive frontend experience.
+TaskAndDocumentManager is a .NET 10.0 MVC application designed to streamline the process of tracking tasks and managing associated documents. It leverages the power of ASP.NET Core for the backend and Bootstrap 5 for a responsive frontend experience.
 
 ## 🛠 Tech Stack
 
-- **Framework:** [.NET 9.0](https://dotnet.microsoft.com/en-us/download/dotnet/9.0)
+- **Framework:** [.NET 10.0](https://dotnet.microsoft.com/en-us/download/dotnet/10.0)
 - **Architecture:** ASP.NET Core MVC
 - **Frontend:**
   - Razor Views (.cshtml)
@@ -19,7 +19,7 @@ TaskAndDocumentManager is a .NET 9.0 MVC application designed to streamline the 
 ## 📦 Prerequisites
 
 Before you begin, ensure you have the following installed:
-- [.NET 9.0 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
+- [.NET 10.0 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
 - An IDE like [Visual Studio 2022](https://visualstudio.microsoft.com/) or [VS Code](https://code.visualstudio.com/)
 
 ## 🏃‍♂️ Getting Started
