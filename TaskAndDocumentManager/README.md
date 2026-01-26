@@ -61,3 +61,21 @@ Contributions are welcome! Please fork the repository and create a pull request 
 ## 📄 License
 
 This project is licensed under the MIT License.
+
+## 🔐 Authentication & Authorization Contract
+
+This section outlines the security architecture and user management decisions for the application.
+
+### 1. User Identity & Management
+- **Unique Identifier:** Users are identified by their email address (must end in `@gmail.com`).
+- **Primary Key:** A globally unique identifier (GUID) serves as the primary ID.
+- **Account Status:** Users can be `Active` or `Disabled`. Status management is controlled by Administrators.
+
+### 2. Roles & Permissions
+- **User:** Standard access privileges.
+- **Admin:** Superuser privileges, including user status management.
+
+### 3. Authentication Flow
+- **Login:** Clients must provide a valid email and password.
+- **Token:** Successful authentication produces a JSON Web Token (JWT) access token.
+- **Authorization:** The frontend sends the token via the `Authorization: Bearer <token>` header. The backend validates the token and applies authorization rules based on the user's role.
