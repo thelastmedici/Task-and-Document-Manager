@@ -75,3 +75,23 @@ This section outlines the security architecture and user management decisions fo
 - **Login:** Clients must provide a valid email and password.
 - **Token:** Successful authentication produces a JSON Web Token (JWT) access token.
 - **Authorization:** The frontend sends the token via the `Authorization: Bearer <token>` header. The backend validates the token and applies authorization rules based on the user's role.
+
+### 4. Authentication Use Cases
+
+1.  **Register User**
+    -   **Input:** Email, Password.
+    -   **Logic:** Validates email and password.
+    -   **Output:** Creates a new user with status `Active`.
+
+2.  **Authenticate User**
+    -   **Input:** Email, Password.
+    -   **Logic:** Checks if user exists, is active, and password matches.
+    -   **Output:** Produces a JWT token with user info.
+
+3.  **Get Current User**
+    -   **Input:** Valid JWT token.
+    -   **Output:** Returns User ID, Email, Role (`User` or `Admin`), and Status (`Active` or `Disabled`).
+
+4.  **Manage User Status** (Admin Only)
+    -   **Input:** Target User ID, New Status (`Active` or `Disabled`).
+    -   **Logic:** Requires `Admin` role. Updates the target user's status.
