@@ -14,3 +14,7 @@
 /// 
 ///// WHAT DOES AUTHENTICATION PRODUCE
 //////// when authentication is done it produces a JWT ACCESS TOKEN
+/// 
+/// 
+/// WHAT DOES AUTHENTICATION NEED
+/// /// username and password
