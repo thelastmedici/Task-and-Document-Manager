@@ -4,16 +4,12 @@ A web application for managing tasks and documents, built with ASP.NET Core MVC.
 
 ## 🚀 Overview
 
-TaskAndDocumentManager is a .NET 10.0 MVC application designed to streamline the process of tracking tasks and managing associated documents. It leverages the power of ASP.NET Core for the backend and Bootstrap 5 for a responsive frontend experience.
+TaskAndDocumentManager is a .NET 10.0 MVC application designed to streamline the process of tracking tasks and managing associated documents. It leverages the power of ASP.NET Core for the backend.
 
 ## 🛠 Tech Stack
 
 - **Framework:** [.NET 10.0](https://dotnet.microsoft.com/en-us/download/dotnet/10.0)
 - **Architecture:** ASP.NET Core MVC
-- **Frontend:**
-  - Razor Views (.cshtml)
-  - [Bootstrap 5.3.3](https://getbootstrap.com/)
-  - [jQuery 3.7.1](https://jquery.com/)
 - **Language:** C#
 
 ## 📦 Prerequisites
@@ -67,7 +63,7 @@ This project is licensed under the MIT License.
 This section outlines the security architecture and user management decisions for the application.
 
 ### 1. User Identity & Management
-- **Unique Identifier:** Users are identified by their email address (must end in `@gmail.com`).
+- **Unique Identifier:** Users are identified by their  valid email address.
 - **Primary Key:** A globally unique identifier (GUID) serves as the primary ID.
 - **Account Status:** Users can be `Active` or `Disabled`. Status management is controlled by Administrators.
 
