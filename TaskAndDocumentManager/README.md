@@ -1,33 +1,34 @@
 # TaskAndDocumentManager
 
-A web application for managing tasks and documents, built with ASP.NET Core MVC.
+A web application for managing tasks and documents, built with ASP.NET Core.
 
 ## 🚀 Overview
 
-TaskAndDocumentManager is a .NET 10.0 MVC application designed to streamline the process of tracking tasks and managing associated documents. It leverages the power of ASP.NET Core for the backend.
+TaskAndDocumentManager is a robust .NET application designed to streamline task tracking and document management. It features a secure, role-based API for handling user authentication and data access.
 
 ## 🛠 Tech Stack
 
-- **Framework:** [.NET 10.0](https://dotnet.microsoft.com/en-us/download/dotnet/10.0)
-- **Architecture:** ASP.NET Core MVC
+- **Framework:** [.NET 10.0 (LTS)](https://dotnet.microsoft.com/en-us/download/dotnet/10.0)
+- **Architecture:** ASP.NET Core Web API
 - **Language:** C#
 
 ## 📦 Prerequisites
 
 Before you begin, ensure you have the following installed:
-- [.NET 10.0 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
+- [.NET 10.0 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
 - An IDE like [Visual Studio 2022](https://visualstudio.microsoft.com/) or [VS Code](https://code.visualstudio.com/)
 
 ## 🏃‍♂️ Getting Started
 
 1.  **Clone the repository:**
     ```bash
-    git clone <repository-url>
+    git clone https://github.com/your-username/TaskAndDocumentManager.git
     ```
+    *(Note: Replace with the actual repository URL)*
 
 2.  **Navigate to the project directory:**
     ```bash
-    cd TaskAndDocumentManager
+    cd TaskAndDocumentManager/src/Api
     ```
 
 3.  **Restore dependencies:**
@@ -37,18 +38,22 @@ Before you begin, ensure you have the following installed:
 
 4.  **Run the application:**
     ```bash
-    dotnet run --project TaskAndDocumentManager
+    dotnet run
     ```
 
 5.  **Open in Browser:**
-    Navigate to `https://localhost:7001` (or the port displayed in your terminal) to view the application.
+    The API will be available at `https://localhost:7001` (or the port specified in your terminal).
 
 ## 📂 Project Structure
 
-- `Controllers/`: Handles user interaction and application logic.
-- `Models/`: Domain data objects.
-- `Views/`: UI templates using Razor syntax.
-- `wwwroot/`: Static assets (CSS, JavaScript, libraries).
+The project is structured to follow Clean Architecture principles, promoting separation of concerns.
+
+- `src/`
+    - `Api/`: The main ASP.NET Core project, containing controllers and API endpoints.
+    - `Application/`: Core application logic, services, and use cases.
+    - `Domain/`: Business models, entities, and domain-specific logic.
+    - `Infrastructure/`: Data access, external services, and other implementation details.
+- `TaskAndDocumentManager.sln`: The Visual Studio solution file.
 
 ## 🤝 Contributing
 
@@ -56,42 +61,38 @@ Contributions are welcome! Please fork the repository and create a pull request 
 
 ## 📄 License
 
-This project is licensed under the MIT License.
+This project is licensed under the **MIT License**.
 
-## 🔐 Authentication & Authorization Contract
+## 🔐 Authentication & Authorization
 
-This section outlines the security architecture and user management decisions for the application.
+This section outlines the application's security model, including user identity, roles, and the authentication process.
 
-### 1. User Identity & Management
-- **Unique Identifier:** Users are identified by their  valid email address.
-- **Primary Key:** A globally unique identifier (GUID) serves as the primary ID.
-- **Account Status:** Users can be `Active` or `Disabled`. Status management is controlled by Administrators.
+### User Identity
+- **Primary Identifier**: Each user is uniquely identified by a **GUID** (`UserId`).
+- **Login Credential**: Users authenticate using their email address and password.
+- **Email Constraint**: User email addresses must end with `.com`.
+- **Account Status**: Each user account has a status of either `Active` or `Disabled`.
 
-### 2. Roles & Permissions
-- **User:** Standard access privileges.
-- **Admin:** Superuser privileges, including user status management.
+### Roles and Permissions
+The application defines two user roles:
+- **`USER`**: Standard users with access to core task and document management features.
+- **`ADMIN`**: Administrators with elevated privileges, including the ability to manage user accounts (e.g., changing a user's status).
 
-### 3. Authentication Flow
-- **Login:** Clients must provide a valid email and password.
-- **Token:** Successful authentication produces a JSON Web Token (JWT) access token.
-- **Authorization:** The frontend sends the token via the `Authorization: Bearer <token>` header. The backend validates the token and applies authorization rules based on the user's role.
+### Authentication and Token Handling
+- **Protocol**: The application uses a token-based authentication system.
+- **Token Type**: A **JSON Web Token (JWT)** is issued upon successful authentication. No refresh tokens are used.
+- **Authorization Header**: For authenticated requests, the JWT must be included in the `Authorization` header using the Bearer schema: `Authorization: Bearer <token>`.
+- **Token Claims**: The JWT payload contains the following claims to identify and authorize the user:
+    - `UserId` (GUID)
+    - `Email`
+    - `Role` (`USER` or `ADMIN`)
+    - `Status` (`Active` or `Disabled`)
 
-### 4. Authentication Use Cases
+### API Use Cases
 
-1.  **Register User**
-    -   **Input:** Email, Password.
-    -   **Logic:** Validates email and password.
-    -   **Output:** Creates a new user with status `Active`.
-
-2.  **Authenticate User**
-    -   **Input:** Email, Password.
-    -   **Logic:** Checks if user exists, is active, and password matches.
-    -   **Output:** Produces a JWT token with user info.
-
-3.  **Get Current User**
-    -   **Input:** Valid JWT token.
-    -   **Output:** Returns User ID, Email, Role (`User` or `Admin`), and Status (`Active` or `Disabled`).
-
-4.  **Manage User Status** (Admin Only)
-    -   **Input:** Target User ID, New Status (`Active` or `Disabled`).
-    -   **Logic:** Requires `Admin` role. Updates the target user's status.
+| Use Case             | Endpoint (Example)           | Input                  | Role Required      | Description                                                              |
+| :------------------- | :--------------------------- | :--------------------- | :----------------- | :----------------------------------------------------------------------- |
+| **Register User**      | `POST /api/auth/register`    | Email, Password        | Public             | Creates a new user with the `USER` role and an `Active` status.          |
+| **Authenticate User**  | `POST /api/auth/login`       | Email, Password        | Public             | Validates credentials and returns a JWT if the user is `Active`.         |
+| **Get Current User**   | `GET /api/users/me`          | Valid JWT              | `USER` or `ADMIN`  | Returns the profile of the currently authenticated user.                 |
+| **Manage User Status** | `PUT /api/users/{id}/status` | New Status             | `ADMIN`            | Updates a user's status to `Active` or `Disabled`.                       |
