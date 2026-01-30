@@ -10,6 +10,6 @@ This project is a secure, role-based task and document management system designe
 - **Enterprise-Style Authentication:** Secure identity verification and management.
 
 ## Technology Stack
-- **Backend:** C# ASP.NET Core
+- **Backend:** C# ASP.NET Core Model View Controller (MVC)
 - **Frontend:** Blazor
 - **Language:** C#
