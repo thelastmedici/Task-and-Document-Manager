@@ -31,17 +31,17 @@ app.MapControllerRoute(
 
 app.Run();
 
-interface IPasswordHasher // interface for IPasswordHasher --> PasswordHasher
+public interface IPasswordHasher // interface for IPasswordHasher --> PasswordHasher
 {
     
 }
 
-interface ITokenService // interfcae for ITokenService--> JwtTokenService
+public interface ITokenService // interfcae for ITokenService--> JwtTokenService
 {
     
 }
 
-interface IUserRepository // interface 
+public interface IUserRepository // interface 
 {
     
 }
