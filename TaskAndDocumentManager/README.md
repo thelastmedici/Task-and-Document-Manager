@@ -1,98 +1,93 @@
-# TaskAndDocumentManager
+# TaskAndDocumentManager API
 
-A web application for managing tasks and documents, built with ASP.NET Core.
+[![.NET](https://img.shields.io/badge/.NET-10.0-512bd4)](https://dotnet.microsoft.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## 🚀 Overview
+A high-performance, scalable RESTful API for task tracking and document management, engineered using **ASP.NET Core 10.0** and adhering to **Clean Architecture** principles.
 
-TaskAndDocumentManager is a robust .NET application designed to streamline task tracking and document management. It features a secure, role-based API for handling user authentication and data access.
+## 🏗 Architecture
 
-## 🛠 Tech Stack
+The solution is architected to enforce separation of concerns and dependency inversion, ensuring maintainability and testability.
 
-- **Framework:** [.NET 10.0 (LTS)](https://dotnet.microsoft.com/en-us/download/dotnet/10.0)
-- **Architecture:** ASP.NET Core Web API
-- **Language:** C#
+*   **`src/Domain`**: The core of the application containing enterprise logic, entities, and value objects. No external dependencies.
+*   **`src/Application`**: Orchestrates application logic, defining use cases, interfaces (abstractions), and DTOs.
+*   **`src/Infrastructure`**: Implements interfaces defined in Application (e.g., Data Access, Identity, File Storage).
+*   **`src/Api`**: The entry point (Presentation Layer), responsible for handling HTTP requests, dependency injection configuration, and middleware pipelines.
 
-## 📦 Prerequisites
+## 🔧 Tech Stack
 
-Before you begin, ensure you have the following installed:
-- [.NET 10.0 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
-- An IDE like [Visual Studio 2022](https://visualstudio.microsoft.com/) or [VS Code](https://code.visualstudio.com/)
+*   **Framework**: .NET 10.0 (LTS)
+*   **Platform**: ASP.NET Core Web API
+*   **Language**: C#
+*   **Authentication**: JWT (JSON Web Tokens) with Bearer Schema
+*   **Authorization**: Role-Based Access Control (RBAC)
 
-## 🏃‍♂️ Getting Started
+## 🚀 Getting Started
 
-1.  **Clone the repository:**
+### Prerequisites
+
+*   .NET 10.0 SDK
+*   IDE: Visual Studio 2022 / JetBrains Rider / VS Code
+
+### Installation & Execution
+
+1.  **Clone the repository**
     ```bash
     git clone https://github.com/your-username/TaskAndDocumentManager.git
-    ```
-    *(Note: Replace with the actual repository URL)*
-
-2.  **Navigate to the project directory:**
-    ```bash
-    cd TaskAndDocumentManager/src/Api
+    cd TaskAndDocumentManager
     ```
 
-3.  **Restore dependencies:**
+2.  **Restore dependencies**
     ```bash
     dotnet restore
     ```
 
-4.  **Run the application:**
+3.  **Run the API**
+    Navigate to the API project and run:
     ```bash
+    cd src/Api
     dotnet run
     ```
+    The API will initialize on `https://localhost:7001` (default).
 
-5.  **Open in Browser:**
-    The API will be available at `https://localhost:7001` (or the port specified in your terminal).
+## 🔐 Security & Identity Management
 
-## 📂 Project Structure
+The application implements a stateless authentication mechanism using JWTs.
 
-The project is structured to follow Clean Architecture principles, promoting separation of concerns.
+### Identity Model
+*   **Identifier**: `Guid` (UUID v4)
+*   **Constraints**: Registration is restricted to emails ending in `.com`.
+*   **Lifecycle**: Accounts utilize a state machine (`Active` | `Disabled`).
 
-- `src/`
-    - `Api/`: The main ASP.NET Core project, containing controllers and API endpoints.
-    - `Application/`: Core application logic, services, and use cases.
-    - `Domain/`: Business models, entities, and domain-specific logic.
-    - `Infrastructure/`: Data access, external services, and other implementation details.
-- `TaskAndDocumentManager.sln`: The Visual Studio solution file.
+### Authorization Strategy
+Access control is enforced via Claims-based authorization.
 
-## 🤝 Contributing
+*   **Roles**:
+    *   `USER`: Standard access scope.
+    *   `ADMIN`: Elevated privileges (User status management).
 
-Contributions are welcome! Please fork the repository and create a pull request with your changes.
+### Token Specification
+*   **Format**: JWT (RFC 7519)
+*   **Transport**: `Authorization: Bearer <token>` header.
+*   **Payload Claims**:
+    *   `sub` / `UserId`: User GUID
+    *   `email`: User Email
+    *   `role`: Assigned Role
+    *   `status`: Account Status
+
+## 📡 API Endpoints
+
+| Method | Endpoint                     | Access Level | Description                                      |
+| :----- | :--------------------------- | :----------- | :----------------------------------------------- |
+| `POST` | `/api/auth/register`         | Public       | Registers a new `USER` (Default status: `Active`).|
+| `POST` | `/api/auth/login`            | Public       | Authenticates credentials; issues JWT.           |
+| `GET`  | `/api/users/me`              | Authenticated| Retrieves context for the current identity.      |
+| `PUT`  | `/api/users/{id}/status`     | `ADMIN`      | Modifies user account status.                    |
+
+## 🤝 Contribution
+
+Pull requests are welcome. Please adhere to the existing code style and ensure all unit tests pass before submitting.
 
 ## 📄 License
 
-This project is licensed under the **MIT License**.
-
-## 🔐 Authentication & Authorization
-
-This section outlines the application's security model, including user identity, roles, and the authentication process.
-
-### User Identity
-- **Primary Identifier**: Each user is uniquely identified by a **GUID** (`UserId`).
-- **Login Credential**: Users authenticate using their email address and password.
-- **Email Constraint**: User email addresses must end with `.com`.
-- **Account Status**: Each user account has a status of either `Active` or `Disabled`.
-
-### Roles and Permissions
-The application defines two user roles:
-- **`USER`**: Standard users with access to core task and document management features.
-- **`ADMIN`**: Administrators with elevated privileges, including the ability to manage user accounts (e.g., changing a user's status).
-
-### Authentication and Token Handling
-- **Protocol**: The application uses a token-based authentication system.
-- **Token Type**: A **JSON Web Token (JWT)** is issued upon successful authentication. No refresh tokens are used.
-- **Authorization Header**: For authenticated requests, the JWT must be included in the `Authorization` header using the Bearer schema: `Authorization: Bearer <token>`.
-- **Token Claims**: The JWT payload contains the following claims to identify and authorize the user:
-    - `UserId` (GUID)
-    - `Email`
-    - `Role` (`USER` or `ADMIN`)
-    - `Status` (`Active` or `Disabled`)
-
-### API Use Cases
-
-| Use Case             | Endpoint (Example)           | Input                  | Role Required      | Description                                                              |
-| :------------------- | :--------------------------- | :--------------------- | :----------------- | :----------------------------------------------------------------------- |
-| **Register User**      | `POST /api/auth/register`    | Email, Password        | Public             | Creates a new user with the `USER` role and an `Active` status.          |
-| **Authenticate User**  | `POST /api/auth/login`       | Email, Password        | Public             | Validates credentials and returns a JWT if the user is `Active`.         |
-| **Get Current User**   | `GET /api/users/me`          | Valid JWT              | `USER` or `ADMIN`  | Returns the profile of the currently authenticated user.                 |
-| **Manage User Status** | `PUT /api/users/{id}/status` | New Status             | `ADMIN`            | Updates a user's status to `Active` or `Disabled`.                       |
+Distributed under the MIT License.
