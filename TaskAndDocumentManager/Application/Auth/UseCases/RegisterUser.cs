@@ -1,14 +1,18 @@
-namespace System.Net.Mail{
+using System.Text.RegularExpressions;
+
 namespace TaskAndDocumentManager.Apploication.Auth.UseCases
     {
         public class RegisterUser
         {
-            //Email validation
+
+            //Implementation of register user usecases
+
+            //1)Email validation
             private bool IsValidEmail(string email)
             {
                 var trimmedEmial = email.Trim();
 
-                if (trimmedEmial.EndsWith("."))
+                if(trimmedEmial.EndsWith("."))
                 {
                     return false;
                 }
@@ -20,40 +24,45 @@ namespace TaskAndDocumentManager.Apploication.Auth.UseCases
                 {
                     return false;
                 }
+                return true;
+
+//                 Later:
+
+// Extract IEmailValidator
+
+// Move implementation out
+
+// Plug it back in
             }
+
+        
+        //TODO Password validation c#
+        public bool IsPasswordStrong(string password)
+        {
+            try
+                {
+                    if (string.IsNullOrWhiteSpace(password))
+                    {
+                        return false;
+                    }
+                    var hasNumber = new Regex(@"[0-9]+");
+                    var hasUpperChar = new Regex(@"[A-Z]+");
+                    var hasMinimum8Chars = new Regex(@".{8,}");
+
+                    return hasNumber.IsMatch(password) && hasUpperChar.IsMatch(password) && hasMinimum8Chars.IsMatch(password);
+                }
+                catch
+                {
+                    return false;
+                }
         }
+
+
+
+        }
+
+
+
+
+        
     }
-}
-
-
-
-
-
-
-// namespace TaskAndDocumentManager.Application.Auth.UseCases
-// {
-// 	public class RegisterUser
-// 	{
-// 		// Todo email validation
-// 		private bool IsValidEmail(string email)
-// 		{
-// 			// TODO: Implement email validation
-// 			return true;
-// 		}
-
-// 		// Password hashing
-// 		private string HashPassword(string password)
-// 		{
-// 			// TODO: Implement password hashing
-// 			return password;
-// 		}
-
-// 		// Saving users
-// 		public void SaveUser(string email, string password)
-// 		{
-// 			// TODO: Implement user saving logic
-// 		}
-
-// 		// It proves your architecture works
-// 	}
-// }
