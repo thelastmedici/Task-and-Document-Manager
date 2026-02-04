@@ -1,3 +1,5 @@
+using System;
+using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 
 namespace TaskAndDocumentManager.Apploication.Auth.UseCases
@@ -50,10 +52,18 @@ namespace TaskAndDocumentManager.Apploication.Auth.UseCases
                             return hasNumber.IsMatch(password) && hasUpperChar.IsMatch(password) && hasMinimum8Chars.IsMatch(password);
                     
                 }
+
+                public string HashPassword(string password)
+                {
+                    // Generate a 128-bit salt using a secure PRNG
+                    byte[] salt = RandomNumberGenerator.GetBytes(16);
+
+                    // Derive a 256-bit subkey (use HMACSHA256 with 100,000 iterations)
+                    byte[] hash = Rfc2898DeriveBytes.Pbkdf2(password, salt, 100000, HashAlgorithmName.SHA256, 32);
+
+                    // Format: {salt}.{hash}
+                    return $"{Convert.ToBase64String(salt)}.{Convert.ToBase64String(hash)}";
+                }
         }
-
-
-
-
         
     }
