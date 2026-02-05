@@ -64,6 +64,11 @@ namespace TaskAndDocumentManager.Apploication.Auth.UseCases
                     // Format: {salt}.{hash}
                     return $"{Convert.ToBase64String(salt)}.{Convert.ToBase64String(hash)}";
                 }
+
+                public bool VerifyPassword(inputPassword, storedHash)
+                {
+                     
+                }
         }
         
     }
