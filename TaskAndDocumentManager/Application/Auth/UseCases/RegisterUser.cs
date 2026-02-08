@@ -1,8 +1,9 @@
 using System;
+using System.Net.Mail;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 
-namespace TaskAndDocumentManager.Apploication.Auth.UseCases
+namespace TaskAndDocumentManager.Application.Auth.UseCases
     {
         public class RegisterUser
         {
@@ -12,9 +13,9 @@ namespace TaskAndDocumentManager.Apploication.Auth.UseCases
             //1)Email validation
             private bool IsValidEmail(string email)
             {
-                var trimmedEmial = email.Trim();
+                var trimmedEmail = email.Trim();
 
-                if(trimmedEmial.EndsWith("."))
+                if(trimmedEmail.EndsWith("."))
                 {
                     return false;
                 }
