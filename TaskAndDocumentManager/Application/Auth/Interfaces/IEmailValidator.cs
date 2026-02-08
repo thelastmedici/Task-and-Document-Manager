@@ -1,5 +1,5 @@
 //email validation contract interface for usecase lives here
-namespace TaskAndDocumentManager.Apploication.Auth.interfaces
+namespace TaskAndDocumentManager.Application.Auth.Interfaces
 {
     public interface IEmailValidator
     {
