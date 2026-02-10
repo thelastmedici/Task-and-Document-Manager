@@ -1,6 +1,6 @@
 using System;
+using System.Linq;
 using System.Net.Mail;
-using System.Text.RegularExpressions;
 
 namespace TaskAndDocumentManager.Application.Auth.UseCases
     {
@@ -28,11 +28,7 @@ namespace TaskAndDocumentManager.Application.Auth.UseCases
                             {
                                 return false;
                             }
-                            var hasNumber = new Regex(@"[0-9]+");
-                            var hasUpperChar = new Regex(@"[A-Z]+");
-                            var hasMinimum8Chars = new Regex(@".{8,}");
-
-                            return hasNumber.IsMatch(password) && hasUpperChar.IsMatch(password) && hasMinimum8Chars.IsMatch(password);
+                            return password.Length >= 8 && password.Any(char.IsDigit) && password.Any(char.IsUpper);
                     
                 }
         }
