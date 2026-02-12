@@ -11,5 +11,14 @@ namespace TaskAndDocumentManager.Application.Auth.UseCases
         private readonly IPasswordHasher _passwordHasher;
         private readonly IEmailValidator _emailValidator;
 
+
+        
+        //A constructor that accept IUserRepository IPasswordHasher IEmailValidator and assigns them to the private field
+        public RegisterUser(IUserRepository userRepository, IPasswordHasher passwordHasher, IEmailValidator emailValidator){
+            _userRepository = userRepository;
+            _passwordHasher = passwordHasher;
+            _emailValidator = emailValidator;
+        }
+
     }
 }
