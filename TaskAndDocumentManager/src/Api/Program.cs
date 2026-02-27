@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Identity;
 using TaskAndDocumentManager.Application.Auth.Interfaces;
 using TaskAndDocumentManager.Application.Auth.UseCases;
 using TaskAndDocumentManager.Infrastructure.Auth.Services;
@@ -35,6 +34,5 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();
 
-// Add services to the container.
 
 app.Run();
