@@ -9,6 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IEmailValidator, EmailValidator>();
+builder.Services.AddScoped<IPasswordValidator, PasswordValidator>();
 builder.Services.AddScoped<RegisterUser>();
 
 
