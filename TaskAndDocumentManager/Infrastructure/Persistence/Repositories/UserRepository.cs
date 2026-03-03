@@ -47,6 +47,6 @@ namespace TaskAndDocumentManager.Infrastructure.Persistence.Repositories
            if (email == null) return null;
            return _users.FirstOrDefault(u => string.Equals(u.Email, email, StringComparison.OrdinalIgnoreCase));
        }
-    }    
+    }
 }
 // ...existing code...
