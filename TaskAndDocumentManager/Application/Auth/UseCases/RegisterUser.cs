@@ -31,6 +31,14 @@ namespace TaskAndDocumentManager.Application.Auth.UseCases
                 throw new FormatException("Email is invalid");
             }
 
+            //validate password strength
+            if (!_passwordValidator.IsPasswordStrong(password))
+            {
+                throw new ArgumentException("Password Is not strong enough");
+            }
+            
+
+            //checkif user exist
             var existingUser = _userRepository.GetByEmail(email);
 
             if(existingUser != null)
