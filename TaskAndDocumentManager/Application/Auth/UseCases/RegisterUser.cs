@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Net.Mail;
 using TaskAndDocumentManager.Application.Auth.Interfaces;
+using TaskAndDocumentManager.Domain.Entities;
 
 namespace TaskAndDocumentManager.Application.Auth.UseCases
 {
@@ -45,6 +46,20 @@ namespace TaskAndDocumentManager.Application.Auth.UseCases
             {
                 throw new InvalidOperationException("User Already Exist");
             }
+
+            //hashpassword
+            var hashPassword = _passwordHasher.HashPassword(password);
+
+            //create new user
+            var user = new User
+            {
+                Email = email,
+                PasswordHash = hashPassword,
+            };
+
+
+            //save user
+            _userRepository.Save(user);
         }
        
        
