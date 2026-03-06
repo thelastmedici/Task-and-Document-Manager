@@ -48,13 +48,12 @@ namespace TaskAndDocumentManager.Application.Auth.UseCases
             }
 
             //hashpassword
-            var hashPassword = _passwordHasher.HashPassword(password);
-
+           var passwordHash = _passwordHasher.HashPassword(password);
             //create new user
             var user = new User
             {
                 Email = email,
-                PasswordHash = hashPassword,
+                PasswordHash = passwordHash,
             };
 
 
@@ -63,6 +62,5 @@ namespace TaskAndDocumentManager.Application.Auth.UseCases
         }
        
        
-
     }
 }
