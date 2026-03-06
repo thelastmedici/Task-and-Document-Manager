@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using TaskAndDocumentManager.Application.Auth.UseCases;
 namespace TaskAndDocumentManager.Controllers
 {
+    [Route("auth")]
     public class AuthController: Controller
     {
         private readonly RegisterUser _registerUser;
@@ -16,10 +17,21 @@ namespace TaskAndDocumentManager.Controllers
         }
 
         [HttpPost]
-        public IActionResult Register(string emial, string password)
+        public IActionResult Register(string email, string password)
         {
-            _registerUser.Execute(emial, password);
-            return RedirectToAction("Index", "Home");
+            try
+            {
+                _registerUser.Execute(email, password);
+                return RedirectToAction("Index", "Home");
+            }
+            catch (Exception ex)
+            {
+                
+                ModelState.AddModelError("", ex.Message);
+                return View();
+            }
+            
+            
         }
     }
 }
