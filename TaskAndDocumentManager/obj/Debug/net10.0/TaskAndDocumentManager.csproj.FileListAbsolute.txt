@@ -111,3 +111,8 @@
 /home/asiwaju/Documents/medici/TaskAndDocumentManager/TaskAndDocumentManager/obj/Debug/net10.0/TaskAndDocumentManager.pdb
 /home/asiwaju/Documents/medici/TaskAndDocumentManager/TaskAndDocumentManager/obj/Debug/net10.0/TaskAndDocumentManager.genruntimeconfig.cache
 /home/asiwaju/Documents/medici/TaskAndDocumentManager/TaskAndDocumentManager/obj/Debug/net10.0/ref/TaskAndDocumentManager.dll
+/home/asiwaju/Documents/medici/TaskAndDocumentManager/TaskAndDocumentManager/bin/Debug/net10.0/Microsoft.OpenApi.dll
+/home/asiwaju/Documents/medici/TaskAndDocumentManager/TaskAndDocumentManager/bin/Debug/net10.0/Swashbuckle.AspNetCore.Swagger.dll
+/home/asiwaju/Documents/medici/TaskAndDocumentManager/TaskAndDocumentManager/bin/Debug/net10.0/Swashbuckle.AspNetCore.SwaggerGen.dll
+/home/asiwaju/Documents/medici/TaskAndDocumentManager/TaskAndDocumentManager/bin/Debug/net10.0/Swashbuckle.AspNetCore.SwaggerUI.dll
+/home/asiwaju/Documents/medici/TaskAndDocumentManager/TaskAndDocumentManager/obj/Debug/net10.0/TaskAndDocumentManager.MvcApplicationPartsAssemblyInfo.cs
