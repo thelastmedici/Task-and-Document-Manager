@@ -54,6 +54,8 @@ namespace TaskAndDocumentManager.Application.Auth.UseCases
             {
                 Email = email,
                 PasswordHash = passwordHash,
+                Role = "User",
+                IsActive = true
             };
 
 
