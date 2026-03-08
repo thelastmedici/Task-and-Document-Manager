@@ -51,7 +51,7 @@ public class AuthenticateUser
 
 
 
-        var normalizedEmail = email.Trim();
+        var normalizedEmail = email.Trim().ToLowerInvariant();
 
         var user = _userRepository.GetByEmail(normalizedEmail);
 
@@ -92,7 +92,6 @@ public class AuthenticateUser
         return new AuthResponse
 
         {
-
             Token = token,
             ExpiresAtUtc = expiresAtUtc,
             User = new UserProfile
