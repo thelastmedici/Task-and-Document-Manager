@@ -1,5 +1,3 @@
-using System.IdentityModel.Tokens.Jwt;
-
 using TaskAndDocumentManager.Application.Auth.DTOs;
 
 using TaskAndDocumentManager.Application.Auth.Interfaces;
@@ -84,16 +82,12 @@ public class AuthenticateUser
 
         var role = string.IsNullOrWhiteSpace(user.Role) ? "User" : user.Role;
 
-        var token = _tokenService.GenerateToken(user.Id.ToString(), user.Email, role);
-
-        var jwtToken = new JwtSecurityTokenHandler().ReadJwtToken(token);
-        var expiresAtUtc = jwtToken.ValidTo;
+        var tokenResult = _tokenService.GenerateToken(user.Id.ToString(), user.Email, role);
 
         return new AuthResponse
-
         {
-            Token = token,
-            ExpiresAtUtc = expiresAtUtc,
+            Token = tokenResult.Token,
+            ExpiresAtUtc = tokenResult.ExpiresAtUtc,
             User = new UserProfile
 
             {

@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using TaskAndDocumentManager.Application.Auth.DTOs;
 using TaskAndDocumentManager.Application.Auth.Interfaces;
 
 namespace TaskAndDocumentManager.Infrastructure.Auth.Token;
@@ -30,9 +31,10 @@ public class JwtTokenService : ITokenService
         _expiresMinutes = int.TryParse(jwtSection["ExpiresMinutes"], out var minutes) ? minutes : 60;
     }
 
-    public string GenerateToken(string userId, string email, string role)
+    public TokenResult GenerateToken(string userId, string email, string role)
     {
         var now = DateTime.UtcNow;
+        var expires = now.AddMinutes(_expiresMinutes);
         var credentials = new SigningCredentials(new SymmetricSecurityKey(_key), SecurityAlgorithms.HmacSha256);
 
         var claims = new List<Claim>
@@ -50,10 +52,16 @@ public class JwtTokenService : ITokenService
             audience: _audience,
             claims: claims,
             notBefore: now,
-            expires: now.AddMinutes(_expiresMinutes),
+            expires: expires,
             signingCredentials: credentials);
 
-        return _tokenHandler.WriteToken(jwtToken);
+        var token = _tokenHandler.WriteToken(jwtToken);
+
+        return new TokenResult
+        {
+            Token = token,
+            ExpiresAtUtc = expires
+        };
     }
 
     public bool ValidateToken(string token)
