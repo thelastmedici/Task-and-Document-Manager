@@ -1,5 +1,7 @@
-public class TokenResult
+namespace TaskAndDocumentManager.Application.Auth.DTOs;
+
+public sealed class TokenResult
 {
-    public string Token { get; set; }
-    public DateTime ExpiresAtUtc{ get; set; }
+    public required string Token { get; init; }
+    public DateTime ExpiresAtUtc { get; init; }
 }
