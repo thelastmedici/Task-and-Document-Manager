@@ -15,10 +15,14 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IEmailValidator, EmailValidator>();
+builder.Services.AddScoped<AuthenticateUser>();
+builder.Services.AddScoped<GetCurrentUser>();
+builder.Services.AddScoped<RegisterUser>();
+builder.Services.AddScoped<GetCurrentUser>();
 builder.Services.AddScoped<IPasswordValidator, PasswordValidator>();
 builder.Services.AddScoped<ITokenService, JwtTokenService>();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme);
-builder.Services.AddScoped<RegisterUser>();
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
