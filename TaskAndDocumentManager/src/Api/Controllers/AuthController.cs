@@ -51,7 +51,7 @@ public class AuthController : ControllerBase
             var authResult = _authenticateUser.Execute(request.Email, request.Password);
             return Ok(authResult);
         }
-        catch (Exception ex)
+        catch (UnauthorizedAccessException ex)
         {
             return Unauthorized(ex.Message);
         }
