@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TaskAndDocumentManager.Application.Auth.UseCases;
+using TaskAndDocumentManager.Api.Extensions;
 
 namespace TaskAndDocumentManager.Controllers;
 
@@ -36,9 +37,22 @@ public class AuthController : ControllerBase
 
             return Ok(new { message = "User registered successfully" });
         }
-        catch (Exception ex)
+        catch (InvalidOperationException ex) // User already exists
         {
-            return BadRequest(ex.Message);
+            return Conflict(new { message = ex.Message });
+        }
+        catch (FormatException ex) // Invalid email format
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (ArgumentException ex) // Password not strong enough or other argument issues
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception)
+        {
+            // It's good practice to log the exception details here.
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = "An unexpected error occurred during registration." });
         }
     }
 
@@ -53,7 +67,7 @@ public class AuthController : ControllerBase
         }
         catch (UnauthorizedAccessException ex)
         {
-            return Unauthorized(ex.Message);
+            return Unauthorized(new { message = ex.Message });
         }
     }
 
@@ -61,13 +75,11 @@ public class AuthController : ControllerBase
     [HttpGet("me")]
     public IActionResult Me()
     {
-        var userIdClaim =
-            User.FindFirstValue(ClaimTypes.NameIdentifier) ??
-            User.FindFirstValue("sub");
+        var userIdValue = User.GetUserId();
 
-        if (!int.TryParse(userIdClaim, out var userId))
+        if (userIdValue is null || !int.TryParse(userIdValue, out var userId))
         {
-            return Unauthorized("Invalid user id claim.");
+            return Unauthorized(new { message = "Invalid user ID claim." });
         }
 
         var currentUser = _getCurrentUser.Execute(userId);
@@ -78,7 +90,19 @@ public class AuthController : ControllerBase
     [HttpPut("users/{id:int}/deactivate")]
     public IActionResult Deactivate(int id)
     {
-        _deactivateUser.Execute(id);
-        return NoContent();
+        try
+        {
+            _deactivateUser.Execute(id);
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (Exception)
+        {
+            // It's good practice to log the exception details here.
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = "An unexpected error occurred while deactivating the user." });
+        }
     }
 }
