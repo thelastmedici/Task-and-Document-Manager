@@ -75,7 +75,7 @@ Access control is enforced via Claims-based authorization.
     *   `role`: Assigned Role
     *   `status`: Account Status
 
-## 📡 API Endpoints
+## 📡 USER API Endpoints
 
 | Method | Endpoint                     | Access Level | Description                                      |
 | :----- | :--------------------------- | :----------- | :----------------------------------------------- |
@@ -83,6 +83,18 @@ Access control is enforced via Claims-based authorization.
 | `POST` | `/api/auth/login`            | Public       | Authenticates credentials; issues JWT.           |
 | `GET`  | `/api/users/me`              | Authenticated| Retrieves context for the current identity.      |
 | `PUT`  | `/api/users/{id}/status`     | `ADMIN`      | Modifies user account status.                    |
+
+## TASK API Endpoints
+The Task API module supports task creation, retrieval, updating, deletion, and assignment.
+
+#### Task Management Endpoints
+| Method   | Endpoint            | Description                                 |
+| :------- | :------------------ | :------------------------------------------ |
+| `POST`   | `/api/tasks`        | Creates a new task.                        |
+| `GET`    | `/api/tasks`        | Retrieves all tasks.                        |
+| `PUT`    | `/api/tasks/{id}`   | Updates a specific task by ID.              |
+| `DELETE` | `/api/tasks/{id}`   | Deletes a specific task by ID.              |
+| `POST`   | `/api/tasks/{id}/assign` | Assigns a task to a user, specified by task ID. |
 
 ## 🤝 Contribution
 
