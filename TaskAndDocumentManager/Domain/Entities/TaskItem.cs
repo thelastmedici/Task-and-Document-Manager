@@ -1,17 +1,16 @@
 namespace TaskAndDocumentManager.Domain.Entities;
 
-class TaskItem
+public class TaskItem
 {
-    private int id; // Unique Identifier
-    private string Title; // Name of Task
+    public Guid Id { get; private set; }
 
-    private string Description; // Details for the task
-    private int UserId; // Assigned to a user
+    public string Title { get; private set; } = string.Empty;
 
-    private DateTime CreatedAt; // created time
-    
+    public string Description { get; private set; } = string.Empty;
 
-    private bool IsComplete; // task status
-    
+    public Guid? AssignedUserId { get; private set; }
 
+    public DateTime CreatedAt { get; private set; }
+
+    public bool IsComplete { get; private set; }
 }
