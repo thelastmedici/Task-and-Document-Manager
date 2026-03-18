@@ -1,0 +1,16 @@
+/home/asiwaju/Documents/medici/TaskAndDocumentManager/TaskAndDocumentManager/Application/bin/Debug/net10.0/TaskAndDocumentManager.Application.deps.json
+/home/asiwaju/Documents/medici/TaskAndDocumentManager/TaskAndDocumentManager/Application/bin/Debug/net10.0/TaskAndDocumentManager.Application.dll
+/home/asiwaju/Documents/medici/TaskAndDocumentManager/TaskAndDocumentManager/Application/bin/Debug/net10.0/TaskAndDocumentManager.Application.pdb
+/home/asiwaju/Documents/medici/TaskAndDocumentManager/TaskAndDocumentManager/Application/bin/Debug/net10.0/TaskAndDocumentManager.Domain.dll
+/home/asiwaju/Documents/medici/TaskAndDocumentManager/TaskAndDocumentManager/Application/bin/Debug/net10.0/TaskAndDocumentManager.Domain.pdb
+/home/asiwaju/Documents/medici/TaskAndDocumentManager/TaskAndDocumentManager/Application/obj/Debug/net10.0/TaskAndDocumentManager.Application.csproj.AssemblyReference.cache
+/home/asiwaju/Documents/medici/TaskAndDocumentManager/TaskAndDocumentManager/Application/obj/Debug/net10.0/TaskAndDocumentManager.Application.GeneratedMSBuildEditorConfig.editorconfig
+/home/asiwaju/Documents/medici/TaskAndDocumentManager/TaskAndDocumentManager/Application/obj/Debug/net10.0/TaskAndDocumentManager.Application.AssemblyInfoInputs.cache
+/home/asiwaju/Documents/medici/TaskAndDocumentManager/TaskAndDocumentManager/Application/obj/Debug/net10.0/TaskAndDocumentManager.Application.AssemblyInfo.cs
+/home/asiwaju/Documents/medici/TaskAndDocumentManager/TaskAndDocumentManager/Application/obj/Debug/net10.0/TaskAndDocumentManager.Application.csproj.CoreCompileInputs.cache
+/home/asiwaju/Documents/medici/TaskAndDocumentManager/TaskAndDocumentManager/Application/obj/Debug/net10.0/TaskAndDocumentManager.Application.sourcelink.json
+/home/asiwaju/Documents/medici/TaskAndDocumentManager/TaskAndDocumentManager/Application/obj/Debug/net10.0/TaskAndD.E69067C7.Up2Date
+/home/asiwaju/Documents/medici/TaskAndDocumentManager/TaskAndDocumentManager/Application/obj/Debug/net10.0/TaskAndDocumentManager.Application.dll
+/home/asiwaju/Documents/medici/TaskAndDocumentManager/TaskAndDocumentManager/Application/obj/Debug/net10.0/refint/TaskAndDocumentManager.Application.dll
+/home/asiwaju/Documents/medici/TaskAndDocumentManager/TaskAndDocumentManager/Application/obj/Debug/net10.0/TaskAndDocumentManager.Application.pdb
+/home/asiwaju/Documents/medici/TaskAndDocumentManager/TaskAndDocumentManager/Application/obj/Debug/net10.0/ref/TaskAndDocumentManager.Application.dll
