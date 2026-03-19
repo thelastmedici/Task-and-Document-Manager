@@ -41,4 +41,13 @@ public class TaskItem
         CreatedAt = DateTime.UtcNow;
         IsCompleted = false;
     }
+
+    public void AssignTask(Guid userId)
+    {
+        if (userId == Guid.Empty)
+        {
+            throw new ArgumentException("User ID is required.", nameof(userId));
+        }
+        AssignedUserId = userId;
+    }
 }
