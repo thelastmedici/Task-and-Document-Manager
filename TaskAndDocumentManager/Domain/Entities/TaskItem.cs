@@ -50,4 +50,14 @@ public class TaskItem
         }
         AssignedUserId = userId;
     }
+
+    public void UpdateTask(string title, string description)
+    {
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            throw new ArgumentException($"{nameof(title)} must be empty.");
+        }
+        title = Title;
+        description = Description;
+    }
 }
