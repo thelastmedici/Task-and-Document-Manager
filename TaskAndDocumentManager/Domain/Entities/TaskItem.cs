@@ -2,6 +2,9 @@ namespace TaskAndDocumentManager.Domain.Entities;
 
 public class TaskItem
 {
+    private const int MaxTitleLength = 200;
+    private const int MaxDescriptionLength = 4000;
+
     public Guid Id { get; private set; }
 
     public string Title { get; private set; } = string.Empty;
@@ -14,50 +17,99 @@ public class TaskItem
 
     public DateTime CreatedAt { get; private set; }
 
+    public DateTime? UpdatedAt { get; private set; }
+
     public bool IsCompleted { get; private set; }
+
+    public DateTime? CompletedAt { get; private set; }
 
     protected TaskItem() { }
 
     public TaskItem(string title, string description, Guid createdByUserId)
     {
-        if (string.IsNullOrWhiteSpace(title))
-        {
-            throw new ArgumentException("Title is required.", nameof(title));
-        }
-
-        if (string.IsNullOrWhiteSpace(description))
-        {
-            throw new ArgumentException("Description is required.", nameof(description));
-        }
-
-        if(createdByUserId == Guid.Empty)
+        if (createdByUserId == Guid.Empty)
         {
             throw new ArgumentException("Created by user ID is required.", nameof(createdByUserId));
         }
 
         Id = Guid.NewGuid();
-        Title = title;
-        Description = description;
+        CreatedByUserId = createdByUserId;
         CreatedAt = DateTime.UtcNow;
+        Title = NormalizeRequiredText(title, nameof(title), MaxTitleLength);
+        Description = NormalizeRequiredText(description, nameof(description), MaxDescriptionLength);
         IsCompleted = false;
     }
 
     public void AssignTask(Guid userId)
     {
+        EnsureTaskIsNotCompleted();
+
         if (userId == Guid.Empty)
         {
             throw new ArgumentException("User ID is required.", nameof(userId));
         }
+
+        if (AssignedUserId == userId)
+        {
+            return;
+        }
+
         AssignedUserId = userId;
+        UpdatedAt = DateTime.UtcNow;
     }
 
     public void UpdateTask(string title, string description)
     {
-        if (string.IsNullOrWhiteSpace(title))
+        EnsureTaskIsNotCompleted();
+
+        var normalizedTitle = NormalizeRequiredText(title, nameof(title), MaxTitleLength);
+        var normalizedDescription = NormalizeRequiredText(description, nameof(description), MaxDescriptionLength);
+
+        if (Title == normalizedTitle && Description == normalizedDescription)
         {
-            throw new ArgumentException($"{nameof(title)} must be empty.");
+            return;
         }
-        title = Title;
-        description = Description;
+
+        Title = normalizedTitle;
+        Description = normalizedDescription;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+
+    public void MarkCompleted()
+    {
+        if (IsCompleted)
+        {
+            throw new InvalidOperationException("Task is already completed.");
+        }
+
+        IsCompleted = true;
+        CompletedAt = DateTime.UtcNow;
+        UpdatedAt = CompletedAt;
+    }
+
+    private static string NormalizeRequiredText(string value, string parameterName, int maxLength)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            throw new ArgumentException($"{parameterName} is required.", parameterName);
+        }
+
+        var normalizedValue = value.Trim();
+
+        if (normalizedValue.Length > maxLength)
+        {
+            throw new ArgumentException($"{parameterName} cannot exceed {maxLength} characters.", parameterName);
+        }
+
+        return normalizedValue;
+    }
+
+    private void EnsureTaskIsNotCompleted()
+    {
+        if (IsCompleted)
+        {
+            throw new InvalidOperationException("Completed tasks cannot be modified.");
+        }
     }
 }
