@@ -40,7 +40,7 @@ public class TaskItem
         IsCompleted = false;
     }
 
-    public void AssignTask(Guid userId)
+    public void AssignTask(Guid? userId)
     {
         EnsureTaskIsNotCompleted();
 
@@ -56,6 +56,11 @@ public class TaskItem
 
         AssignedToUserId = userId;
         UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void UnassignTask()
+    {
+        AssignTask(null);
     }
 
     public void UpdateTask(string title, string description)
