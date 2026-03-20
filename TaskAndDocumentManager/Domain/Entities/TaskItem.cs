@@ -11,7 +11,7 @@ public class TaskItem
 
     public string Description { get; private set; } = string.Empty;
 
-    public Guid? AssignedUserId { get; private set; }
+    public Guid? AssignedToUserId { get; private set; }
 
     public Guid CreatedByUserId { get; private set; }
 
@@ -49,12 +49,12 @@ public class TaskItem
             throw new ArgumentException("User ID is required.", nameof(userId));
         }
 
-        if (AssignedUserId == userId)
+        if (AssignedToUserId == userId)
         {
             return;
         }
 
-        AssignedUserId = userId;
+        AssignedToUserId = userId;
         UpdatedAt = DateTime.UtcNow;
     }
 
