@@ -13,6 +13,8 @@ namespace Application.TodoTask.Interfaces
    Task<TaskItem?> GetByIdAsync(Guid id, CancellationToken cancellationToken=default);
 
    Task<IReadOnlyList<TaskItem>> GetAllAsync(CancellationToken cancellationToken=default);
+
+   Task UpdateAsync(TaskItem task, CancellationToken cancellationToken=default); // update existing task
 }
 
 }
