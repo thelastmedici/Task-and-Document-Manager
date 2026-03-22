@@ -9,6 +9,10 @@ namespace Application.TodoTask.Interfaces
    public interface ITaskRepository
 {
    Task<TaskItem> CreateAsync(TaskItem task, CancellationToken cancellationToken=default);// method is asynchronous and returns a TaskItem when finished
+
+   Task<TaskItem?> GetByIdAsync(Guid id, CancellationToken cancellationToken=default);
+
+   Task<IReadOnlyList<TaskItem>> GetAllAsync(CancellationToken cancellationToken=default);
 }
 
 }
