@@ -84,14 +84,16 @@ Access control is enforced via Claims-based authorization.
 | `GET`  | `/api/users/me`              | Authenticated| Retrieves context for the current identity.      |
 | `PUT`  | `/api/users/{id}/status`     | `ADMIN`      | Modifies user account status.                    |
 
-## TASK API Endpoints
-The Task API module supports task creation, retrieval, updating, deletion, and assignment.
+
 
 ### Task Domain Model
 *   **Identifier**: `Guid` (UUID v4)
 *   **Validation**: Enforces max lengths for `Title` (200) and `Description` (4000).
 *   **Lifecycle**: Tracks assignment, updates, and completion timestamps.
 *   **Constraints**: Completed tasks are immutable (cannot be updated or re-assigned).
+
+## TASK API Endpoints
+The Task API module supports task creation, retrieval, updating, deletion, and assignment.
 
 #### Task Management Endpoints
 | Method   | Endpoint            | Description                                 |
