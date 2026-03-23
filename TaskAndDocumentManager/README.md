@@ -87,6 +87,12 @@ Access control is enforced via Claims-based authorization.
 ## TASK API Endpoints
 The Task API module supports task creation, retrieval, updating, deletion, and assignment.
 
+### Task Domain Model
+*   **Identifier**: `Guid` (UUID v4)
+*   **Validation**: Enforces max lengths for `Title` (200) and `Description` (4000).
+*   **Lifecycle**: Tracks assignment, updates, and completion timestamps.
+*   **Constraints**: Completed tasks are immutable (cannot be updated or re-assigned).
+
 #### Task Management Endpoints
 | Method   | Endpoint            | Description                                 |
 | :------- | :------------------ | :------------------------------------------ |
