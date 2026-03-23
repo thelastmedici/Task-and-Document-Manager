@@ -15,6 +15,8 @@ namespace Application.TodoTask.Interfaces
    Task<IReadOnlyList<TaskItem>> GetAllAsync(CancellationToken cancellationToken=default);
 
    Task UpdateAsync(TaskItem task, CancellationToken cancellationToken=default); // update existing task
+
+   Task DeleteAsync(Guid id, CancellationToken cancellationToken=default); // delete completed task
 }
 
 }
