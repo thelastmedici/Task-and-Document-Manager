@@ -12,17 +12,18 @@ namespace TaskAndDocumentManager.Application.Tests.Tasks.UseCases;
 public class CreateTaskTests
 {
     private readonly Mock<ITaskRepository> _taskRepositoryMock;
-    private readonly CreateTask _createTaskUseCase;
+    private readonly CreateTask _sut; // System Under Test
 
     public CreateTaskTests()
     {
         _taskRepositoryMock = new Mock<ITaskRepository>();
-        _createTaskUseCase = new CreateTask(_taskRepositoryMock.Object);
+        _sut = new CreateTask(_taskRepositoryMock.Object);
     }
 
     [Fact]
-    public async Task ExecuteAsync_WithValidData_ShouldCreateTaskAndReturnItsId()
+    public async Task ExecuteAsync_ShouldCreateTaskAndReturnId_WhenInputIsValid()
     {
+        // Arrange
         var title = "Test Task";
         var description = "This is a test description.";
         var createdByUserId = Guid.NewGuid();
@@ -32,18 +33,24 @@ public class CreateTaskTests
             .Setup(repo => repo.CreateAsync(It.IsAny<TaskItem>(), cancellationToken))
             .Returns(Task.CompletedTask);
 
-        var taskId = await _createTaskUseCase.ExecuteAsync(title, description, createdByUserId, cancellationToken);
+        // Act
+        var result = await _sut.ExecuteAsync(
+            title,
+            description,
+            createdByUserId,
+            cancellationToken);
 
-        Assert.NotEqual(Guid.Empty, taskId);
+        // Assert
+        Assert.NotEqual(Guid.Empty, result);
 
-        _taskRepositoryMock.Verify(
-            repo => repo.CreateAsync(
+        _taskRepositoryMock.Verify(repo =>
+            repo.CreateAsync(
                 It.Is<TaskItem>(task =>
-                    task.Id == taskId &&
+                    task.Id == result &&
                     task.Title == title &&
                     task.Description == description &&
                     task.CreatedByUserId == createdByUserId &&
-                    !task.IsCompleted),
+                    task.IsCompleted == false),
                 cancellationToken),
             Times.Once);
     }
