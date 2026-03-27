@@ -1,5 +1,7 @@
 using TaskAndDocumentManager.Application.Tasks.Interfaces;
 using TaskAndDocumentManager.Domain.Entities;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace TaskAndDocumentManager.Application.Tasks.UseCases;
 
@@ -16,7 +18,8 @@ public class CreateTask
         string title,
         string description,
         Guid createdByUserId,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+        )
     {
         var task = new TaskItem(title, description, createdByUserId);
 
