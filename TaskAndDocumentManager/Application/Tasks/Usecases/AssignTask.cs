@@ -20,7 +20,7 @@ public class AssignTask
 
         if (task == null)
         {
-            throw new InvalidOperationException("Task was not found.");
+            throw new FileNotFoundException("Task was not found.");
         }
 
         task.AssignTask(userId);
