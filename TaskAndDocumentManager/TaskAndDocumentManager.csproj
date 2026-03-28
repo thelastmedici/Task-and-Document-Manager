@@ -9,6 +9,9 @@
   <ItemGroup>
     <Compile Remove="**/obj/**/*.cs" />
     <Compile Remove="**/bin/**/*.cs" />
+    <Compile Remove="Application/Tests/**/*.cs" />
+    <EmbeddedResource Remove="Application/Tests/**/*" />
+    <None Remove="Application/Tests/**/*" />
   </ItemGroup>
 
   <ItemGroup>
