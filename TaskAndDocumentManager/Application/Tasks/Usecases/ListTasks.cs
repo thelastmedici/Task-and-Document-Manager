@@ -17,16 +17,12 @@ public class ListTasks
         _taskRepository = taskRepository;
     }
 
-    public async Task<IReadOnlyList<TaskListItemDto>> ExecuteAsync(CancellationToken cancellationToken = default)
-    {
-        return await ExecuteAsync(new ListTasksQuery(), cancellationToken);
-    }
-
     public async Task<IReadOnlyList<TaskListItemDto>> ExecuteAsync(
         ListTasksQuery query,
         CancellationToken cancellationToken = default)
     {
         var normalizedQuery = NormalizeQuery(query);
+
         var tasks = await _taskRepository.SearchAsync(normalizedQuery, cancellationToken);
 
         return tasks
@@ -41,7 +37,7 @@ public class ListTasks
                 task.UpdatedAt,
                 task.IsCompleted,
                 task.CompletedAt))
-            .ToList();
+                .ToList();
     }
 
     private static ListTasksQuery NormalizeQuery(ListTasksQuery query)
@@ -49,9 +45,11 @@ public class ListTasks
         ArgumentNullException.ThrowIfNull(query);
 
         var pageNumber = query.PageNumber < 1 ? 1 : query.PageNumber;
+
         var pageSize = query.PageSize < 1
             ? ListTasksQuery.DefaultPageSize
             : Math.Min(query.PageSize, ListTasksQuery.MaxPageSize);
+
         var searchTerm = string.IsNullOrWhiteSpace(query.SearchTerm)
             ? null
             : query.SearchTerm.Trim();
