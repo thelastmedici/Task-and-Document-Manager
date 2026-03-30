@@ -9,4 +9,5 @@ public sealed record TaskListItemDto(
     DateTime CreatedAt,
     DateTime? UpdatedAt,
     bool IsCompleted,
-    DateTime? CompletedAt);
+    DateTime? CompletedAt
+    );
