@@ -1,10 +1,14 @@
 using TaskAndDocumentManager.Application.Auth.Interfaces;
 using TaskAndDocumentManager.Application.Auth.UseCases;
+using TaskAndDocumentManager.Application.Tasks.Interfaces;
+using TaskAndDocumentManager.Application.Tasks.UseCases;
+using TaskAndDocumentManager.Infrastructure.Persistence;
 using TaskAndDocumentManager.Infrastructure.Auth.Services;
 using TaskAndDocumentManager.Infrastructure.Auth;
 using TaskAndDocumentManager.Infrastructure.Persistence.Repositories;
 using TaskAndDocumentManager.Infrastructure.Auth.Token;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
@@ -12,13 +16,19 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 //register service here IUserRepository, IPasswordHasher, IEmailValidator
+builder.Services.AddDbContext<TaskDbContext>(options =>
+    options.UseInMemoryDatabase("TaskAndDocumentManager"));
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<ITaskRepository, TaskRepository>();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IEmailValidator, EmailValidator>();
 builder.Services.AddScoped<AuthenticateUser>();
 builder.Services.AddScoped<GetCurrentUser>();
 builder.Services.AddScoped<RegisterUser>();
 builder.Services.AddScoped<GetCurrentUser>();
+builder.Services.AddScoped<CreateTask>();
+builder.Services.AddScoped<AssignTask>();
+builder.Services.AddScoped<ListTasks>();
 builder.Services.AddScoped<IPasswordValidator, PasswordValidator>();
 builder.Services.AddScoped<ITokenService, JwtTokenService>();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme);
