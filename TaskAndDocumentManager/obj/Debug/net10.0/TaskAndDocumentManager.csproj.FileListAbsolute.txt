@@ -127,7 +127,6 @@
 /home/asiwaju/Documents/medici/TaskAndDocumentManager/TaskAndDocumentManager/bin/Debug/net10.0/Application/Tests/obj/Tests.csproj.nuget.dgspec.json
 /home/asiwaju/Documents/medici/TaskAndDocumentManager/TaskAndDocumentManager/bin/Debug/net10.0/Microsoft.EntityFrameworkCore.dll
 /home/asiwaju/Documents/medici/TaskAndDocumentManager/TaskAndDocumentManager/bin/Debug/net10.0/Microsoft.EntityFrameworkCore.Abstractions.dll
-/home/asiwaju/Documents/medici/TaskAndDocumentManager/TaskAndDocumentManager/bin/Debug/net10.0/Microsoft.EntityFrameworkCore.InMemory.dll
 /home/asiwaju/Documents/medici/TaskAndDocumentManager/TaskAndDocumentManager/bin/Debug/net10.0/Microsoft.Extensions.Caching.Abstractions.dll
 /home/asiwaju/Documents/medici/TaskAndDocumentManager/TaskAndDocumentManager/bin/Debug/net10.0/Microsoft.Extensions.Caching.Memory.dll
 /home/asiwaju/Documents/medici/TaskAndDocumentManager/TaskAndDocumentManager/bin/Debug/net10.0/Microsoft.Extensions.DependencyInjection.dll
@@ -136,3 +135,7 @@
 /home/asiwaju/Documents/medici/TaskAndDocumentManager/TaskAndDocumentManager/bin/Debug/net10.0/Microsoft.Extensions.Logging.Abstractions.dll
 /home/asiwaju/Documents/medici/TaskAndDocumentManager/TaskAndDocumentManager/bin/Debug/net10.0/Microsoft.Extensions.Options.dll
 /home/asiwaju/Documents/medici/TaskAndDocumentManager/TaskAndDocumentManager/bin/Debug/net10.0/Microsoft.Extensions.Primitives.dll
+/home/asiwaju/Documents/medici/TaskAndDocumentManager/TaskAndDocumentManager/bin/Debug/net10.0/Microsoft.EntityFrameworkCore.Relational.dll
+/home/asiwaju/Documents/medici/TaskAndDocumentManager/TaskAndDocumentManager/bin/Debug/net10.0/Microsoft.Extensions.Configuration.Abstractions.dll
+/home/asiwaju/Documents/medici/TaskAndDocumentManager/TaskAndDocumentManager/bin/Debug/net10.0/Npgsql.dll
+/home/asiwaju/Documents/medici/TaskAndDocumentManager/TaskAndDocumentManager/bin/Debug/net10.0/Npgsql.EntityFrameworkCore.PostgreSQL.dll

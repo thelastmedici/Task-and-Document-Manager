@@ -34,7 +34,7 @@ public class ListTasksTests
             .Setup(repo => repo.SearchAsync(It.IsAny<ListTasksQuery>(), cancellationToken))
             .ReturnsAsync(new List<TaskItem> { olderTask, newerTask });
 
-        var result = await _sut.ExecuteAsync(cancellationToken);
+        var result = await _sut.ExecuteAsync(new ListTasksQuery(), cancellationToken);
 
         Assert.Collection(
             result,
@@ -51,7 +51,7 @@ public class ListTasksTests
             .Setup(repo => repo.SearchAsync(It.IsAny<ListTasksQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<TaskItem> { task });
 
-        var result = await _sut.ExecuteAsync();
+        var result = await _sut.ExecuteAsync(new ListTasksQuery());
 
         var item = Assert.IsType<TaskListItemDto>(Assert.Single(result));
         Assert.Equal(task.Title, item.Title);
