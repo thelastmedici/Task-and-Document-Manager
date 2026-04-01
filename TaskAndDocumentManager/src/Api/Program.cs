@@ -15,9 +15,12 @@ using System.Text;
 
 
 var builder = WebApplication.CreateBuilder(args);
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException(
+        "Connection string 'DefaultConnection' is missing. Configure it before starting the API.");
 //register service here IUserRepository, IPasswordHasher, IEmailValidator
 builder.Services.AddDbContext<TaskDbContext>(options =>
-    options.UseInMemoryDatabase("TaskAndDocumentManager"));
+    options.UseNpgsql(connectionString));
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<ITaskRepository, TaskRepository>();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();

@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Npgsql.EntityFrameworkCore.PostgreSQL;
 using TaskAndDocumentManager.Application.Tasks.Dtos;
 using TaskAndDocumentManager.Application.Tasks.Interfaces;
 using TaskAndDocumentManager.Domain.Entities;
@@ -61,8 +62,8 @@ public class TaskRepository(TaskDbContext dbContext) : ITaskRepository
         {
             var pattern = $"%{searchTerm}%";
             tasks = tasks.Where(task =>
-                EF.Functions.Like(task.Title, pattern) ||
-                EF.Functions.Like(task.Description, pattern));
+                EF.Functions.ILike(task.Title, pattern) ||
+                EF.Functions.ILike(task.Description, pattern));
         }
 
         return await tasks
