@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Moq;
@@ -58,7 +57,7 @@ public class UpdateTaskTests
             .Setup(repo => repo.GetByIdAsync(taskId, cancellationToken))
             .ReturnsAsync((TaskItem?)null);
 
-        var exception = await Assert.ThrowsAsync<FileNotFoundException>(() =>
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
             _sut.ExecuteAsync(taskId, "Title", "Description", cancellationToken));
 
         Assert.Equal("Task not found", exception.Message);
