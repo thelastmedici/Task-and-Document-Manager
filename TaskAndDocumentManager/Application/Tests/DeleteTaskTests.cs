@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Moq;
@@ -9,42 +10,38 @@ using Xunit;
 
 namespace TaskAndDocumentManager.Application.Tests.Tasks.UseCases;
 
-public class UpdateTaskTests
+public class DeleteTaskTests
 {
     private readonly Mock<ITaskRepository> _taskRepositoryMock;
-    private readonly UpdateTask _sut;
+    private readonly DeleteTask _sut;
 
-    public UpdateTaskTests()
+    public DeleteTaskTests()
     {
         _taskRepositoryMock = new Mock<ITaskRepository>();
-        _sut = new UpdateTask(_taskRepositoryMock.Object);
+        _sut = new DeleteTask(_taskRepositoryMock.Object);
     }
 
     [Fact]
-    public async Task ExecuteAsync_ShouldUpdateTaskAndPersistChanges_WhenTaskExists()
+    public async Task ExecuteAsync_ShouldDeleteTask_WhenTaskExists()
     {
         var taskId = Guid.NewGuid();
-        var task = new TaskItem("Old title", "Old description", Guid.NewGuid());
-        var updatedTitle = "New title";
-        var updatedDescription = "New description";
+        var task = new TaskItem("Title", "Description", Guid.NewGuid());
         var cancellationToken = CancellationToken.None;
+
+        typeof(TaskItem).GetProperty(nameof(TaskItem.Id))!.SetValue(task, taskId);
 
         _taskRepositoryMock
             .Setup(repo => repo.GetByIdAsync(taskId, cancellationToken))
             .ReturnsAsync(task);
 
         _taskRepositoryMock
-            .Setup(repo => repo.UpdateAsync(task, cancellationToken))
+            .Setup(repo => repo.DeleteAsync(taskId, cancellationToken))
             .Returns(Task.CompletedTask);
 
-        await _sut.ExecuteAsync(taskId, updatedTitle, updatedDescription, cancellationToken);
-
-        Assert.Equal(updatedTitle, task.Title);
-        Assert.Equal(updatedDescription, task.Description);
-        Assert.NotNull(task.UpdatedAt);
+        await _sut.ExecuteAsync(taskId, cancellationToken);
 
         _taskRepositoryMock.Verify(repo => repo.GetByIdAsync(taskId, cancellationToken), Times.Once);
-        _taskRepositoryMock.Verify(repo => repo.UpdateAsync(task, cancellationToken), Times.Once);
+        _taskRepositoryMock.Verify(repo => repo.DeleteAsync(taskId, cancellationToken), Times.Once);
     }
 
     [Fact]
@@ -57,12 +54,12 @@ public class UpdateTaskTests
             .Setup(repo => repo.GetByIdAsync(taskId, cancellationToken))
             .ReturnsAsync((TaskItem?)null);
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            _sut.ExecuteAsync(taskId, "Title", "Description", cancellationToken));
+        var exception = await Assert.ThrowsAsync<FileNotFoundException>(() =>
+            _sut.ExecuteAsync(taskId, cancellationToken));
 
         Assert.Equal("Task not found", exception.Message);
         _taskRepositoryMock.Verify(
-            repo => repo.UpdateAsync(It.IsAny<TaskItem>(), It.IsAny<CancellationToken>()),
+            repo => repo.DeleteAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 }
