@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using TaskAndDocumentManager.Application.Tasks.Interfaces;
@@ -20,8 +21,9 @@ public class DeleteTask
 
         if (task == null)
         {
-            throw new InvalidOperationException("Task not found");
+            throw new FileNotFoundException("Task not found");
         }
+
         await _taskRepository.DeleteAsync(task.Id, cancellationToken);
     }
 }
