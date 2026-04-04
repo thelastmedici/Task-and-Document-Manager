@@ -1,4 +1,4 @@
-using TaskAndDocumentManager.Domain.Entities;
+using TaskAndDocumentManager.Domain.Auth;
 
 namespace TaskAndDocumentManager.Application.Auth.Interfaces;
 

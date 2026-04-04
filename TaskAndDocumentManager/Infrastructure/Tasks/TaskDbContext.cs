@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using TaskAndDocumentManager.Domain.Entities;
+using TaskAndDocumentManager.Domain.Tasks;
 
-namespace TaskAndDocumentManager.Infrastructure.Persistence;
+namespace TaskAndDocumentManager.Infrastructure.Tasks;
 
 public class TaskDbContext(DbContextOptions<TaskDbContext> options) : DbContext(options)
 {

@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using TaskAndDocumentManager.Application.Auth.DTOs;
 using TaskAndDocumentManager.Application.Auth.UseCases;
 using TaskAndDocumentManager.Api.Extensions;
 

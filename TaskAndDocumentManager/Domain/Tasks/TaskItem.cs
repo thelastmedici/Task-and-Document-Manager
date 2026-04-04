@@ -1,4 +1,4 @@
-namespace TaskAndDocumentManager.Domain.Entities;
+namespace TaskAndDocumentManager.Domain.Tasks;
 
 public class TaskItem
 {

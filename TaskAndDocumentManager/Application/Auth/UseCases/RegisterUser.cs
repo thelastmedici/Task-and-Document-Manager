@@ -2,7 +2,7 @@ using System;
 using System.Linq;
 using System.Net.Mail;
 using TaskAndDocumentManager.Application.Auth.Interfaces;
-using TaskAndDocumentManager.Domain.Entities;
+using TaskAndDocumentManager.Domain.Auth;
 
 namespace TaskAndDocumentManager.Application.Auth.UseCases
 {

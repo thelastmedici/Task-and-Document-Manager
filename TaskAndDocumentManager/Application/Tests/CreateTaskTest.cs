@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Moq;
 using TaskAndDocumentManager.Application.Tasks.Interfaces;
 using TaskAndDocumentManager.Application.Tasks.UseCases;
-using TaskAndDocumentManager.Domain.Entities;
+using TaskAndDocumentManager.Domain.Tasks;
 using Xunit;
 
 namespace TaskAndDocumentManager.Application.Tests.Tasks.UseCases;

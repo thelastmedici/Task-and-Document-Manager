@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using TaskAndDocumentManager.Application.Tasks.Dtos;
+using TaskAndDocumentManager.Application.Tasks.DTOs;
 using TaskAndDocumentManager.Application.Tasks.Interfaces;
 
 namespace TaskAndDocumentManager.Application.Tasks.UseCases;
