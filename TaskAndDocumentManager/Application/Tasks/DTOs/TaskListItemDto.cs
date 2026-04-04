@@ -1,4 +1,4 @@
-namespace TaskAndDocumentManager.Application.Tasks.Dtos;
+namespace TaskAndDocumentManager.Application.Tasks.DTOs;
 
 public sealed record TaskListItemDto(
     Guid Id,

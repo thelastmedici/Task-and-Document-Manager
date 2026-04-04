@@ -1,10 +1,10 @@
 using Microsoft.EntityFrameworkCore;
 using Npgsql.EntityFrameworkCore.PostgreSQL;
-using TaskAndDocumentManager.Application.Tasks.Dtos;
+using TaskAndDocumentManager.Application.Tasks.DTOs;
 using TaskAndDocumentManager.Application.Tasks.Interfaces;
-using TaskAndDocumentManager.Domain.Entities;
+using TaskAndDocumentManager.Domain.Tasks;
 
-namespace TaskAndDocumentManager.Infrastructure.Persistence.Repositories;
+namespace TaskAndDocumentManager.Infrastructure.Tasks;
 
 public class TaskRepository(TaskDbContext dbContext) : ITaskRepository
 {

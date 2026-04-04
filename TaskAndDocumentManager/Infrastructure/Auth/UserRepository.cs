@@ -3,9 +3,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using TaskAndDocumentManager.Application.Auth.Interfaces;
-using TaskAndDocumentManager.Domain.Entities;
+using TaskAndDocumentManager.Domain.Auth;
 
-namespace TaskAndDocumentManager.Infrastructure.Persistence.Repositories
+namespace TaskAndDocumentManager.Infrastructure.Auth
 {
         // This is a dummy implementation for demonstration purposes.
     // You should replace this with your actual data access logic (e.g., using Entity Framework Core).

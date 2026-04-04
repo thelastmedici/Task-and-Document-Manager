@@ -1,6 +1,6 @@
 using System.IO;
 using Microsoft.AspNetCore.Mvc;
-using TaskAndDocumentManager.Application.Tasks.Dtos;
+using TaskAndDocumentManager.Application.Tasks.DTOs;
 using TaskAndDocumentManager.Application.Tasks.UseCases;
 
 namespace TaskAndDocumentManager.Controllers;

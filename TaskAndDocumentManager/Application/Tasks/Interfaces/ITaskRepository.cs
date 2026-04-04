@@ -1,8 +1,8 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using TaskAndDocumentManager.Application.Tasks.Dtos;
-using TaskAndDocumentManager.Domain.Entities;
+using TaskAndDocumentManager.Application.Tasks.DTOs;
+using TaskAndDocumentManager.Domain.Tasks;
 
 namespace TaskAndDocumentManager.Application.Tasks.Interfaces
 {

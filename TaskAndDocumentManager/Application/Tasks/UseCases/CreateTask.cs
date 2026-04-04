@@ -1,5 +1,5 @@
 using TaskAndDocumentManager.Application.Tasks.Interfaces;
-using TaskAndDocumentManager.Domain.Entities;
+using TaskAndDocumentManager.Domain.Tasks;
 using System.Threading;
 using System.Threading.Tasks;
 
