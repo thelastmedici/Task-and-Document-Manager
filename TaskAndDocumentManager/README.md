@@ -5,7 +5,7 @@ TaskAndDocumentManager is an ASP.NET Core project that is currently focused on t
 1. user authentication and account management
 2. task management domain logic and application use cases
 
-The repository name includes "DocumentManager", but document-management features are not implemented yet in the codebase. At the moment, the strongest parts of the project are the authentication flow foundations, the task domain model, the task use-case layer, and the unit tests around the task application layer.
+The repository name includes "DocumentManager". A document-management domain and application layer now exists, including file metadata, access-control models, and document use cases, but the feature is not yet fully wired into the running API.
 
 This README is intentionally written around the repository as it exists today, not around a future target architecture.
 
@@ -20,6 +20,7 @@ What is already in place:
 - email validation
 - a `TaskItem` domain entity with clear business rules
 - task use cases for create, list, update, delete, and assign
+- document use cases and domain models for upload, download, sharing, and delete are present in the application layer
 - a PostgreSQL-backed task repository using Entity Framework Core
 - application-layer tests for the main task use cases
 
@@ -29,7 +30,7 @@ What is only partially completed or still needs wiring:
 - `DeactivateUser` exists, but it is not registered in dependency injection in `Program.cs`
 - users are not stored in PostgreSQL yet; the current user repository is an in-memory static list
 - task HTTP endpoints/controllers are not present yet, even though the task application logic exists
-- document-management features are not present yet
+- document-management application and infrastructure code exists, but no document endpoints or DI wiring are completed
 - Entity Framework migrations are not included in the repository
 - there are MVC views and scaffolded pages in the repo, but the current startup path is API-oriented and uses `AddControllers()`
 
@@ -96,6 +97,9 @@ The repository is organized in a clean-architecture style, even though the runna
 - `Application/Tasks`
   - DTOs, repository abstraction, and use cases for task operations
 
+- `Application/Documents`
+  - DTOs, repository abstraction, and use cases for document upload, download, sharing, and delete operations
+
 - `Application/Tests`
   - xUnit tests covering the task application layer
 
@@ -106,6 +110,11 @@ The repository is organized in a clean-architecture style, even though the runna
   - password validation
   - email validation
   - JWT token creation
+
+- `Infrastructure/Documents`
+  - in-memory document repository
+  - document access repository
+  - local file storage service
 
 - `Infrastructure/Persistence`
   - `TaskDbContext`
@@ -494,8 +503,12 @@ Even though the task system has application logic and persistence, the following
 - update task endpoint
 - delete task endpoint
 - assign task endpoint
+- upload document endpoint
+- download document endpoint
+- share document endpoint
+- delete document endpoint
 
-If someone clones this repo today, they should think of the task feature as "implemented in the core/backend layers, but not yet finished as a public API surface."
+If someone clones this repo today, they should think of the task and document features as "implemented in the core/backend layers, but not yet finished as a public API surface."
 
 ## Testing Status
 
@@ -587,7 +600,7 @@ This section is here on purpose so anyone reading the repo understands what is d
 - task endpoints are not yet added
 - JWT generation exists, but JWT bearer validation is not fully configured
 - the auth controller depends on `DeactivateUser`, which still needs DI registration
-- document-management functionality is not yet implemented despite the project name
+- document-management application and infrastructure code exists, but the document API is not yet wired or exposed
 - some MVC/template files remain in the repo, but the current startup direction is API-first
 
 ## Suggested Next Steps
@@ -598,8 +611,9 @@ If you want to continue this project from where it currently stands, the most na
 2. configure `AddJwtBearer(...)` so `[Authorize]` endpoints work properly
 3. move user persistence from the in-memory repository to Entity Framework/PostgreSQL
 4. add a task controller to expose the existing task use cases over HTTP
-5. create and commit EF Core migrations
-6. decide what the document-management module should include and then implement it explicitly
+5. register document services and document use cases in dependency injection, then implement `DocumentsController`
+6. create and commit EF Core migrations
+7. decide what additional document-management behaviors should be included and implement them explicitly
 
 ## Summary
 
