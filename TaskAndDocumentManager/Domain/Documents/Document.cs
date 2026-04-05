@@ -9,6 +9,7 @@ public class Document
     public string StoragePath { get; private set; } = string.Empty;
     public Guid UploadedByUserId { get; private set; }
     public DateTime UploadedAtUtc { get; private set; } = DateTime.UtcNow;
+    public Guid? LinkedTaskId { get; private set; }
 
     protected Document()
     {
@@ -51,5 +52,15 @@ public class Document
         SizeInBytes = sizeInBytes;
         StoragePath = storagePath.Trim();
         UploadedByUserId = uploadedByUserId;
+    }
+
+    public void LinkToTask(Guid taskId)
+    {
+        if (taskId == Guid.Empty)
+        {
+            throw new ArgumentException("Task ID is required.", nameof(taskId));
+        }
+
+        LinkedTaskId = taskId;
     }
 }

@@ -1,0 +1,69 @@
+using Moq;
+using TaskAndDocumentManager.Application.Documents.UseCases;
+using TaskAndDocumentManager.Application.Documents.Interfaces;
+using TaskAndDocumentManager.Domain.Documents;
+
+namespace TaskAndDocumentManager.Application.Tests.Documents.UseCases;
+
+public class GetDocumentMetadataTests
+{
+    private readonly Mock<IDocumentRepository> _documentRepositoryMock;
+    private readonly Mock<IDocumentAccessRepository> _documentAccessRepositoryMock;
+    private readonly GetDocumentMetadata _sut;
+
+    public GetDocumentMetadataTests()
+    {
+        _documentRepositoryMock = new Mock<IDocumentRepository>();
+        _documentAccessRepositoryMock = new Mock<IDocumentAccessRepository>();
+        _sut = new GetDocumentMetadata(_documentRepositoryMock.Object, _documentAccessRepositoryMock.Object);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_ShouldReturnMetadata_WhenRequesterIsOwner()
+    {
+        var ownerId = Guid.NewGuid();
+        var document = new Document(
+            "report.pdf",
+            "application/pdf",
+            1024,
+            "/tmp/report.pdf",
+            ownerId);
+
+        _documentRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(document.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(document);
+
+        var result = await _sut.ExecuteAsync(document.Id, ownerId);
+
+        Assert.Equal(document.Id, result.Id);
+        Assert.Equal(document.FileName, result.FileName);
+        Assert.Equal(document.SizeInBytes, result.SizeInBytes);
+        Assert.Equal(ownerId, result.UploadedByUserId);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_ShouldThrow_WhenRequesterHasNoAccess()
+    {
+        var ownerId = Guid.NewGuid();
+        var requesterId = Guid.NewGuid();
+        var document = new Document(
+            "report.pdf",
+            "application/pdf",
+            1024,
+            "/tmp/report.pdf",
+            ownerId);
+
+        _documentRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(document.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(document);
+
+        _documentAccessRepositoryMock
+            .Setup(repository => repository.HasAccessAsync(document.Id, requesterId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+            _sut.ExecuteAsync(document.Id, requesterId));
+
+        Assert.Equal("You do not have access to this document.", exception.Message);
+    }
+}
