@@ -44,6 +44,7 @@ builder.Services.AddScoped<UploadDocument>();
 builder.Services.AddScoped<DownloadDocument>();
 builder.Services.AddScoped<DeleteDocument>();
 builder.Services.AddScoped<ShareDocument>();
+builder.Services.AddScoped<ShareTaskLinkedDocument>();
 builder.Services.AddScoped<LinkDocumentToTask>();
 builder.Services.AddScoped<GetDocumentMetadata>();
 builder.Services.AddScoped<IPasswordValidator, PasswordValidator>();

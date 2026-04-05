@@ -66,4 +66,30 @@ public class GetDocumentMetadataTests
 
         Assert.Equal("You do not have access to this document.", exception.Message);
     }
+
+    [Fact]
+    public async Task ExecuteAsync_ShouldReturnMetadata_WhenRequesterWasSharedOnDocument()
+    {
+        var ownerId = Guid.NewGuid();
+        var requesterId = Guid.NewGuid();
+        var document = new Document(
+            "report.pdf",
+            "application/pdf",
+            1024,
+            "/tmp/report.pdf",
+            ownerId);
+
+        _documentRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(document.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(document);
+
+        _documentAccessRepositoryMock
+            .Setup(repository => repository.HasAccessAsync(document.Id, requesterId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        var result = await _sut.ExecuteAsync(document.Id, requesterId);
+
+        Assert.Equal(document.Id, result.Id);
+        Assert.Equal(document.FileName, result.FileName);
+    }
 }
