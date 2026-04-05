@@ -10,6 +10,8 @@ public class DocumentsController : ControllerBase
 {
     private readonly UploadDocument _uploadDocument;
     private readonly LinkDocumentToTask _linkDocumentToTask;
+    private readonly ShareDocument _shareDocument;
+    private readonly ShareTaskLinkedDocument _shareTaskLinkedDocument;
     private readonly DownloadDocument _downloadDocument;
     private readonly DeleteDocument _deleteDocument;
     private readonly GetDocumentMetadata _getDocumentMetadata;
@@ -17,12 +19,16 @@ public class DocumentsController : ControllerBase
     public DocumentsController(
         UploadDocument uploadDocument,
         LinkDocumentToTask linkDocumentToTask,
+        ShareDocument shareDocument,
+        ShareTaskLinkedDocument shareTaskLinkedDocument,
         DownloadDocument downloadDocument,
         DeleteDocument deleteDocument,
         GetDocumentMetadata getDocumentMetadata)
     {
         _uploadDocument = uploadDocument;
         _linkDocumentToTask = linkDocumentToTask;
+        _shareDocument = shareDocument;
+        _shareTaskLinkedDocument = shareTaskLinkedDocument;
         _downloadDocument = downloadDocument;
         _deleteDocument = deleteDocument;
         _getDocumentMetadata = getDocumentMetadata;
@@ -30,6 +36,7 @@ public class DocumentsController : ControllerBase
 
     [HttpPost]
     [RequestSizeLimit(50_000_000)]
+// for upload
     public async Task<IActionResult> Upload(
         [FromForm] UploadDocumentFormRequest request,
         CancellationToken cancellationToken)
@@ -114,6 +121,94 @@ public class DocumentsController : ControllerBase
         }
     }
 
+    [HttpPost("{id:guid}/share")]
+    public async Task<IActionResult> Share(
+        Guid id,
+        [FromBody] ShareDocumentBody request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _shareDocument.ExecuteAsync(
+                new ShareDocumentRequest
+                {
+                    DocumentId = id,
+                    TargetUserId = request.TargetUserId,
+                    GrantedByUserId = request.GrantedByUserId
+                },
+                cancellationToken);
+
+            return NoContent();
+        }
+        catch (FileNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception)
+        {
+            return StatusCode(
+                StatusCodes.Status500InternalServerError,
+                new { message = "An unexpected error occurred while sharing the document." });
+        }
+    }
+
+    [HttpPost("{id:guid}/tasks/{taskId:guid}/share")]
+    public async Task<IActionResult> ShareForTask(
+        Guid id,
+        Guid taskId,
+        [FromBody] ShareTaskLinkedDocumentBody request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _shareTaskLinkedDocument.ExecuteAsync(
+                new ShareTaskLinkedDocumentRequest
+                {
+                    DocumentId = id,
+                    TaskId = taskId,
+                    TargetUserId = request.TargetUserId,
+                    GrantedByUserId = request.GrantedByUserId
+                },
+                cancellationToken);
+
+            return NoContent();
+        }
+        catch (FileNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception)
+        {
+            return StatusCode(
+                StatusCodes.Status500InternalServerError,
+                new { message = "An unexpected error occurred while sharing the task-linked document." });
+        }
+    }
+
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetMetadata(
         Guid id,
@@ -195,5 +290,17 @@ public class DocumentsController : ControllerBase
     {
         public Guid TaskId { get; init; }
         public Guid RequestedByUserId { get; init; }
+    }
+
+    public sealed class ShareDocumentBody
+    {
+        public Guid TargetUserId { get; init; }
+        public Guid GrantedByUserId { get; init; }
+    }
+
+    public sealed class ShareTaskLinkedDocumentBody
+    {
+        public Guid TargetUserId { get; init; }
+        public Guid GrantedByUserId { get; init; }
     }
 }

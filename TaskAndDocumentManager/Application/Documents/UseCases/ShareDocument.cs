@@ -24,12 +24,27 @@ public class ShareDocument
     {
         ArgumentNullException.ThrowIfNull(request);
 
+        if (request.TargetUserId == Guid.Empty)
+        {
+            throw new ArgumentException("Target user ID is required.", nameof(request.TargetUserId));
+        }
+
+        if (request.GrantedByUserId == Guid.Empty)
+        {
+            throw new ArgumentException("Granted by user ID is required.", nameof(request.GrantedByUserId));
+        }
+
         var document = await _documentRepository.GetByIdAsync(request.DocumentId, cancellationToken)
             ?? throw new FileNotFoundException("Document not found.");
 
         if (document.UploadedByUserId != request.GrantedByUserId)
         {
             throw new UnauthorizedAccessException("Only the owner can share this document.");
+        }
+
+        if (request.TargetUserId == request.GrantedByUserId)
+        {
+            throw new InvalidOperationException("You cannot share a document with yourself.");
         }
 
         var access = new DocumentAccess(request.DocumentId, request.TargetUserId, request.GrantedByUserId);
