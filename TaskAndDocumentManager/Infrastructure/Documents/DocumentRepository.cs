@@ -20,6 +20,21 @@ public class DocumentRepository : IDocumentRepository
         return Task.FromResult(document);
     }
 
+    public Task UpdateAsync(Document document, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(document);
+
+        var existingDocument = Documents.FirstOrDefault(item => item.Id == document.Id);
+
+        if (existingDocument is not null)
+        {
+            Documents.Remove(existingDocument);
+        }
+
+        Documents.Add(document);
+        return Task.CompletedTask;
+    }
+
     public Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var document = Documents.FirstOrDefault(existingDocument => existingDocument.Id == id);
