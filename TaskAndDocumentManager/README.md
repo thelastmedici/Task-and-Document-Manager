@@ -1,155 +1,124 @@
 # TaskAndDocumentManager
 
-TaskAndDocumentManager is an ASP.NET Core project that is currently focused on two main areas:
+TaskAndDocumentManager is an ASP.NET Core backend for:
 
-1. user authentication and account management
-2. task management domain logic and application use cases
+1. authentication and user management
+2. task management
+3. document upload, linking, sharing, download, delete, and metadata access
 
-The repository name includes "DocumentManager". A document-management domain and application layer now exists, including file metadata, access-control models, and document use cases, but the feature is not yet fully wired into the running API.
+The project is organized in a feature-based clean-architecture style, with separate `Application`, `Domain`, `Infrastructure`, and `src/Api` layers.
 
-This README is intentionally written around the repository as it exists today, not around a future target architecture.
+This README is written to match the repository as it exists now.
 
-## Current State Of The Project
+## Current Status
 
-What is already in place:
+What is already implemented:
 
-- a runnable ASP.NET Core web project targeting `net10.0`
-- JWT token generation logic
-- user registration, login, current-user lookup, and deactivate-user use cases
+- ASP.NET Core web app targeting `net10.0`
+- authentication use cases for register, login, current user, and deactivate user
+- JWT token generation
 - password hashing and password-strength validation
-- email validation
-- a `TaskItem` domain entity with clear business rules
-- task use cases for create, list, update, delete, and assign
-- document use cases and domain models for upload, download, sharing, and delete are present in the application layer
-- a PostgreSQL-backed task repository using Entity Framework Core
-- application-layer tests for the main task use cases
+- task domain model, task use cases, task repository, and task API controller
+- document domain model, document use cases, document repositories, local file storage, and document API controller
+- document sharing and task-linked document sharing between users
+- PostgreSQL-backed task persistence with EF Core
+- application-layer test coverage for task and document use cases
 
-What is only partially completed or still needs wiring:
+What is still incomplete:
 
-- authentication middleware is started, but JWT bearer validation is not fully configured with `AddJwtBearer(...)`
-- `DeactivateUser` exists, but it is not registered in dependency injection in `Program.cs`
-- users are not stored in PostgreSQL yet; the current user repository is an in-memory static list
-- task HTTP endpoints/controllers are not present yet, even though the task application logic exists
-- document-management application and infrastructure code exists, but no document endpoints or DI wiring are completed
-- Entity Framework migrations are not included in the repository
-- there are MVC views and scaffolded pages in the repo, but the current startup path is API-oriented and uses `AddControllers()`
+- JWT bearer validation is not fully configured with `AddJwtBearer(...)`
+- user persistence is still in-memory, not PostgreSQL-backed
+- document persistence is currently in-memory plus local filesystem storage, not EF Core/database-backed
+- EF Core migrations are not committed yet
+- there are still MVC template files in the repo even though the active direction is API-first
 
-Because of that, this project is best described as a backend foundation / work-in-progress rather than a finished production API.
+So the app is usable for local API work, but it is not yet production-ready from an auth/persistence/infrastructure perspective.
 
 ## Tech Stack
 
-- .NET SDK: `10.0.100-rc.2.25502.107` from `global.json`
+- .NET SDK: `10.0.100-rc.2.25502.107`
 - Target framework: `net10.0`
-- Web framework: ASP.NET Core
-- Data access: Entity Framework Core with Npgsql
-- Database: PostgreSQL
-- Authentication token format: JWT
-- API docs: Swagger / Swashbuckle
-- Testing: xUnit + Moq
+- ASP.NET Core
+- Entity Framework Core
+- PostgreSQL via Npgsql
+- JWT
+- Swagger / Swashbuckle
+- xUnit + Moq
 
-Nuance worth calling out:
+## Project Structure
 
-- the root web app is in `TaskAndDocumentManager.csproj`
-- `src/Api/Program.cs` is the startup entry point currently being used by the web app
-- separate `Application` and `Domain` class library projects also exist and are used by the test project
-
-## Repository Structure
-
-The repository is organized in a clean-architecture style, even though the runnable app is still a single web project at the top level.
-
-### Root Web App
-
-- `TaskAndDocumentManager.csproj`
-  - the main runnable ASP.NET Core project
-  - pulls in the API, domain, infrastructure, and view files that live inside this repository tree
+The repository is organized by feature and layer.
 
 ### `src/Api`
 
 - `src/Api/Program.cs`
-  - application startup
-  - service registration
-  - database registration
-  - authentication/authorization setup
-  - controller mapping
-  - Swagger setup in development
+  - startup, dependency injection, Swagger, controller registration
 
 - `src/Api/Controllers/AuthController.cs`
-  - exposes the authentication-related HTTP endpoints currently defined in the app
+  - auth endpoints
 
-- `src/Api/Controllers/ClaimsPrincipalExtensions.cs`
-  - helper for reading the authenticated user id claim
+- `src/Api/Controllers/TaskController.cs`
+  - task endpoints
 
-### `Domain`
-
-- `Domain/Entities/User.cs`
-  - user model used by authentication logic
-  - stores `Id`, `Email`, `PasswordHash`, `Role`, and `IsActive`
-
-- `Domain/Entities/TaskItem.cs`
-  - the main task aggregate/entity
-  - contains business rules for title/description validation, assignment, updates, and completion protection
+- `src/Api/Controllers/DocumentsController.cs`
+  - document endpoints
 
 ### `Application`
 
 - `Application/Auth`
-  - DTOs, interfaces, and use cases for authentication and user management
+  - auth DTOs, interfaces, and use cases
 
 - `Application/Tasks`
-  - DTOs, repository abstraction, and use cases for task operations
+  - task DTOs, interfaces, and use cases
 
 - `Application/Documents`
-  - DTOs, repository abstraction, and use cases for document upload, download, sharing, and delete operations
+  - document DTOs, interfaces, and use cases
 
 - `Application/Tests`
-  - xUnit tests covering the task application layer
+  - application-layer tests
+
+### `Domain`
+
+- `Domain/Auth`
+  - `User`
+
+- `Domain/Tasks`
+  - `TaskItem`
+
+- `Domain/Documents`
+  - `Document`
+  - `DocumentAccess`
 
 ### `Infrastructure`
 
 - `Infrastructure/Auth`
+  - email validation
   - password hashing
   - password validation
-  - email validation
-  - JWT token creation
+  - JWT token service
+  - in-memory user repository
+
+- `Infrastructure/Tasks`
+  - `TaskDbContext`
+  - PostgreSQL-backed task repository
 
 - `Infrastructure/Documents`
   - in-memory document repository
-  - document access repository
-  - local file storage service
+  - in-memory document access repository
+  - local filesystem storage service
 
-- `Infrastructure/Persistence`
-  - `TaskDbContext`
-  - task repository implementation
-  - user repository implementation
+## Authentication
 
-### MVC Template Artifacts Still In The Repo
+The auth flow currently supports:
 
-The repository still contains:
-
-- `Controllers/HomeController.cs`
-- `Views/...`
-- `Views/Auth/...`
-- `wwwroot/...`
-
-These are useful to know about, but they are not the main active direction of the current startup configuration. The current startup registers controllers for API usage, not full MVC with views.
-
-## What Has Been Built So Far
-
-## 1. Authentication And User Management
-
-The authentication flow is already modeled in code and consists of:
-
-- registering a user
-- validating the email format
-- validating password strength
-- hashing the password before storage
-- logging a user in
-- generating a JWT token
-- retrieving the currently authenticated user
-- deactivating a user account
+- register a user
+- login a user
+- return current user details
+- deactivate a user
 
 ### User Model
 
-The `User` entity currently contains:
+The current `User` model contains:
 
 - `Id` as `int`
 - `Email`
@@ -157,241 +126,109 @@ The `User` entity currently contains:
 - `Role`
 - `IsActive`
 
-Defaults in the current code:
+Defaults:
 
 - role defaults to `"User"`
-- active status defaults to `true`
+- active defaults to `true`
 
-### Registration Rules
+### Password Rules
 
-The `RegisterUser` use case enforces:
+The current password validator requires:
 
-- email must pass `MailAddress` format validation
-- password must be considered strong by the password validator
-- email must be unique inside the current repository implementation
+- at least 8 characters
+- at least one digit
+- at least one uppercase letter
 
-Current password-strength rule:
+### Password Storage
 
-- minimum length of 8 characters
-- must contain at least one digit
-- must contain at least one uppercase letter
-
-### Password Handling
-
-Passwords are not stored in plain text.
-
-The project currently uses:
+Passwords are hashed using:
 
 - PBKDF2
 - SHA-256
 - 100,000 iterations
-- 16-byte random salt
-- 32-byte derived hash
+- random salt
 
-The stored format is:
+Stored format:
 
 ```text
 {base64Salt}.{base64Hash}
 ```
 
-### Login Flow
+### JWT
 
-The login use case:
+JWTs are generated with:
 
-- normalizes email to lowercase
-- checks whether the user exists
-- blocks login if the account is deactivated
-- verifies the password hash
-- issues a JWT token if the credentials are valid
-
-### JWT Token Contents
-
-The token service places these claims into the token:
-
-- subject / user id
-- name identifier
+- user id
 - email
 - role
-- JWT id (`jti`)
+- standard JWT id claim
 
-The token settings are read from `appsettings.json`:
+Configuration comes from:
 
 - `Jwt:Key`
 - `Jwt:Issuer`
 - `Jwt:Audience`
 - `Jwt:ExpiresMinutes`
 
-Default expiration in the current config:
+Important limitation:
 
-- 60 minutes
+- token generation is implemented
+- token validation middleware is not fully finished because `AddJwtBearer(...)` is still missing
 
-### Important Limitation In The Current Auth Setup
+### Auth Persistence Today
 
-Authentication is not fully wired end-to-end yet.
-
-Specifically:
-
-- `builder.Services.AddAuthentication(...)` is called
-- but `AddJwtBearer(...)` is not configured
-- so JWT validation for protected endpoints is not fully set up yet
-
-There is also a dependency injection gap:
-
-- `AuthController` requires `DeactivateUser`
-- `DeactivateUser` is not currently registered in `src/Api/Program.cs`
-
-That means the authentication controller is defined in code, but the runtime setup still needs finishing before all auth endpoints can be relied on as fully working.
-
-### User Persistence Today
-
-User persistence is currently not backed by PostgreSQL.
-
-`Infrastructure/Persistence/Repositories/UserRepository.cs` uses:
-
-- a static in-memory `List<User>`
+User data is still stored in an in-memory static list.
 
 That means:
 
-- registered users do not survive an application restart
-- this is suitable for early development only
-- the auth side is not yet using Entity Framework persistence
+- users do not survive app restarts
+- auth is fine for local development
+- auth is not yet production-grade persistence-wise
 
-## 2. Task Domain And Application Layer
+## Tasks
 
-The task side of the project is one of the stronger and more complete areas from a domain/use-case perspective.
+The task module is implemented end to end through domain logic, use cases, repository, and API controller.
 
-### Task Entity
+### Task Model
 
-The `TaskItem` entity currently contains:
+`TaskItem` contains:
 
-- `Id` as `Guid`
+- `Id`
 - `Title`
 - `Description`
-- `AssignedToUserId` as nullable `Guid`
-- `CreatedByUserId` as `Guid`
+- `AssignedToUserId`
+- `CreatedByUserId`
 - `CreatedAt`
 - `UpdatedAt`
 - `IsCompleted`
 - `CompletedAt`
 
-### Task Business Rules
+### Task Rules
 
-The task entity enforces the following rules:
+The task entity enforces:
 
-- `CreatedByUserId` cannot be empty
+- `CreatedByUserId` must not be empty
 - `Title` is required
 - `Description` is required
-- `Title` cannot exceed 200 characters
-- `Description` cannot exceed 4000 characters
+- `Title` max length is 200
+- `Description` max length is 4000
 - completed tasks cannot be modified
-- assigning the same user again is treated as a no-op
-- updating with the same title and description is treated as a no-op
+- reassigning the same user is a no-op
+- saving the same title and description is a no-op
 
-### Task Behaviors Already Implemented
+### Task API Endpoints
 
-- create a task
-- update a task
-- delete a task
-- assign a task to a user
-- unassign a task
-- mark a task as completed
-- list tasks
-- search tasks
-- filter tasks by completion state
-- filter tasks by assigned user
-- paginate task results
+#### `POST /api/tasks`
 
-### Task Use Cases
-
-The application layer currently includes these use cases:
-
-- `CreateTask`
-- `UpdateTask`
-- `DeleteTask`
-- `AssignTask`
-- `ListTasks`
-
-Important clarification:
-
-- these use cases exist and are tested
-- but there is not yet a task API controller exposing them over HTTP
-
-So the task system is currently more complete in the domain/application layers than in the presentation/API layer.
-
-## 3. Database And Persistence
-
-### Task Persistence
-
-Task persistence is implemented with Entity Framework Core and PostgreSQL.
-
-`TaskDbContext` currently maps:
-
-- `Tasks`
-
-The repository implementation supports:
-
-- create
-- get by id
-- get all
-- search with pagination
-- update
-- delete
-
-### Search Behavior
-
-The task repository supports:
-
-- pagination via page number and page size
-- completion-state filtering
-- assigned-user filtering
-- text search over title and description
-
-Text search is implemented with PostgreSQL `ILIKE` through EF Core.
-
-### Connection Strings
-
-The repository currently ships with these config files:
-
-- `appsettings.json`
-- `appsettings.Development.json`
-
-Configured databases:
-
-- production/default: `taskanddocumentmanager`
-- development: `taskanddocumentmanager_dev`
-
-Default local credentials currently shown in config:
-
-```json
-"Host=localhost;Port=5432;Database=taskanddocumentmanager;Username=postgres;Password=postgres"
-```
-
-You will almost certainly want to replace these values in your own environment.
-
-### Current Persistence Limitation
-
-There are no migrations checked into the repository yet.
-
-That means:
-
-- the `TaskDbContext` exists
-- the task repository exists
-- but database schema creation / migration workflow is not yet documented or committed here
-
-## HTTP Endpoints Currently Defined
-
-These are the HTTP endpoints currently implemented in `AuthController`.
-
-## `POST /api/auth/register`
-
-Registers a new user.
+Creates a task.
 
 Request body:
 
 ```json
 {
-  "email": "user@example.com",
-  "password": "Password1"
+  "title": "Prepare weekly report",
+  "description": "Compile updates for the team",
+  "createdByUserId": "11111111-1111-1111-1111-111111111111"
 }
 ```
 
@@ -399,231 +236,400 @@ Success response:
 
 ```json
 {
-  "message": "User registered successfully"
+  "id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+  "message": "Task created successfully"
 }
 ```
 
-Possible failure cases:
+#### `GET /api/tasks`
 
-- `400 Bad Request`
-  - invalid email
-  - weak password
-- `409 Conflict`
-  - user already exists
-- `500 Internal Server Error`
-  - unexpected error
+Lists tasks with optional filtering and search.
 
-## `POST /api/auth/login`
+Query params:
 
-Authenticates a user and returns a JWT plus user profile information.
+- `pageNumber`
+- `pageSize`
+- `searchTerm`
+- `isCompleted`
+- `assignedToUserId`
+
+Example:
+
+```text
+/api/tasks?pageNumber=1&pageSize=20&searchTerm=report
+```
+
+#### `PUT /api/tasks/{id}`
+
+Updates a task.
 
 Request body:
 
 ```json
 {
-  "email": "user@example.com",
-  "password": "Password1"
+  "title": "Prepare final report",
+  "description": "Compile final updates for the team"
 }
 ```
-
-Success response shape:
-
-```json
-{
-  "token": "jwt-token-here",
-  "expiresAtUtc": "2026-04-02T12:34:56Z",
-  "user": {
-    "id": 1,
-    "email": "user@example.com",
-    "role": "User",
-    "isActive": true
-  }
-}
-```
-
-Failure case:
-
-- `401 Unauthorized`
-  - invalid credentials
-  - deactivated account
-
-## `GET /api/auth/me`
-
-Returns the currently authenticated user.
-
-Intended access:
-
-- authenticated user only
-
-Response shape:
-
-```json
-{
-  "id": 1,
-  "email": "user@example.com",
-  "role": "User",
-  "isActive": true
-}
-```
-
-Important note:
-
-- this endpoint depends on JWT bearer auth being fully configured
-
-## `PUT /api/auth/users/{id}/deactivate`
-
-Deactivates a user account.
-
-Intended access:
-
-- admin only
 
 Success response:
 
 - `204 No Content`
 
-Possible failure cases:
+#### `DELETE /api/tasks/{id}`
 
-- `404 Not Found`
-  - user does not exist
-- `500 Internal Server Error`
-  - unexpected error
+Deletes a task.
 
-Important note:
+Success response:
 
-- this endpoint depends on role-based auth being fully configured
-- it also depends on the missing `DeactivateUser` DI registration being added
+- `204 No Content`
 
-## What Is Not Exposed Over HTTP Yet
+#### `POST /api/tasks/{id}/assign`
 
-Even though the task system has application logic and persistence, the following are not yet exposed through a controller in the current repository:
+Assigns a task to a user.
 
-- create task endpoint
-- list task endpoint
-- update task endpoint
-- delete task endpoint
-- assign task endpoint
-- upload document endpoint
-- download document endpoint
-- share document endpoint
-- delete document endpoint
+Request body:
 
-If someone clones this repo today, they should think of the task and document features as "implemented in the core/backend layers, but not yet finished as a public API surface."
+```json
+{
+  "userId": "22222222-2222-2222-2222-222222222222"
+}
+```
+
+Success response:
+
+- `204 No Content`
+
+## Documents
+
+The document module is now implemented through domain, application, infrastructure, and API layers.
+
+### Document Model
+
+`Document` contains:
+
+- `Id`
+- `FileName`
+- `ContentType`
+- `SizeInBytes`
+- `StoragePath`
+- `UploadedByUserId`
+- `UploadedAtUtc`
+- `LinkedTaskId`
+
+`DocumentAccess` contains:
+
+- `DocumentId`
+- `UserId`
+- `GrantedByUserId`
+- `GrantedAtUtc`
+
+### Document Capabilities
+
+The current document module supports:
+
+- upload document
+- link document to a task
+- share document directly with another user
+- share a task-linked document with another task participant
+- download document
+- delete document
+- view document metadata
+
+### Document Storage Today
+
+Documents currently use:
+
+- in-memory metadata repository
+- in-memory document access repository
+- local filesystem storage under the app directory
+
+That means:
+
+- uploaded file contents are written locally
+- metadata and share grants are not persisted across app restarts
+- document infrastructure is functional for development, but not production-ready yet
+
+### Document API Endpoints
+
+#### `POST /api/documents`
+
+Uploads a document.
+
+Content type:
+
+- `multipart/form-data`
+
+Form fields:
+
+- `file`
+- `uploadedByUserId`
+
+Success response:
+
+```json
+{
+  "id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+  "message": "Document uploaded successfully"
+}
+```
+
+#### `POST /api/documents/{id}/link-task`
+
+Links a document to a task.
+
+Request body:
+
+```json
+{
+  "taskId": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+  "requestedByUserId": "11111111-1111-1111-1111-111111111111"
+}
+```
+
+Success response:
+
+- `204 No Content`
+
+#### `POST /api/documents/{id}/share`
+
+Shares a document directly with another user.
+
+Request body:
+
+```json
+{
+  "targetUserId": "22222222-2222-2222-2222-222222222222",
+  "grantedByUserId": "11111111-1111-1111-1111-111111111111"
+}
+```
+
+Rules:
+
+- only the document owner can share
+- you cannot share with yourself
+
+Success response:
+
+- `204 No Content`
+
+#### `POST /api/documents/{id}/tasks/{taskId}/share`
+
+Shares a task-linked document with another user in the same task context.
+
+Request body:
+
+```json
+{
+  "targetUserId": "22222222-2222-2222-2222-222222222222",
+  "grantedByUserId": "11111111-1111-1111-1111-111111111111"
+}
+```
+
+Rules:
+
+- only the owner can share
+- the document must already be linked to that exact task
+- the sharer must be a participant in the task
+- the target user must also be a participant in the task
+- you cannot share with yourself
+
+Success response:
+
+- `204 No Content`
+
+#### `GET /api/documents/{id}`
+
+Returns document metadata.
+
+Query param:
+
+- `requestedByUserId`
+
+Success response:
+
+```json
+{
+  "id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+  "fileName": "report.pdf",
+  "contentType": "application/pdf",
+  "sizeInBytes": 1024,
+  "uploadedByUserId": "11111111-1111-1111-1111-111111111111",
+  "uploadedAtUtc": "2026-04-06T12:34:56Z",
+  "linkedTaskId": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
+}
+```
+
+Access:
+
+- owner can view metadata
+- directly shared users can view metadata
+- task-linked shared users can view metadata once access has been granted
+
+#### `GET /api/documents/{id}/download`
+
+Downloads a document.
+
+Query param:
+
+- `requestedByUserId`
+
+Access:
+
+- owner can download
+- shared users can download
+
+#### `DELETE /api/documents/{id}`
+
+Deletes a document.
+
+Query param:
+
+- `requestedByUserId`
+
+Rules:
+
+- only the owner can delete
+
+Success response:
+
+- `204 No Content`
+
+## Database And Persistence
+
+### Tasks
+
+Task persistence is implemented with:
+
+- EF Core
+- PostgreSQL
+- `TaskDbContext`
+
+Task repository supports:
+
+- create
+- get by id
+- get all
+- search with filtering
+- pagination
+- update
+- delete
+
+### Users
+
+Users are still stored in-memory.
+
+### Documents
+
+Documents are stored with:
+
+- in-memory metadata/access storage
+- local file storage
+
+### Current Persistence Gap
+
+The project still needs:
+
+- EF Core migrations
+- persistent user storage
+- persistent document metadata/access storage
 
 ## Testing Status
 
-The repository contains application-layer tests for the task use cases.
-
-Currently covered areas:
+The repository includes application-layer tests for:
 
 - task creation
 - task listing
-- pagination/search normalization
+- pagination and search normalization
 - task update
 - task deletion
+- document metadata access
+- document linking
+- document sharing
+- task-linked document sharing
 
-The tests are written with:
+The tests use:
 
 - xUnit
 - Moq
 
-Current observed result from the repository:
+Current observed result:
 
 - `dotnet test Application/Tests/Tests.csproj` passes
-- total passing tests observed: `9`
+- total passing tests observed: `19`
 
-That includes the task use-case tests plus one placeholder test file.
+## Running Locally
 
-## How To Run The Project Locally
-
-## Prerequisites
+### Prerequisites
 
 You need:
 
 - .NET 10 SDK
 - PostgreSQL
-- a local PostgreSQL user/password that match your connection string
 
-Because `global.json` is pinned to a release-candidate SDK, using the same SDK version is the safest option for consistency.
+Because `global.json` is pinned to a release-candidate SDK, using the same version is the safest option.
 
-## Restore
+### Restore
 
 ```bash
 dotnet restore
 ```
 
-## Build
+### Build
 
 ```bash
 dotnet build TaskAndDocumentManager.sln
 ```
 
-## Run Tests
+### Run Tests
 
 ```bash
 dotnet test Application/Tests/Tests.csproj
 ```
 
-## Run The App
+### Run The App
 
 ```bash
 dotnet run --project TaskAndDocumentManager.csproj
 ```
 
-Launch settings currently point to:
+Launch settings currently expose:
 
 - `http://localhost:5121`
 - `https://localhost:7216`
 
 Swagger is enabled in the Development environment.
 
-## Configuration Checklist Before Running For Real
+## Configuration
 
-Before relying on the app end-to-end, you should review:
+Review these before real usage:
 
 1. PostgreSQL connection strings in `appsettings.json` and `appsettings.Development.json`
 2. JWT settings in `appsettings.json`
-3. dependency injection setup in `src/Api/Program.cs`
-4. JWT bearer middleware configuration in `src/Api/Program.cs`
-5. database migration/schema setup for tasks
+3. auth middleware setup in `src/Api/Program.cs`
+4. database schema/migration setup
+5. local document storage expectations on the machine running the app
 
-## Known Gaps And Honest Caveats
+## Known Gaps
 
-This section is here on purpose so anyone reading the repo understands what is done and what still needs attention.
-
-- the project builds successfully
-- the task application-layer tests pass
-- the authentication controller exists
-- the task use cases exist
-- task persistence exists for tasks only
-- user persistence is still in-memory
-- task endpoints are not yet added
-- JWT generation exists, but JWT bearer validation is not fully configured
-- the auth controller depends on `DeactivateUser`, which still needs DI registration
-- document-management application and infrastructure code exists, but the document API is not yet wired or exposed
-- some MVC/template files remain in the repo, but the current startup direction is API-first
-
-## Suggested Next Steps
-
-If you want to continue this project from where it currently stands, the most natural next steps are:
-
-1. register `DeactivateUser` in dependency injection
-2. configure `AddJwtBearer(...)` so `[Authorize]` endpoints work properly
-3. move user persistence from the in-memory repository to Entity Framework/PostgreSQL
-4. add a task controller to expose the existing task use cases over HTTP
-5. register document services and document use cases in dependency injection, then implement `DocumentsController`
-6. create and commit EF Core migrations
-7. decide what additional document-management behaviors should be included and implement them explicitly
+- JWT bearer validation is still incomplete
+- user IDs in auth use `int`, while task/document ownership uses `Guid`
+- users are still in-memory only
+- documents are not database-backed yet
+- document access grants are in-memory only
+- no migrations are committed yet
+- some MVC template files remain in the repo even though the current runtime path is API-first
 
 ## Summary
 
-So far, this project has a meaningful backend foundation:
+The repository now contains a functional API foundation for:
 
-- auth use cases are written
-- JWT token creation is implemented
-- password hashing and validation are in place
-- task business rules are modeled well
-- task use cases are implemented and tested
-- PostgreSQL-backed task persistence is present
+- auth
+- tasks
+- document upload and download
+- document-to-task linking
+- direct document sharing
+- task-linked document sharing
+- document metadata access
 
-The repo is not finished yet, but it already contains a solid base for turning this into a proper task and document management API once the remaining wiring and missing features are completed.
+The app builds, the tests pass, and the main task/document flows are now exposed through controllers. The biggest remaining work is infrastructure hardening: proper JWT validation, persistent user/document storage, and migrations.
