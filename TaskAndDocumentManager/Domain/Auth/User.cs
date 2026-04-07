@@ -1,3 +1,5 @@
+using TaskAndDocumentManager.Domain.Entities;
+
 namespace TaskAndDocumentManager.Domain.Auth;
 
 public class User
@@ -10,5 +12,10 @@ public class User
 
     public string Role { get; set; } = "User";
 
+    public int RoleId {get; set;}
+
+    public Role? RoleEntity { get; set; }
+
     public bool IsActive { get; set; } = true;
+
 }
