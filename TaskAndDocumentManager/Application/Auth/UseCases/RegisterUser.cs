@@ -3,6 +3,7 @@ using System.Linq;
 using System.Net.Mail;
 using TaskAndDocumentManager.Application.Auth.Interfaces;
 using TaskAndDocumentManager.Domain.Auth;
+using TaskAndDocumentManager.Domain.Entities;
 
 namespace TaskAndDocumentManager.Application.Auth.UseCases
 {
@@ -54,7 +55,8 @@ namespace TaskAndDocumentManager.Application.Auth.UseCases
             {
                 Email = email,
                 PasswordHash = passwordHash,
-                Role = "User",
+                RoleId = BuiltInRoles.UserId,
+                Role = BuiltInRoles.CreateUserRole(),
                 IsActive = true
             };
 

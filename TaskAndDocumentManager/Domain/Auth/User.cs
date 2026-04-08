@@ -4,18 +4,15 @@ namespace TaskAndDocumentManager.Domain.Auth;
 
 public class User
 {
-    public int Id {get; set;}
+    public int Id { get; set; }
 
-    public required string Email {get; set;}
+    public required string Email { get; set; }
 
-    public required string PasswordHash{get; set;}
+    public required string PasswordHash { get; set; }
 
-    public string Role { get; set; } = "User";
+    public Guid RoleId { get; set; }
 
-    public int RoleId {get; set;}
-
-    public Role? RoleEntity { get; set; }
+    public Role? Role { get; set; }
 
     public bool IsActive { get; set; } = true;
-
 }
