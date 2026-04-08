@@ -30,8 +30,25 @@ public static class BuiltInRoles
         };
     }
 
+    public static Role CreateManagerRole()
+    {
+        return new Role
+        {
+            Id = ManagerId,
+            Name = ManagerName
+        };
+    }
+
     public static string ResolveName(Guid roleId)
     {
-        return roleId == AdminId ? AdminName : UserName;
+        if(roleId == AdminId)
+        {
+            return AdminName;
+        }
+        if(roleId == ManagerId)
+        {
+            return ManagerName;
+        }
+        return UserName;
     }
 }
