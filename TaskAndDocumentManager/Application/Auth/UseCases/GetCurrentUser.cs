@@ -1,5 +1,6 @@
 using TaskAndDocumentManager.Application.Auth.DTOs;
 using TaskAndDocumentManager.Application.Auth.Interfaces;
+using TaskAndDocumentManager.Domain.Entities;
 
 namespace TaskAndDocumentManager.Application.Auth.UseCases;
 
@@ -24,7 +25,7 @@ public class GetCurrentUser
         {
             Id = user.Id,
             Email = user.Email,
-            Role = user.Role,
+            Role = user.Role?.Name ?? BuiltInRoles.ResolveName(user.RoleId),
             IsActive = user.IsActive
         };
     }

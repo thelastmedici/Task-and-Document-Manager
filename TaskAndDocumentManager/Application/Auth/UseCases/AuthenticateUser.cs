@@ -1,6 +1,7 @@
 using TaskAndDocumentManager.Application.Auth.DTOs;
 
 using TaskAndDocumentManager.Application.Auth.Interfaces;
+using TaskAndDocumentManager.Domain.Entities;
 
 namespace TaskAndDocumentManager.Application.Auth.UseCases;
 
@@ -80,7 +81,7 @@ public class AuthenticateUser
 
         }
 
-        var role = string.IsNullOrWhiteSpace(user.Role) ? "User" : user.Role;
+        var role = user.Role?.Name ?? BuiltInRoles.ResolveName(user.RoleId);
 
         var tokenResult = _tokenService.GenerateToken(user.Id.ToString(), user.Email, role);
 
