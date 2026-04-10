@@ -49,9 +49,20 @@ public class TaskDbContext(DbContextOptions<TaskDbContext> options) : DbContext(
            ); 
         });
 
-        // modelBuilder.Entity<User>(entity =>
-        // {
-            
-        // })
+        modelBuilder.Entity<User>(entity =>
+        {
+           entity.HasKey(user => user.Id);
+
+           entity.Property(user => user.Email).IsRequired();
+
+           entity.Property(user=> user.PasswordHash).IsRequired();
+
+           entity.Property(user => user.RoleId).IsRequired();
+
+           entity.HasOne(user => user.Role)
+               .WithMany()
+               .HasForeignKey(user => user.RoleId)
+               .OnDelete(DeleteBehavior.Restrict); 
+        });
     }
 }
