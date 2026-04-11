@@ -3,7 +3,6 @@ using System.Linq;
 using System.Net.Mail;
 using TaskAndDocumentManager.Application.Auth.Interfaces;
 using TaskAndDocumentManager.Domain.Auth;
-using TaskAndDocumentManager.Domain.Entities;
 
 namespace TaskAndDocumentManager.Application.Auth.UseCases
 {
@@ -11,11 +10,12 @@ namespace TaskAndDocumentManager.Application.Auth.UseCases
     {
          
           //A constructor that accept IUserRepository IPasswordHasher IEmailValidator and assigns them to the private field
-         public RegisterUser(IUserRepository userRepository, IPasswordHasher passwordHasher, IEmailValidator emailValidator, IPasswordValidator passwordValidator){
+         public RegisterUser(IUserRepository userRepository, IPasswordHasher passwordHasher, IEmailValidator emailValidator, IPasswordValidator passwordValidator, IRoleCatalog roleCatalog){
             _userRepository = userRepository;
             _passwordHasher = passwordHasher;
             _emailValidator = emailValidator;
             _passwordValidator = passwordValidator;
+            _roleCatalog = roleCatalog;
         }
 
         private readonly IUserRepository _userRepository;
@@ -23,6 +23,7 @@ namespace TaskAndDocumentManager.Application.Auth.UseCases
         private readonly IEmailValidator _emailValidator;
 
         private readonly IPasswordValidator _passwordValidator;
+        private readonly IRoleCatalog _roleCatalog;
 
 
     
@@ -55,8 +56,7 @@ namespace TaskAndDocumentManager.Application.Auth.UseCases
             {
                 Email = email,
                 PasswordHash = passwordHash,
-                RoleId = BuiltInRoles.UserId,
-                Role = BuiltInRoles.CreateUserRole(),
+                RoleId = _roleCatalog.UserRoleId,
                 IsActive = true
             };
 
