@@ -1,7 +1,7 @@
 using TaskAndDocumentManager.Application.Auth.DTOs;
 
 using TaskAndDocumentManager.Application.Auth.Interfaces;
-
+using TaskAndDocumentManager.Infrastructure.Persistence;
 namespace TaskAndDocumentManager.Application.Auth.UseCases;
 
 
@@ -83,9 +83,9 @@ public class AuthenticateUser
 
         }
 
-        var role = user.Role?.Name ?? _roleCatalog.ResolveName(user.RoleId);
+        var roleName = user.Role?.Name ?? BuiltInRoles.ResolveName(user.RoleId);
 
-        var tokenResult = _tokenService.GenerateToken(user.Id.ToString(), user.Email, role);
+        var tokenResult = _tokenService.GenerateToken(user.Id.ToString(), user.Email, roleName);
 
         return new AuthResponse
         {
@@ -99,7 +99,7 @@ public class AuthenticateUser
 
                 Email = user.Email,
 
-                Role = role,
+                Role = roleName,
                 IsActive = user.IsActive
 
             }
