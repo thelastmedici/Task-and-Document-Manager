@@ -1,7 +1,6 @@
 using TaskAndDocumentManager.Application.Auth.DTOs;
 
 using TaskAndDocumentManager.Application.Auth.Interfaces;
-using TaskAndDocumentManager.Domain.Entities;
 
 namespace TaskAndDocumentManager.Application.Auth.UseCases;
 
@@ -14,13 +13,15 @@ public class AuthenticateUser
     private readonly IUserRepository _userRepository;
     private readonly IPasswordHasher _passwordHasher;
     private readonly ITokenService _tokenService;
+    private readonly IRoleCatalog _roleCatalog;
 
     public AuthenticateUser(
         IUserRepository userRepository,
 
         IPasswordHasher passwordHasher,
 
-        ITokenService tokenService)
+        ITokenService tokenService,
+        IRoleCatalog roleCatalog)
 
     {
 
@@ -29,6 +30,7 @@ public class AuthenticateUser
         _passwordHasher = passwordHasher;
 
         _tokenService = tokenService;
+        _roleCatalog = roleCatalog;
 
     }
 
@@ -81,7 +83,7 @@ public class AuthenticateUser
 
         }
 
-        var role = user.Role?.Name ?? BuiltInRoles.ResolveName(user.RoleId);
+        var role = user.Role?.Name ?? _roleCatalog.ResolveName(user.RoleId);
 
         var tokenResult = _tokenService.GenerateToken(user.Id.ToString(), user.Email, role);
 
