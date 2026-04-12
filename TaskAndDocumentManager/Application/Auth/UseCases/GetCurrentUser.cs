@@ -1,17 +1,16 @@
 using TaskAndDocumentManager.Application.Auth.DTOs;
 using TaskAndDocumentManager.Application.Auth.Interfaces;
-
+using TaskAndDocumentManager.Infrastructure.Persistence;
 namespace TaskAndDocumentManager.Application.Auth.UseCases;
 
 public class GetCurrentUser
 {
     private readonly IUserRepository _userRepository;
-    private readonly IRoleCatalog _roleCatalog;
 
-    public GetCurrentUser(IUserRepository userRepository, IRoleCatalog roleCatalog)
+    public GetCurrentUser(IUserRepository userRepository)
     {
         _userRepository = userRepository;
-        _roleCatalog = roleCatalog;
+    
     }
 
     public UserProfile Execute(int userId)
@@ -26,7 +25,7 @@ public class GetCurrentUser
         {
             Id = user.Id,
             Email = user.Email,
-            Role = user.Role?.Name ?? _roleCatalog.ResolveName(user.RoleId),
+            Role = user.Role?.Name ?? BuiltInRoles.ResolveName(user.RoleId),
             IsActive = user.IsActive
         };
     }
