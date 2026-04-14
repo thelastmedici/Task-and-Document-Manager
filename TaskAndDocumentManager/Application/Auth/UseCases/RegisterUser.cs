@@ -1,58 +1,49 @@
 using System;
-using System.Linq;
-using System.Net.Mail;
 using TaskAndDocumentManager.Application.Auth.Interfaces;
-using TaskAndDocumentManager.Infrastructure.Persistence;
 using TaskAndDocumentManager.Domain.Auth;
+using TaskAndDocumentManager.Infrastructure.Persistence;
 
 namespace TaskAndDocumentManager.Application.Auth.UseCases
 {
     public class RegisterUser
     {
-         
-          //A constructor that accept IUserRepository IPasswordHasher IEmailValidator and assigns them to the private field
-         public RegisterUser(IUserRepository userRepository, IPasswordHasher passwordHasher, IEmailValidator emailValidator, IPasswordValidator passwordValidator, IRoleCatalog roleCatalog){
+        private readonly IUserRepository _userRepository;
+        private readonly IPasswordHasher _passwordHasher;
+        private readonly IEmailValidator _emailValidator;
+        private readonly IPasswordValidator _passwordValidator;
+
+        public RegisterUser(
+            IUserRepository userRepository,
+            IPasswordHasher passwordHasher,
+            IEmailValidator emailValidator,
+            IPasswordValidator passwordValidator)
+        {
             _userRepository = userRepository;
             _passwordHasher = passwordHasher;
             _emailValidator = emailValidator;
             _passwordValidator = passwordValidator;
-            _roleCatalog = roleCatalog;
         }
 
-        private readonly IUserRepository _userRepository;
-        private readonly IPasswordHasher _passwordHasher;
-        private readonly IEmailValidator _emailValidator;
-
-        private readonly IPasswordValidator _passwordValidator;
-        private readonly IRoleCatalog _roleCatalog;
-
-
-    
         public void Execute(string email, string password)
         {
-            if(!_emailValidator.IsValidEmail(email))
+            if (!_emailValidator.IsValidEmail(email))
             {
                 throw new FormatException("Email is invalid");
             }
 
-            //validate password strength
             if (!_passwordValidator.IsPasswordStrong(password))
             {
-                throw new ArgumentException("Password Is not strong enough");
+                throw new ArgumentException("Password is not strong enough");
             }
-            
 
-            //checkif user exist
             var existingUser = _userRepository.GetByEmail(email);
-
-            if(existingUser != null)
+            if (existingUser != null)
             {
-                throw new InvalidOperationException("User Already Exist");
+                throw new InvalidOperationException("User already exists");
             }
 
-            //hashpassword
-           var passwordHash = _passwordHasher.HashPassword(password);
-            //create new user
+            var passwordHash = _passwordHasher.HashPassword(password);
+
             var user = new User
             {
                 Email = email,
@@ -61,11 +52,7 @@ namespace TaskAndDocumentManager.Application.Auth.UseCases
                 IsActive = true
             };
 
-
-            //save user
             _userRepository.Save(user);
         }
-       
-       
     }
 }
