@@ -11,7 +11,7 @@ public class DeactivateUser
         _userRepository = userRepository;
     }
 
-    public void Execute(int userId)
+    public void Execute(Guid userId)
     {
         var user = _userRepository.GetById(userId);
         if (user is null)
