@@ -1,6 +1,5 @@
 using TaskAndDocumentManager.Application.Auth.DTOs;
 using TaskAndDocumentManager.Application.Auth.Interfaces;
-using TaskAndDocumentManager.Infrastructure.Persistence;
 
 namespace TaskAndDocumentManager.Application.Auth.UseCases;
 
@@ -9,15 +8,18 @@ public class AuthenticateUser
     private readonly IUserRepository _userRepository;
     private readonly IPasswordHasher _passwordHasher;
     private readonly ITokenService _tokenService;
+    private readonly IRoleCatalog _roleCatalog;
 
     public AuthenticateUser(
         IUserRepository userRepository,
         IPasswordHasher passwordHasher,
-        ITokenService tokenService)
+        ITokenService tokenService,
+        IRoleCatalog roleCatalog)
     {
         _userRepository = userRepository;
         _passwordHasher = passwordHasher;
         _tokenService = tokenService;
+        _roleCatalog = roleCatalog;
     }
 
     public AuthResponse Execute(string email, string password)
@@ -50,9 +52,9 @@ public class AuthenticateUser
             throw new UnauthorizedAccessException("Invalid email or password.");
         }
 
-        var roleName = user.Role?.Name ?? BuiltInRoles.ResolveName(user.RoleId);
+        var role = user.Role?.Name ?? _roleCatalog.ResolveName(user.RoleId);
 
-        var tokenResult = _tokenService.GenerateToken(user.Id.ToString(), user.Email, roleName);
+        var tokenResult = _tokenService.GenerateToken(user.Id.ToString(), user.Email, role);
 
         return new AuthResponse
         {
@@ -62,7 +64,7 @@ public class AuthenticateUser
             {
                 Id = user.Id,
                 Email = user.Email,
-                Role = roleName,
+                Role = role,
                 IsActive = user.IsActive
             }
         };

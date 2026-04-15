@@ -18,10 +18,9 @@ namespace TaskAndDocumentManager.Infrastructure.Auth
 
             AttachRoleIfMissing(user);
 
-            if (user.Id == 0)
+            if (user.Id == Guid.Empty)
             {
-                var nextId = _users.Count == 0 ? 1 : _users.Max(u => u.Id) + 1;
-                user.Id = nextId;
+                user.Id = Guid.NewGuid();
                 _users.Add(user);
                 return user;
             }
@@ -38,7 +37,7 @@ namespace TaskAndDocumentManager.Infrastructure.Auth
             return user;
         }
 
-        public User? GetById(int id)
+        public User? GetById(Guid id)
         {
             var user = _users.FirstOrDefault(u => u.Id == id);
             return user is null ? null : CloneWithRole(user);

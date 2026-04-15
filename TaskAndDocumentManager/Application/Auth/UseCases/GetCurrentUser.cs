@@ -13,7 +13,7 @@ public class GetCurrentUser
         _userRepository = userRepository;
     }
 
-    public UserProfile Execute(int userId)
+    public UserProfile Execute(Guid userId)
     {
         var user = _userRepository.GetById(userId);
 

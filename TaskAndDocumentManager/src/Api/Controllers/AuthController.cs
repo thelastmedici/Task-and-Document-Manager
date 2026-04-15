@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TaskAndDocumentManager.Application.Auth.DTOs;
@@ -35,25 +34,24 @@ public class AuthController : ControllerBase
         try
         {
             _registerUser.Execute(request.Email, request.Password);
-
             return Ok(new { message = "User registered successfully" });
         }
-        catch (InvalidOperationException ex) // User already exists
+        catch (InvalidOperationException ex)
         {
             return Conflict(new { message = ex.Message });
         }
-        catch (FormatException ex) // Invalid email format
+        catch (FormatException ex)
         {
             return BadRequest(new { message = ex.Message });
         }
-        catch (ArgumentException ex) // Password not strong enough or other argument issues
+        catch (ArgumentException ex)
         {
             return BadRequest(new { message = ex.Message });
         }
         catch (Exception)
         {
-            // It's good practice to log the exception details here.
-            return StatusCode(StatusCodes.Status500InternalServerError, new { message = "An unexpected error occurred during registration." });
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                new { message = "An unexpected error occurred during registration." });
         }
     }
 
@@ -76,20 +74,25 @@ public class AuthController : ControllerBase
     [HttpGet("me")]
     public IActionResult Me()
     {
-        var userIdValue = User.GetUserId();
-
-        if (userIdValue is null || !int.TryParse(userIdValue, out var userId))
+        try
         {
-            return Unauthorized(new { message = "Invalid user ID claim." });
+            var userId = User.GetUserId();
+            var currentUser = _getCurrentUser.Execute(userId);
+            return Ok(currentUser);
         }
-
-        var currentUser = _getCurrentUser.Execute(userId);
-        return Ok(currentUser);
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(new { message = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
     }
 
     [Authorize(Roles = "Admin")]
-    [HttpPut("users/{id:int}/deactivate")]
-    public IActionResult Deactivate(int id)
+    [HttpPut("users/{id:guid}/deactivate")]
+    public IActionResult Deactivate(Guid id)
     {
         try
         {
@@ -102,8 +105,8 @@ public class AuthController : ControllerBase
         }
         catch (Exception)
         {
-            // It's good practice to log the exception details here.
-            return StatusCode(StatusCodes.Status500InternalServerError, new { message = "An unexpected error occurred while deactivating the user." });
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                new { message = "An unexpected error occurred while deactivating the user." });
         }
     }
 }
