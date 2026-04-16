@@ -10,6 +10,8 @@ using TaskAndDocumentManager.Infrastructure.Auth.Token;
 using TaskAndDocumentManager.Infrastructure.Documents;
 using TaskAndDocumentManager.Infrastructure.Persistence;
 using TaskAndDocumentManager.Infrastructure.Tasks;
+using TaskAndDocumentManager.Api.Authorization;
+using TaskAndDocumentManager.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
