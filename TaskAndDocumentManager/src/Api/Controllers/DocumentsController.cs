@@ -1,13 +1,23 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using TaskAndDocumentManager.Api.Authorization;
+using TaskAndDocumentManager.Api.Extensions;
 using TaskAndDocumentManager.Application.Documents.DTOs;
+using TaskAndDocumentManager.Application.Documents.Interfaces;
 using TaskAndDocumentManager.Application.Documents.UseCases;
+using TaskAndDocumentManager.Application.Tasks.Interfaces;
 
 namespace TaskAndDocumentManager.Controllers;
 
+[Authorize(Policy = AppPolicies.Authenticated)]
 [ApiController]
 [Route("api/documents")]
 public class DocumentsController : ControllerBase
 {
+    private readonly IDocumentRepository _documentRepository;
+    private readonly IDocumentAccessRepository _documentAccessRepository;
+    private readonly ITaskRepository _taskRepository;
+    private readonly IFileStorageService _fileStorageService;
     private readonly UploadDocument _uploadDocument;
     private readonly LinkDocumentToTask _linkDocumentToTask;
     private readonly ShareDocument _shareDocument;
@@ -17,6 +27,10 @@ public class DocumentsController : ControllerBase
     private readonly GetDocumentMetadata _getDocumentMetadata;
 
     public DocumentsController(
+        IDocumentRepository documentRepository,
+        IDocumentAccessRepository documentAccessRepository,
+        ITaskRepository taskRepository,
+        IFileStorageService fileStorageService,
         UploadDocument uploadDocument,
         LinkDocumentToTask linkDocumentToTask,
         ShareDocument shareDocument,
@@ -25,6 +39,10 @@ public class DocumentsController : ControllerBase
         DeleteDocument deleteDocument,
         GetDocumentMetadata getDocumentMetadata)
     {
+        _documentRepository = documentRepository;
+        _documentAccessRepository = documentAccessRepository;
+        _taskRepository = taskRepository;
+        _fileStorageService = fileStorageService;
         _uploadDocument = uploadDocument;
         _linkDocumentToTask = linkDocumentToTask;
         _shareDocument = shareDocument;
@@ -41,6 +59,8 @@ public class DocumentsController : ControllerBase
         [FromForm] UploadDocumentFormRequest request,
         CancellationToken cancellationToken)
     {
+        var actorId = User.GetActorId();
+
         if (request.File is null || request.File.Length == 0)
         {
             return BadRequest(new { message = "A non-empty file is required." });
@@ -60,7 +80,7 @@ public class DocumentsController : ControllerBase
                         ? "application/octet-stream"
                         : request.File.ContentType,
                     Content = memoryStream.ToArray(),
-                    UploadedByUserId = request.UploadedByUserId
+                    UploadedByUserId = actorId
                 },
                 cancellationToken);
 
@@ -88,6 +108,27 @@ public class DocumentsController : ControllerBase
         [FromBody] LinkDocumentToTaskBody request,
         CancellationToken cancellationToken)
     {
+        var actorId = User.GetActorId();
+
+        if (User.IsAdmin())
+        {
+            var adminDocument = await _documentRepository.GetByIdAsync(id, cancellationToken);
+            if (adminDocument is null)
+            {
+                return NotFound(new { message = "Document not found" });
+            }
+
+            var adminTask = await _taskRepository.GetByIdAsync(request.TaskId, cancellationToken);
+            if (adminTask is null)
+            {
+                return NotFound(new { message = "Task not found" });
+            }
+
+            adminDocument.LinkToTask(request.TaskId);
+            await _documentRepository.UpdateAsync(adminDocument, cancellationToken);
+            return NoContent();
+        }
+
         try
         {
             await _linkDocumentToTask.ExecuteAsync(
@@ -95,7 +136,7 @@ public class DocumentsController : ControllerBase
                 {
                     DocumentId = id,
                     TaskId = request.TaskId,
-                    RequestedByUserId = request.RequestedByUserId
+                    RequestedByUserId = actorId
                 },
                 cancellationToken);
 
@@ -127,6 +168,23 @@ public class DocumentsController : ControllerBase
         [FromBody] ShareDocumentBody request,
         CancellationToken cancellationToken)
     {
+        var actorId = User.GetActorId();
+
+        if (User.IsAdmin())
+        {
+            var adminDocument = await _documentRepository.GetByIdAsync(id, cancellationToken);
+            if (adminDocument is null)
+            {
+                return NotFound(new { message = "Document not found" });
+            }
+
+            await _documentAccessRepository.GrantAccessAsync(
+                new Domain.Documents.DocumentAccess(id, request.TargetUserId, actorId),
+                cancellationToken);
+
+            return NoContent();
+        }
+
         try
         {
             await _shareDocument.ExecuteAsync(
@@ -134,7 +192,7 @@ public class DocumentsController : ControllerBase
                 {
                     DocumentId = id,
                     TargetUserId = request.TargetUserId,
-                    GrantedByUserId = request.GrantedByUserId
+                    GrantedByUserId = actorId
                 },
                 cancellationToken);
 
@@ -171,6 +229,39 @@ public class DocumentsController : ControllerBase
         [FromBody] ShareTaskLinkedDocumentBody request,
         CancellationToken cancellationToken)
     {
+        var actorId = User.GetActorId();
+
+        if (User.IsAdmin())
+        {
+            var adminDocument = await _documentRepository.GetByIdAsync(id, cancellationToken);
+            if (adminDocument is null)
+            {
+                return NotFound(new { message = "Document not found" });
+            }
+
+            if (adminDocument.LinkedTaskId is null)
+            {
+                return Conflict(new { message = "Document is not linked to a task." });
+            }
+
+            if (adminDocument.LinkedTaskId.Value != taskId)
+            {
+                return Conflict(new { message = "Document is linked to a different task." });
+            }
+
+            var adminTask = await _taskRepository.GetByIdAsync(taskId, cancellationToken);
+            if (adminTask is null)
+            {
+                return NotFound(new { message = "Task not found" });
+            }
+
+            await _documentAccessRepository.GrantAccessAsync(
+                new Domain.Documents.DocumentAccess(id, request.TargetUserId, actorId),
+                cancellationToken);
+
+            return NoContent();
+        }
+
         try
         {
             await _shareTaskLinkedDocument.ExecuteAsync(
@@ -179,7 +270,7 @@ public class DocumentsController : ControllerBase
                     DocumentId = id,
                     TaskId = taskId,
                     TargetUserId = request.TargetUserId,
-                    GrantedByUserId = request.GrantedByUserId
+                    GrantedByUserId = actorId
                 },
                 cancellationToken);
 
@@ -212,12 +303,31 @@ public class DocumentsController : ControllerBase
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetMetadata(
         Guid id,
-        [FromQuery] Guid requestedByUserId,
         CancellationToken cancellationToken)
     {
+        var actorId = User.GetActorId();
+
+        if (User.IsAdmin())
+        {
+            var adminDocument = await _documentRepository.GetByIdAsync(id, cancellationToken);
+            if (adminDocument is null)
+            {
+                return NotFound(new { message = "Document not found" });
+            }
+
+            return Ok(new DocumentMetadataDto(
+                adminDocument.Id,
+                adminDocument.FileName,
+                adminDocument.ContentType,
+                adminDocument.SizeInBytes,
+                adminDocument.UploadedByUserId,
+                adminDocument.UploadedAtUtc,
+                adminDocument.LinkedTaskId));
+        }
+
         try
         {
-            var metadata = await _getDocumentMetadata.ExecuteAsync(id, requestedByUserId, cancellationToken);
+            var metadata = await _getDocumentMetadata.ExecuteAsync(id, actorId, cancellationToken);
             return Ok(metadata);
         }
         catch (FileNotFoundException ex)
@@ -233,13 +343,26 @@ public class DocumentsController : ControllerBase
     [HttpGet("{id:guid}/download")]
     public async Task<IActionResult> Download(
         Guid id,
-        [FromQuery] Guid requestedByUserId,
         CancellationToken cancellationToken)
     {
+        var actorId = User.GetActorId();
+
+        if (User.IsAdmin())
+        {
+            var adminDocument = await _documentRepository.GetByIdAsync(id, cancellationToken);
+            if (adminDocument is null)
+            {
+                return NotFound(new { message = "Document not found" });
+            }
+
+            var stream = await _fileStorageService.OpenReadAsync(adminDocument.StoragePath, cancellationToken);
+            return File(stream, adminDocument.ContentType, adminDocument.FileName);
+        }
+
         try
         {
-            var metadata = await _getDocumentMetadata.ExecuteAsync(id, requestedByUserId, cancellationToken);
-            var stream = await _downloadDocument.ExecuteAsync(id, requestedByUserId, cancellationToken);
+            var metadata = await _getDocumentMetadata.ExecuteAsync(id, actorId, cancellationToken);
+            var stream = await _downloadDocument.ExecuteAsync(id, actorId, cancellationToken);
 
             return File(stream, metadata.ContentType, metadata.FileName);
         }
@@ -256,12 +379,26 @@ public class DocumentsController : ControllerBase
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(
         Guid id,
-        [FromQuery] Guid requestedByUserId,
         CancellationToken cancellationToken)
     {
+        var actorId = User.GetActorId();
+
+        if (User.IsAdmin())
+        {
+            var adminDocument = await _documentRepository.GetByIdAsync(id, cancellationToken);
+            if (adminDocument is null)
+            {
+                return NotFound(new { message = "Document not found" });
+            }
+
+            await _fileStorageService.DeleteAsync(adminDocument.StoragePath, cancellationToken);
+            await _documentRepository.DeleteAsync(id, cancellationToken);
+            return NoContent();
+        }
+
         try
         {
-            await _deleteDocument.ExecuteAsync(id, requestedByUserId, cancellationToken);
+            await _deleteDocument.ExecuteAsync(id, actorId, cancellationToken);
             return NoContent();
         }
         catch (FileNotFoundException ex)
@@ -283,24 +420,47 @@ public class DocumentsController : ControllerBase
     public sealed class UploadDocumentFormRequest
     {
         public IFormFile? File { get; init; }
-        public Guid UploadedByUserId { get; init; }
     }
 
     public sealed class LinkDocumentToTaskBody
     {
         public Guid TaskId { get; init; }
-        public Guid RequestedByUserId { get; init; }
     }
 
     public sealed class ShareDocumentBody
     {
         public Guid TargetUserId { get; init; }
-        public Guid GrantedByUserId { get; init; }
     }
 
     public sealed class ShareTaskLinkedDocumentBody
     {
         public Guid TargetUserId { get; init; }
-        public Guid GrantedByUserId { get; init; }
+    }
+
+    private bool CanManageOwnedDocument(Guid ownerId, Guid actorId)
+    {
+        if (User.IsAdmin())
+        {
+            return true;
+        }
+
+        return ownerId == actorId;
+    }
+
+    private bool CanManageTaskLinkedDocument(Domain.Documents.Document document, Domain.Tasks.TaskItem task, Guid actorId)
+    {
+        if (User.IsAdmin())
+        {
+            return true;
+        }
+
+        if (User.IsManager())
+        {
+            return document.UploadedByUserId == actorId &&
+                   (task.CreatedByUserId == actorId || task.AssignedToUserId == actorId);
+        }
+
+        return document.UploadedByUserId == actorId &&
+               task.CreatedByUserId == actorId;
     }
 }

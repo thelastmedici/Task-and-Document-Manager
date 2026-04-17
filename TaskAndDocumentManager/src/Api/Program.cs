@@ -11,7 +11,6 @@ using TaskAndDocumentManager.Infrastructure.Documents;
 using TaskAndDocumentManager.Infrastructure.Persistence;
 using TaskAndDocumentManager.Infrastructure.Tasks;
 using TaskAndDocumentManager.Api.Authorization;
-using TaskAndDocumentManager.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -23,6 +22,10 @@ var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException(
         "Connection string 'DefaultConnection' is missing. Configure it before starting the API.");
+var jwtSection = builder.Configuration.GetSection("Jwt");
+var key = jwtSection["Key"] ?? throw new InvalidOperationException("JWT signing key is missing. Configure Jwt:Key.");
+var issuer = jwtSection["Issuer"] ?? "TaskAndDocumentManager";
+var audience = jwtSection["Audience"] ?? "TaskAndDocumentManager.Client";
 //register service here IUserRepository, IPasswordHasher, IEmailValidator
 builder.Services.AddDbContext<TaskDbContext>(options =>
     options.UseNpgsql(connectionString));
@@ -53,7 +56,21 @@ builder.Services.AddScoped<LinkDocumentToTask>();
 builder.Services.AddScoped<GetDocumentMetadata>();
 builder.Services.AddScoped<IPasswordValidator, PasswordValidator>();
 builder.Services.AddScoped<ITokenService, JwtTokenService>();
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme);
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = issuer,
+            ValidateAudience = true,
+            ValidAudience = audience,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)),
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.Zero
+        };
+    });
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -75,11 +92,6 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy(AppPolicies.ManagerOrAdmin, policy =>
          policy.RequireRole(BuiltInRoles.AdminName, BuiltInRoles.ManagerName));
 });
-var jwtSection = builder.Configuration.GetSection("jwt");
-
-var key = jwtSection["Key"];
-var issuer = jwtSection["Issuer"];
-var audience = jwtSection["Audience"];
 
 var app = builder.Build();
 // Configure the HTTP request pipeline.

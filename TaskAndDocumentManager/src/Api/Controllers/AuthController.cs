@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TaskAndDocumentManager.Application.Auth.DTOs;
 using TaskAndDocumentManager.Application.Auth.UseCases;
+using TaskAndDocumentManager.Api.Authorization;
 using TaskAndDocumentManager.Api.Extensions;
 
 namespace TaskAndDocumentManager.Controllers;
@@ -70,13 +71,13 @@ public class AuthController : ControllerBase
         }
     }
 
-    [Authorize]
+    [Authorize(Policy = AppPolicies.Authenticated)]
     [HttpGet("me")]
     public IActionResult Me()
     {
         try
         {
-            var userId = User.GetUserId();
+            var userId = User.GetActorId();
             var currentUser = _getCurrentUser.Execute(userId);
             return Ok(currentUser);
         }
@@ -90,7 +91,7 @@ public class AuthController : ControllerBase
         }
     }
 
-    [Authorize(Roles = "Admin")]
+    [Authorize(Policy = AppPolicies.AdminOnly)]
     [HttpPut("users/{id:guid}/deactivate")]
     public IActionResult Deactivate(Guid id)
     {

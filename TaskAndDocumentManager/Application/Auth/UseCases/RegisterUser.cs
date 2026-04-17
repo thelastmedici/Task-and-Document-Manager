@@ -1,7 +1,6 @@
 using System;
 using TaskAndDocumentManager.Application.Auth.Interfaces;
 using TaskAndDocumentManager.Domain.Auth;
-using TaskAndDocumentManager.Infrastructure.Persistence;
 
 namespace TaskAndDocumentManager.Application.Auth.UseCases
 {
@@ -11,17 +10,20 @@ namespace TaskAndDocumentManager.Application.Auth.UseCases
         private readonly IPasswordHasher _passwordHasher;
         private readonly IEmailValidator _emailValidator;
         private readonly IPasswordValidator _passwordValidator;
+        private readonly IRoleCatalog _roleCatalog;
 
         public RegisterUser(
             IUserRepository userRepository,
             IPasswordHasher passwordHasher,
             IEmailValidator emailValidator,
-            IPasswordValidator passwordValidator)
+            IPasswordValidator passwordValidator,
+            IRoleCatalog roleCatalog)
         {
             _userRepository = userRepository;
             _passwordHasher = passwordHasher;
             _emailValidator = emailValidator;
             _passwordValidator = passwordValidator;
+            _roleCatalog = roleCatalog;
         }
 
         public void Execute(string email, string password)
@@ -48,7 +50,7 @@ namespace TaskAndDocumentManager.Application.Auth.UseCases
             {
                 Email = email,
                 PasswordHash = passwordHash,
-                RoleId = BuiltInRoles.UserId,
+                RoleId = _roleCatalog.UserRoleId,
                 IsActive = true
             };
 
