@@ -58,7 +58,23 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy(AppPolicies.Authenticated, policy =>
+         policy.RequireRole(
+            BuiltInRoles.AdminName,
+            BuiltInRoles.ManagerName,
+            BuiltInRoles.UserName
+         )
+    );
+
+    options.AddPolicy(AppPolicies.AdminOnly, policy =>
+        policy.RequireRole(BuiltInRoles.AdminName));
+
+    
+    options.AddPolicy(AppPolicies.ManagerOrAdmin, policy =>
+         policy.RequireRole(BuiltInRoles.AdminName, BuiltInRoles.ManagerName));
+});
 var jwtSection = builder.Configuration.GetSection("jwt");
 
 var key = jwtSection["Key"];
