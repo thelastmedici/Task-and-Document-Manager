@@ -43,6 +43,23 @@ namespace TaskAndDocumentManager.Infrastructure.Auth
             return user is null ? null : CloneWithRole(user);
         }
 
+        public IReadOnlyCollection<User> GetAll()
+        {
+            return _users.Select(CloneWithRole).ToList();
+        }
+
+        public void Delete(Guid id)
+        {
+            var user = _users.FirstOrDefault(u => u.Id == id);
+
+            if(user is null)
+            {
+                throw new KeyNotFoundException("User NOt found");
+            }
+
+            _users.Remove(user);
+        }
+
         public User? GetByEmail(string email)
         {
             if (email == null) return null;
