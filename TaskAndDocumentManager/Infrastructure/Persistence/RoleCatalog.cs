@@ -14,4 +14,8 @@ public class RoleCatalog : IRoleCatalog
     {
         return BuiltInRoles.ResolveName(roleId);
     }
+    public bool IsSupportedRole(Guid roleId)
+    {
+        return roleId == BuiltInRoles.AdminId || roleId == BuiltInRoles.ManagerId || roleId == BuiltInRoles.UserId;
+    }
 }

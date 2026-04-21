@@ -7,4 +7,5 @@ public interface IRoleCatalog
     Guid UserRoleId { get; }
 
     string ResolveName(Guid roleId);
+    bool IsSupportedRole(Guid roleId);
 }
