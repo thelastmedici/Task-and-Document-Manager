@@ -56,6 +56,10 @@ builder.Services.AddScoped<LinkDocumentToTask>();
 builder.Services.AddScoped<GetDocumentMetadata>();
 builder.Services.AddScoped<IPasswordValidator, PasswordValidator>();
 builder.Services.AddScoped<ITokenService, JwtTokenService>();
+builder.Services.AddScoped<ListUsers>();
+builder.Services.AddScoped<CreateUserAsAdmin>();
+builder.Services.AddScoped<ChangeUserRole>();
+builder.Services.AddScoped<DeleteUser>();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
