@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("TaskAndDocumentManager.Application")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+eaaad01d2c7bd805ca11a9e47ea6196716211d38")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+05e7ac186a0ab556d316f6ff5cdbe52344fd891a")]
 [assembly: System.Reflection.AssemblyProductAttribute("TaskAndDocumentManager.Application")]
 [assembly: System.Reflection.AssemblyTitleAttribute("TaskAndDocumentManager.Application")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -65,9 +65,18 @@ public class AuthController : ControllerBase
             var authResult = _authenticateUser.Execute(request.Email, request.Password);
             return Ok(authResult);
         }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
         catch (UnauthorizedAccessException ex)
         {
             return Unauthorized(new { message = ex.Message });
+        }
+        catch (Exception)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                new { message = "An unexpected error occurred during login." });
         }
     }
 
