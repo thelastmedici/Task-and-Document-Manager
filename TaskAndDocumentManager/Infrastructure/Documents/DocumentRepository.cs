@@ -20,6 +20,11 @@ public class DocumentRepository : IDocumentRepository
         return Task.FromResult(document);
     }
 
+    public Task<IReadOnlyCollection<Document>> GetAllAsync(CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult((IReadOnlyCollection<Document>)Documents.ToList());
+    }
+
     public Task UpdateAsync(Document document, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(document);

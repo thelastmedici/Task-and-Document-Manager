@@ -102,6 +102,24 @@ public class DocumentsController : ControllerBase
         }
     }
 
+    [Authorize(Policy = AppPolicies.AdminOnly)]
+    [HttpGet]
+    public async Task<IActionResult> ListAll(CancellationToken cancellationToken)
+    {
+        var documents = await _documentRepository.GetAllAsync(cancellationToken);
+
+        var dtos = documents.Select(d => new DocumentMetadataDto(
+            d.Id,
+            d.FileName,
+            d.ContentType,
+            d.SizeInBytes,
+            d.UploadedByUserId,
+            d.UploadedAtUtc,
+            d.LinkedTaskId)).ToList();
+
+        return Ok(dtos);
+    }
+
     [HttpPost("{id:guid}/link-task")]
     public async Task<IActionResult> LinkToTask(
         Guid id,
