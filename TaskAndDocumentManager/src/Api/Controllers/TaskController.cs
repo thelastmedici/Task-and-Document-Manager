@@ -146,15 +146,21 @@ public class TaskController : ControllerBase
         }
     }
 
-    [Authorize(Policy = AppPolicies.AdminOnly)]
+    [Authorize(Policy = AppPolicies.ManagerOrAdmin)]
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
+        var actorId = User.GetActorId();
         var task = await _taskRepository.GetByIdAsync(id, cancellationToken);
 
         if (task is null)
         {
             return NotFound(new { message = "Task not found" });
+        }
+
+        if (User.IsManager() && !CanManageTask(task, actorId))
+        {
+            return Forbid();
         }
 
         try

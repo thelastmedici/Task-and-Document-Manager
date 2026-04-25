@@ -25,6 +25,7 @@ public class DocumentsController : ControllerBase
     private readonly DownloadDocument _downloadDocument;
     private readonly DeleteDocument _deleteDocument;
     private readonly GetDocumentMetadata _getDocumentMetadata;
+    private readonly ListAccessibleDocuments _listAccessibleDocuments;
 
     public DocumentsController(
         IDocumentRepository documentRepository,
@@ -37,7 +38,8 @@ public class DocumentsController : ControllerBase
         ShareTaskLinkedDocument shareTaskLinkedDocument,
         DownloadDocument downloadDocument,
         DeleteDocument deleteDocument,
-        GetDocumentMetadata getDocumentMetadata)
+        GetDocumentMetadata getDocumentMetadata,
+        ListAccessibleDocuments listAccessibleDocuments)
     {
         _documentRepository = documentRepository;
         _documentAccessRepository = documentAccessRepository;
@@ -50,6 +52,7 @@ public class DocumentsController : ControllerBase
         _downloadDocument = downloadDocument;
         _deleteDocument = deleteDocument;
         _getDocumentMetadata = getDocumentMetadata;
+        _listAccessibleDocuments = listAccessibleDocuments;
     }
 
     [HttpPost]
@@ -102,10 +105,16 @@ public class DocumentsController : ControllerBase
         }
     }
 
-    [Authorize(Policy = AppPolicies.AdminOnly)]
     [HttpGet]
     public async Task<IActionResult> ListAll(CancellationToken cancellationToken)
     {
+        if (!User.IsAdmin())
+        {
+            var actorId = User.GetActorId();
+            var accessibleDocuments = await _listAccessibleDocuments.ExecuteAsync(actorId, cancellationToken);
+            return Ok(accessibleDocuments);
+        }
+
         var documents = await _documentRepository.GetAllAsync(cancellationToken);
 
         var dtos = documents.Select(d => new DocumentMetadataDto(

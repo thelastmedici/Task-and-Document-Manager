@@ -1,19 +1,20 @@
 using TaskAndDocumentManager.Application.Documents.DTOs;
 using TaskAndDocumentManager.Application.Documents.Interfaces;
+using TaskAndDocumentManager.Application.Documents.Services;
 
 namespace TaskAndDocumentManager.Application.Documents.UseCases;
 
 public class GetDocumentMetadata
 {
     private readonly IDocumentRepository _documentRepository;
-    private readonly IDocumentAccessRepository _documentAccessRepository;
+    private readonly DocumentAccessEvaluator _documentAccessEvaluator;
 
     public GetDocumentMetadata(
         IDocumentRepository documentRepository,
-        IDocumentAccessRepository documentAccessRepository)
+        DocumentAccessEvaluator documentAccessEvaluator)
     {
         _documentRepository = documentRepository;
-        _documentAccessRepository = documentAccessRepository;
+        _documentAccessEvaluator = documentAccessEvaluator;
     }
 
     public async Task<DocumentMetadataDto> ExecuteAsync(
@@ -24,8 +25,10 @@ public class GetDocumentMetadata
         var document = await _documentRepository.GetByIdAsync(documentId, cancellationToken)
             ?? throw new FileNotFoundException("Document not found.");
 
-        var hasAccess = document.UploadedByUserId == requestedByUserId ||
-            await _documentAccessRepository.HasAccessAsync(documentId, requestedByUserId, cancellationToken);
+        var hasAccess = await _documentAccessEvaluator.HasAccessAsync(
+            document,
+            requestedByUserId,
+            cancellationToken);
 
         if (!hasAccess)
         {
