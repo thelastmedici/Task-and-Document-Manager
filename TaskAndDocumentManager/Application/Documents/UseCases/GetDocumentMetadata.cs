@@ -20,6 +20,7 @@ public class GetDocumentMetadata
     public async Task<DocumentMetadataDto> ExecuteAsync(
         Guid documentId,
         Guid requestedByUserId,
+        bool allowTaskParticipationAccess = false,
         CancellationToken cancellationToken = default)
     {
         var document = await _documentRepository.GetByIdAsync(documentId, cancellationToken)
@@ -28,6 +29,7 @@ public class GetDocumentMetadata
         var hasAccess = await _documentAccessEvaluator.HasAccessAsync(
             document,
             requestedByUserId,
+            allowTaskParticipationAccess,
             cancellationToken);
 
         if (!hasAccess)

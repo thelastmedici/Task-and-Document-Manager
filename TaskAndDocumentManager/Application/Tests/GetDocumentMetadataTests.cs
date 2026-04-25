@@ -129,9 +129,39 @@ public class GetDocumentMetadataTests
             .Setup(repository => repository.GetByIdAsync(task.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(task);
 
-        var result = await _sut.ExecuteAsync(document.Id, requesterId);
+        var result = await _sut.ExecuteAsync(document.Id, requesterId, true);
 
         Assert.Equal(document.Id, result.Id);
         Assert.Equal(document.FileName, result.FileName);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_ShouldThrow_WhenRequesterIsTaskParticipantButTaskAccessIsDisabled()
+    {
+        var ownerId = Guid.NewGuid();
+        var requesterId = Guid.NewGuid();
+        var task = new TaskItem("Review", "Review linked document", ownerId);
+        task.AssignTask(requesterId);
+
+        var document = new Document(
+            "report.pdf",
+            "application/pdf",
+            1024,
+            "/tmp/report.pdf",
+            ownerId);
+        document.LinkToTask(task.Id);
+
+        _documentRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(document.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(document);
+
+        _documentAccessRepositoryMock
+            .Setup(repository => repository.HasAccessAsync(document.Id, requesterId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+            _sut.ExecuteAsync(document.Id, requesterId));
+
+        Assert.Equal("You do not have access to this document.", exception.Message);
     }
 }

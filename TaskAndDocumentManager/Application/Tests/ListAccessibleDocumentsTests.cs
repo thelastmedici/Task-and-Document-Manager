@@ -65,12 +65,40 @@ public class ListAccessibleDocumentsTests
             .Setup(repository => repository.GetByIdAsync(task.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(task);
 
-        var result = await _sut.ExecuteAsync(requesterId);
+        var result = await _sut.ExecuteAsync(requesterId, true);
 
         Assert.Equal(3, result.Count);
         Assert.Contains(result, document => document.Id == ownDocument.Id);
         Assert.Contains(result, document => document.Id == sharedDocument.Id);
         Assert.Contains(result, document => document.Id == taskLinkedDocument.Id);
         Assert.DoesNotContain(result, document => document.Id == inaccessibleDocument.Id);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_ShouldExcludeTaskLinkedDocuments_WhenTaskAccessIsDisabled()
+    {
+        var requesterId = Guid.NewGuid();
+        var ownerId = Guid.NewGuid();
+
+        var ownDocument = new Document("own.pdf", "application/pdf", 128, "/tmp/own.pdf", requesterId);
+        var taskLinkedDocument = new Document("task.pdf", "application/pdf", 512, "/tmp/task.pdf", ownerId);
+
+        var task = new TaskItem("Review", "Review task document", ownerId);
+        task.AssignTask(requesterId);
+        taskLinkedDocument.LinkToTask(task.Id);
+
+        _documentRepositoryMock
+            .Setup(repository => repository.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { ownDocument, taskLinkedDocument });
+
+        _documentAccessRepositoryMock
+            .Setup(repository => repository.HasAccessAsync(taskLinkedDocument.Id, requesterId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        var result = await _sut.ExecuteAsync(requesterId);
+
+        Assert.Single(result);
+        Assert.Contains(result, document => document.Id == ownDocument.Id);
+        Assert.DoesNotContain(result, document => document.Id == taskLinkedDocument.Id);
     }
 }
