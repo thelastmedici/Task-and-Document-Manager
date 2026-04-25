@@ -19,6 +19,7 @@ public class ListAccessibleDocuments
 
     public async Task<IReadOnlyList<DocumentMetadataDto>> ExecuteAsync(
         Guid requestedByUserId,
+        bool allowTaskParticipationAccess = false,
         CancellationToken cancellationToken = default)
     {
         if (requestedByUserId == Guid.Empty)
@@ -31,7 +32,11 @@ public class ListAccessibleDocuments
 
         foreach (var document in documents.OrderByDescending(document => document.UploadedAtUtc))
         {
-            if (!await _documentAccessEvaluator.HasAccessAsync(document, requestedByUserId, cancellationToken))
+            if (!await _documentAccessEvaluator.HasAccessAsync(
+                document,
+                requestedByUserId,
+                allowTaskParticipationAccess,
+                cancellationToken))
             {
                 continue;
             }

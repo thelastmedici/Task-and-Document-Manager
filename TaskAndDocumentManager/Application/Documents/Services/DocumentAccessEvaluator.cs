@@ -21,6 +21,7 @@ public class DocumentAccessEvaluator
     public async Task<bool> HasAccessAsync(
         Document document,
         Guid requestedByUserId,
+        bool allowTaskParticipationAccess,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(document);
@@ -35,7 +36,7 @@ public class DocumentAccessEvaluator
             return true;
         }
 
-        if (!document.LinkedTaskId.HasValue)
+        if (!allowTaskParticipationAccess || !document.LinkedTaskId.HasValue)
         {
             return false;
         }

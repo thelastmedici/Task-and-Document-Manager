@@ -111,7 +111,10 @@ public class DocumentsController : ControllerBase
         if (!User.IsAdmin())
         {
             var actorId = User.GetActorId();
-            var accessibleDocuments = await _listAccessibleDocuments.ExecuteAsync(actorId, cancellationToken);
+            var accessibleDocuments = await _listAccessibleDocuments.ExecuteAsync(
+                actorId,
+                User.IsManager(),
+                cancellationToken);
             return Ok(accessibleDocuments);
         }
 
@@ -354,7 +357,11 @@ public class DocumentsController : ControllerBase
 
         try
         {
-            var metadata = await _getDocumentMetadata.ExecuteAsync(id, actorId, cancellationToken);
+            var metadata = await _getDocumentMetadata.ExecuteAsync(
+                id,
+                actorId,
+                User.IsManager(),
+                cancellationToken);
             return Ok(metadata);
         }
         catch (FileNotFoundException ex)
@@ -388,8 +395,17 @@ public class DocumentsController : ControllerBase
 
         try
         {
-            var metadata = await _getDocumentMetadata.ExecuteAsync(id, actorId, cancellationToken);
-            var stream = await _downloadDocument.ExecuteAsync(id, actorId, cancellationToken);
+            var allowTaskParticipationAccess = User.IsManager();
+            var metadata = await _getDocumentMetadata.ExecuteAsync(
+                id,
+                actorId,
+                allowTaskParticipationAccess,
+                cancellationToken);
+            var stream = await _downloadDocument.ExecuteAsync(
+                id,
+                actorId,
+                allowTaskParticipationAccess,
+                cancellationToken);
 
             return File(stream, metadata.ContentType, metadata.FileName);
         }
