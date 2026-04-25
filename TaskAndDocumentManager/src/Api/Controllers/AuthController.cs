@@ -125,7 +125,7 @@ public class AuthController : ControllerBase
     }
 
 
-    [Authorize(Policy = AppPolicies.AdminOnly)]
+[Authorize(Policy = AppPolicies.ManagerOrAdmin)]
 [HttpGet("users")]
 public IActionResult GetUsers()
 {
