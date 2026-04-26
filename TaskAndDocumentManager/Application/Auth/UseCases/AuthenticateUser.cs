@@ -52,6 +52,12 @@ public class AuthenticateUser
             throw new UnauthorizedAccessException("Invalid email or password.");
         }
 
+        if (_passwordHasher.NeedsRehash(user.PasswordHash))
+        {
+            user.PasswordHash = _passwordHasher.HashPassword(password);
+            _userRepository.Save(user);
+        }
+
         var role = user.Role?.Name ?? _roleCatalog.ResolveName(user.RoleId);
 
         var tokenResult = _tokenService.GenerateToken(user.Id.ToString(), user.Email, role);

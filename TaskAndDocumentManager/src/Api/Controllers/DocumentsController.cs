@@ -252,6 +252,7 @@ public class DocumentsController : ControllerBase
         }
     }
 
+
     [HttpPost("{id:guid}/tasks/{taskId:guid}/share")]
     public async Task<IActionResult> ShareForTask(
         Guid id,
@@ -291,6 +292,7 @@ public class DocumentsController : ControllerBase
 
             return NoContent();
         }
+
 
         try
         {
