@@ -13,7 +13,7 @@ public class TaskItem
 
     public Guid? AssignedToUserId { get; private set; }
 
-    public Guid CreatedByUserId { get; private set; }
+    public Guid OwnerId { get; private set; }
 
     public DateTime CreatedAt { get; private set; }
 
@@ -25,15 +25,15 @@ public class TaskItem
 
     protected TaskItem() { }
 
-    public TaskItem(string title, string description, Guid createdByUserId)
+    public TaskItem(string title, string description, Guid ownerId)
     {
-        if (createdByUserId == Guid.Empty)
+        if (ownerId == Guid.Empty)
         {
-            throw new ArgumentException("Created by user ID is required.", nameof(createdByUserId));
+            throw new ArgumentException("Owner ID is required.", nameof(ownerId));
         }
 
         Id = Guid.NewGuid();
-        CreatedByUserId = createdByUserId;
+        OwnerId = ownerId;
         CreatedAt = DateTime.UtcNow;
         Title = NormalizeRequiredText(title, nameof(title), MaxTitleLength);
         Description = NormalizeRequiredText(description, nameof(description), MaxDescriptionLength);

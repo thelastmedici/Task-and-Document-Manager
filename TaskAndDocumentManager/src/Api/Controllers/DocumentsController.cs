@@ -502,10 +502,10 @@ public class DocumentsController : ControllerBase
         if (User.IsManager())
         {
             return document.UploadedByUserId == actorId &&
-                   (task.CreatedByUserId == actorId || task.AssignedToUserId == actorId);
+                   (task.OwnerId == actorId || task.AssignedToUserId == actorId);
         }
 
         return document.UploadedByUserId == actorId &&
-               task.CreatedByUserId == actorId;
+               task.OwnerId == actorId;
     }
 }

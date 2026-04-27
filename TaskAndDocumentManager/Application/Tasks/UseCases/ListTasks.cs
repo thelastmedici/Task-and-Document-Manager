@@ -32,7 +32,7 @@ public class ListTasks
                 task.Title,
                 task.Description,
                 task.AssignedToUserId,
-                task.CreatedByUserId,
+                task.OwnerId,
                 task.CreatedAt,
                 task.UpdatedAt,
                 task.IsCompleted,

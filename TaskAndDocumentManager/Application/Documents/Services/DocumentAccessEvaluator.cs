@@ -48,6 +48,6 @@ public class DocumentAccessEvaluator
 
     private static bool IsTaskParticipant(TaskItem task, Guid userId)
     {
-        return task.CreatedByUserId == userId || task.AssignedToUserId == userId;
+        return task.OwnerId == userId || task.AssignedToUserId == userId;
     }
 }

@@ -5,7 +5,7 @@ public sealed record TaskListItemDto(
     string Title,
     string Description,
     Guid? AssignedToUserId,
-    Guid CreatedByUserId,
+    Guid OwnerId,
     DateTime CreatedAt,
     DateTime? UpdatedAt,
     bool IsCompleted,

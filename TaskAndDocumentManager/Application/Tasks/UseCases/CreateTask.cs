@@ -17,11 +17,11 @@ public class CreateTask
     public async Task<Guid> ExecuteAsync(
         string title,
         string description,
-        Guid createdByUserId,
+        Guid ownerId,
         CancellationToken cancellationToken = default
         )
     {
-        var task = new TaskItem(title, description, createdByUserId);
+        var task = new TaskItem(title, description, ownerId);
 
         await _taskRepository.CreateAsync(task, cancellationToken);
 
