@@ -56,7 +56,7 @@ public class ListTasksTests
         var item = Assert.IsType<TaskListItemDto>(Assert.Single(result));
         Assert.Equal(task.Title, item.Title);
         Assert.Equal(task.Description, item.Description);
-        Assert.Equal(task.CreatedByUserId, item.CreatedByUserId);
+        Assert.Equal(task.OwnerId, item.OwnerId);
     }
 
     [Fact]

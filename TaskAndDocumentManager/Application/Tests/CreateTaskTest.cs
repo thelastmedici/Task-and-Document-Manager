@@ -26,7 +26,7 @@ public class CreateTaskTests
         // Arrange
         var title = "Test Task";
         var description = "This is a test description.";
-        var createdByUserId = Guid.NewGuid();
+        var ownerId = Guid.NewGuid();
         var cancellationToken = CancellationToken.None;
 
         _taskRepositoryMock
@@ -37,7 +37,7 @@ public class CreateTaskTests
         var result = await _sut.ExecuteAsync(
             title,
             description,
-            createdByUserId,
+            ownerId,
             cancellationToken);
 
         // Assert
@@ -49,7 +49,7 @@ public class CreateTaskTests
                     task.Id == result &&
                     task.Title == title &&
                     task.Description == description &&
-                    task.CreatedByUserId == createdByUserId &&
+                    task.OwnerId == ownerId &&
                     task.IsCompleted == false),
                 cancellationToken),
             Times.Once);

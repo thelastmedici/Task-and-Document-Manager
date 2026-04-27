@@ -23,6 +23,9 @@ public class TaskDbContext(DbContextOptions<TaskDbContext> options) : DbContext(
             entity.Property(task => task.Description)
                 .HasMaxLength(4000)
                 .IsRequired();
+            entity.Property(task => task.OwnerId)
+                .HasColumnName("CreatedByUserId")
+                .IsRequired();
             entity.Property(task => task.CreatedAt)
                 .IsRequired();
         });

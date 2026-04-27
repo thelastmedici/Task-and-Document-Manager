@@ -93,10 +93,10 @@ public class TaskController : ControllerBase
         {
             if (User.IsManager())
             {
-                return task.CreatedByUserId == actorId || task.AssignedToUserId == actorId;
+                return task.OwnerId == actorId || task.AssignedToUserId == actorId;
             }
 
-            return task.CreatedByUserId == actorId;
+            return task.OwnerId == actorId;
         });
 
         return Ok(filteredTasks);
@@ -260,9 +260,9 @@ public class TaskController : ControllerBase
 
         if (User.IsManager())
         {
-            return task.CreatedByUserId == actorId || task.AssignedToUserId == actorId;
+            return task.OwnerId == actorId || task.AssignedToUserId == actorId;
         }
 
-        return task.CreatedByUserId == actorId;
+        return task.OwnerId == actorId;
     }
 }
