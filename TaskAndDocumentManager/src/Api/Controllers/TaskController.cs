@@ -146,6 +146,34 @@ public class TaskController : ControllerBase
         }
     }
 
+    [HttpGet("{id:guid}")]
+    public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
+    {
+        var actorId = User.GetActorId();
+        var task = await _taskRepository.GetByIdAsync(id, cancellationToken);
+
+        if(task is null)
+        {
+            return NotFound(new {message = "Task not found"});
+        }
+
+        if(!CanReadTask(task, actorId))
+        {
+            return Forbid();
+        }
+        return Ok(new TaskListItemDto(
+            task.Id,
+            task.Title,
+            task.Description,
+            task.AssignedToUserId,
+            task.OwnerId,
+            task.CreatedAt,
+            task.UpdatedAt,
+            task.IsCompleted,
+            task.CompletedAt
+        ));
+    }
+
     [Authorize(Policy = AppPolicies.ManagerOrAdmin)]
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
@@ -261,6 +289,16 @@ public class TaskController : ControllerBase
         if (User.IsManager())
         {
             return task.OwnerId == actorId || task.AssignedToUserId == actorId;
+        }
+
+        return task.OwnerId == actorId;
+    }
+
+    private bool CanReadTask(Domain.Tasks.TaskItem task, Guid actorId)
+    {
+        if (User.IsAdmin())
+        {
+            return true;
         }
 
         return task.OwnerId == actorId;
