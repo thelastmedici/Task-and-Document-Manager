@@ -54,4 +54,17 @@ public class CreateTaskTests
                 cancellationToken),
             Times.Once);
     }
+
+    [Fact]
+    public async Task ExecuteAsync_ShouldThrow_WhenOwnerIdIsEmpty()
+    {
+        var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
+            _sut.ExecuteAsync("Test Task", "This is a test description.", Guid.Empty, CancellationToken.None));
+
+        Assert.Equal("ownerId", exception.ParamName);
+
+        _taskRepositoryMock.Verify(
+            repo => repo.CreateAsync(It.IsAny<TaskItem>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
 }
