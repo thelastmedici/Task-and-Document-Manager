@@ -21,6 +21,11 @@ public class CreateTask
         CancellationToken cancellationToken = default
         )
     {
+        if (ownerId == Guid.Empty)
+        {
+            throw new ArgumentException("Owner ID is required.", nameof(ownerId));
+        }
+
         var task = new TaskItem(title, description, ownerId);
 
         await _taskRepository.CreateAsync(task, cancellationToken);

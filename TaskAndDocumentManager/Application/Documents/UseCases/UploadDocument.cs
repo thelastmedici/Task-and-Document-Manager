@@ -24,6 +24,11 @@ public class UploadDocument
     {
         ArgumentNullException.ThrowIfNull(request);
 
+        if (request.UploadedByUserId == Guid.Empty)
+        {
+            throw new ArgumentException("Uploaded by user ID is required.", nameof(request.UploadedByUserId));
+        }
+
         await using var contentStream = new MemoryStream(request.Content, writable: false);
         var storagePath = await _fileStorageService.SaveAsync(
             request.FileName,
