@@ -29,12 +29,13 @@ public class ListTasksTests
         var olderTask = CreateTaskWithCreatedAt(new DateTime(2026, 03, 28, 9, 0, 0, DateTimeKind.Utc));
         var newerTask = CreateTaskWithCreatedAt(new DateTime(2026, 03, 29, 9, 0, 0, DateTimeKind.Utc));
         var cancellationToken = CancellationToken.None;
+        var actorId = Guid.NewGuid();
 
         _taskRepositoryMock
             .Setup(repo => repo.SearchAsync(It.IsAny<ListTasksQuery>(), cancellationToken))
             .ReturnsAsync(new List<TaskItem> { olderTask, newerTask });
 
-        var result = await _sut.ExecuteAsync(new ListTasksQuery(), cancellationToken);
+        var result = await _sut.ExecuteAsync(new ListTasksQuery(), actorId, true, false, cancellationToken);
 
         Assert.Collection(
             result,
@@ -46,12 +47,13 @@ public class ListTasksTests
     public async Task ExecuteAsync_ShouldReturnTaskDtos()
     {
         var task = CreateTaskWithCreatedAt(new DateTime(2026, 03, 29, 9, 0, 0, DateTimeKind.Utc));
+        var actorId = Guid.NewGuid();
 
         _taskRepositoryMock
             .Setup(repo => repo.SearchAsync(It.IsAny<ListTasksQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<TaskItem> { task });
 
-        var result = await _sut.ExecuteAsync(new ListTasksQuery());
+        var result = await _sut.ExecuteAsync(new ListTasksQuery(), actorId, true, false);
 
         var item = Assert.IsType<TaskListItemDto>(Assert.Single(result));
         Assert.Equal(task.Title, item.Title);
@@ -63,17 +65,56 @@ public class ListTasksTests
     public async Task ExecuteAsync_ShouldNormalizePaginationAndSearchBeforeQueryingRepository()
     {
         var query = new ListTasksQuery(PageNumber: 0, PageSize: 1000, SearchTerm: "  title  ");
+        var actorId = Guid.NewGuid();
 
         _taskRepositoryMock
             .Setup(repo => repo.SearchAsync(
                 It.Is<ListTasksQuery>(requestedQuery =>
                     requestedQuery.PageNumber == 1 &&
                     requestedQuery.PageSize == ListTasksQuery.MaxPageSize &&
-                    requestedQuery.SearchTerm == "title"),
+                    requestedQuery.SearchTerm == "title" &&
+                    requestedQuery.OwnerId == null &&
+                    requestedQuery.IncludeAssignedTasks == false),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<TaskItem>());
 
-        await _sut.ExecuteAsync(query);
+        await _sut.ExecuteAsync(query, actorId, true, false);
+
+        _taskRepositoryMock.VerifyAll();
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_ShouldScopeQueryToOwner_WhenUserIsNotAdminOrManager()
+    {
+        var actorId = Guid.NewGuid();
+
+        _taskRepositoryMock
+            .Setup(repo => repo.SearchAsync(
+                It.Is<ListTasksQuery>(requestedQuery =>
+                    requestedQuery.OwnerId == actorId &&
+                    requestedQuery.IncludeAssignedTasks == false),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<TaskItem>());
+
+        await _sut.ExecuteAsync(new ListTasksQuery(), actorId, false, false);
+
+        _taskRepositoryMock.VerifyAll();
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_ShouldScopeQueryToOwnerOrAssigned_WhenUserIsManager()
+    {
+        var actorId = Guid.NewGuid();
+
+        _taskRepositoryMock
+            .Setup(repo => repo.SearchAsync(
+                It.Is<ListTasksQuery>(requestedQuery =>
+                    requestedQuery.OwnerId == actorId &&
+                    requestedQuery.IncludeAssignedTasks),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<TaskItem>());
+
+        await _sut.ExecuteAsync(new ListTasksQuery(), actorId, false, true);
 
         _taskRepositoryMock.VerifyAll();
     }
