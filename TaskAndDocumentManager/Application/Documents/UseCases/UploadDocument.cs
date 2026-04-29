@@ -31,16 +31,18 @@ public class UploadDocument
 
         await using var contentStream = new MemoryStream(request.Content, writable: false);
         var storagePath = await _fileStorageService.SaveAsync(
+            request.UploadedByUserId,
             request.FileName,
             contentStream,
             cancellationToken);
-
+    
         var document = new Document(
             request.FileName,
             request.ContentType,
             request.Content.LongLength,
             storagePath,
             request.UploadedByUserId);
+        
 
         await _documentRepository.AddAsync(document, cancellationToken);
         return document.Id;

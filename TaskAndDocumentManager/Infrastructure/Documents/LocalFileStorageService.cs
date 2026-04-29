@@ -13,14 +13,23 @@ public class LocalFileStorageService : IFileStorageService
     }
 
     public async Task<string> SaveAsync(
+        Guid uploadByUserId,
         string fileName,
         Stream content,
         CancellationToken cancellationToken = default)
     {
+        if(uploadByUserId == Guid.Empty)
+        {
+            throw new ArgumentException("Upload by user ID is required.", nameof(uploadByUserId));
+        }
         if (string.IsNullOrWhiteSpace(fileName))
         {
             throw new ArgumentException("File name is required.", nameof(fileName));
         }
+
+        var safeFileName = Path.GetFileName(fileName);
+        var userFolder = Path.Combine(_storageRoot,uploadByUserId.ToString() );
+        Directory.CreateDirectory(userFolder);
 
         var storedFileName = $"{Guid.NewGuid()}_{Path.GetFileName(fileName)}";
         var fullPath = Path.Combine(_storageRoot, storedFileName);
