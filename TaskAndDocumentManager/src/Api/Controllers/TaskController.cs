@@ -116,7 +116,7 @@ public class TaskController : ControllerBase
             return NotFound(new { message = "Task not found" });
         }
 
-        if (!CanManageTask(task, actorId))
+        if (!CanOwnTask(task, actorId))
         {
             return Forbid();
         }
@@ -174,7 +174,6 @@ public class TaskController : ControllerBase
         ));
     }
 
-    [Authorize(Policy = AppPolicies.ManagerOrAdmin)]
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
@@ -186,7 +185,7 @@ public class TaskController : ControllerBase
             return NotFound(new { message = "Task not found" });
         }
 
-        if (User.IsManager() && !CanManageTask(task, actorId))
+        if (!CanOwnTask(task, actorId))
         {
             return Forbid();
         }
@@ -278,6 +277,17 @@ public class TaskController : ControllerBase
         public bool? IsCompleted { get; init; }
         public Guid? AssignedToUserId { get; init; }
     }
+
+    private bool CanOwnTask(Domain.Tasks.TaskItem task, Guid actorId)
+{
+    if (User.IsAdmin())
+    {
+        return true;
+    }
+
+    return task.OwnerId == actorId;
+}
+
 
     private bool CanManageTask(Domain.Tasks.TaskItem task, Guid actorId)
     {
