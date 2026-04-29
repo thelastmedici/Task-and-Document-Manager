@@ -58,6 +58,20 @@ public class TaskRepository(TaskDbContext dbContext) : ITaskRepository
             tasks = tasks.Where(task => task.AssignedToUserId == query.AssignedToUserId.Value);
         }
 
+        if (query.OwnerId.HasValue)
+        {
+            if (query.IncludeAssignedTasks)
+            {
+                tasks = tasks.Where(task =>
+                    task.OwnerId == query.OwnerId.Value ||
+                    task.AssignedToUserId == query.OwnerId.Value);
+            }
+            else
+            {
+                tasks = tasks.Where(task => task.OwnerId == query.OwnerId.Value);
+            }
+        }
+
         if (!string.IsNullOrWhiteSpace(searchTerm))
         {
             var pattern = $"%{searchTerm}%";

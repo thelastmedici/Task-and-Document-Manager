@@ -19,11 +19,15 @@ public class ListTasks
 
     public async Task<IReadOnlyList<TaskListItemDto>> ExecuteAsync(
         ListTasksQuery query,
+        Guid actorId,
+        bool isAdmin,
+        bool isManager,
         CancellationToken cancellationToken = default)
     {
         var normalizedQuery = NormalizeQuery(query);
+        var scopedQuery = ApplyAccessScope(normalizedQuery, actorId, isAdmin, isManager);
 
-        var tasks = await _taskRepository.SearchAsync(normalizedQuery, cancellationToken);
+        var tasks = await _taskRepository.SearchAsync(scopedQuery, cancellationToken);
 
         return tasks
             .OrderByDescending(task => task.CreatedAt)
@@ -59,6 +63,33 @@ public class ListTasks
             PageNumber = pageNumber,
             PageSize = pageSize,
             SearchTerm = searchTerm
+        };
+    }
+
+    private static ListTasksQuery ApplyAccessScope(
+        ListTasksQuery query,
+        Guid actorId,
+        bool isAdmin,
+        bool isManager)
+    {
+        if (actorId == Guid.Empty)
+        {
+            throw new ArgumentException("Actor ID is required.", nameof(actorId));
+        }
+
+        if (isAdmin)
+        {
+            return query with
+            {
+                OwnerId = null,
+                IncludeAssignedTasks = false
+            };
+        }
+
+        return query with
+        {
+            OwnerId = actorId,
+            IncludeAssignedTasks = isManager
         };
     }
 }

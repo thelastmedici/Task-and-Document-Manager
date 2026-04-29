@@ -21,8 +21,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\TaskAndDocumentManager.Application.csproj" />
-    <ProjectReference Include="..\TaskAndDocumentManager.Application.csproj" />
-    <ProjectReference Include="..\..\TaskAndDocumentManager.csproj" />
   </ItemGroup>
 
 

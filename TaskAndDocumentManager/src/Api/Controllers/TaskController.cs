@@ -82,24 +82,14 @@ public class TaskController : ControllerBase
             request.IsCompleted,
             request.AssignedToUserId);
 
-        var tasks = await _listTasks.ExecuteAsync(query, cancellationToken);
+        var tasks = await _listTasks.ExecuteAsync(
+            query,
+            actorId,
+            User.IsAdmin(),
+            User.IsManager(),
+            cancellationToken);
 
-        if (User.IsAdmin())
-        {
-            return Ok(tasks);
-        }
-
-        var filteredTasks = tasks.Where(task =>
-        {
-            if (User.IsManager())
-            {
-                return task.OwnerId == actorId || task.AssignedToUserId == actorId;
-            }
-
-            return task.OwnerId == actorId;
-        });
-
-        return Ok(filteredTasks);
+        return Ok(tasks);
     }
 
     [HttpPut("{id:guid}")]
