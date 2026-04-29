@@ -397,19 +397,13 @@ public class DocumentsController : ControllerBase
 
         try
         {
-            var allowTaskParticipationAccess = User.IsManager();
             var metadata = await _getDocumentMetadata.ExecuteAsync(
                 id,
                 actorId,
-                allowTaskParticipationAccess,
-                cancellationToken);
-            var stream = await _downloadDocument.ExecuteAsync(
-                id,
-                actorId,
-                allowTaskParticipationAccess,
+                false,
                 cancellationToken);
 
-            return File(stream, metadata.ContentType, metadata.FileName);
+            return Ok(metadata);
         }
         catch (FileNotFoundException ex)
         {
