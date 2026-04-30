@@ -56,6 +56,39 @@ public class UploadDocumentTests
             Times.Once);
     }
 
+   [Fact]
+public async Task ExecuteAsync_ShouldPassUploadedByUserIdToStorageService()
+{
+    var ownerId = Guid.NewGuid();
+
+    var request = new UploadDocumentRequest
+    {
+        FileName = "report.pdf",
+        ContentType = "application/pdf",
+        Content = new byte[] { 1, 2, 3, 4 },
+        UploadedByUserId = ownerId
+    };
+
+    _fileStorageServiceMock
+        .Setup(storage => storage.SaveAsync(
+            ownerId,
+            request.FileName,
+            It.IsAny<Stream>(),
+            It.IsAny<CancellationToken>()))
+        .ReturnsAsync("/storage/uploads/" + ownerId + "/saved-report.pdf");
+
+    await _sut.ExecuteAsync(request, CancellationToken.None);
+
+    _fileStorageServiceMock.Verify(
+        storage => storage.SaveAsync(
+            ownerId,
+            request.FileName,
+            It.IsAny<Stream>(),
+            It.IsAny<CancellationToken>()),
+        Times.Once);
+}
+
+
     [Fact]
     public async Task ExecuteAsync_ShouldThrow_WhenUploadedByUserIdIsEmpty()
     {
