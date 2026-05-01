@@ -37,7 +37,7 @@ public class UploadDocumentTests
         };
 
         _fileStorageServiceMock
-            .Setup(storage => storage.SaveAsync(request.FileName, It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
+            .Setup(storage => storage.SaveAsync(ownerId, request.FileName, It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync("/tmp/report.pdf");
 
         var result = await _sut.ExecuteAsync(request, CancellationToken.None);
@@ -56,37 +56,37 @@ public class UploadDocumentTests
             Times.Once);
     }
 
-   [Fact]
-public async Task ExecuteAsync_ShouldPassUploadedByUserIdToStorageService()
-{
-    var ownerId = Guid.NewGuid();
-
-    var request = new UploadDocumentRequest
+    [Fact]
+    public async Task ExecuteAsync_ShouldPassUploadedByUserIdToStorageService()
     {
-        FileName = "report.pdf",
-        ContentType = "application/pdf",
-        Content = new byte[] { 1, 2, 3, 4 },
-        UploadedByUserId = ownerId
-    };
+        var ownerId = Guid.NewGuid();
 
-    _fileStorageServiceMock
-        .Setup(storage => storage.SaveAsync(
-            ownerId,
-            request.FileName,
-            It.IsAny<Stream>(),
-            It.IsAny<CancellationToken>()))
-        .ReturnsAsync("/storage/uploads/" + ownerId + "/saved-report.pdf");
+        var request = new UploadDocumentRequest
+        {
+            FileName = "report.pdf",
+            ContentType = "application/pdf",
+            Content = new byte[] { 1, 2, 3, 4 },
+            UploadedByUserId = ownerId
+        };
 
-    await _sut.ExecuteAsync(request, CancellationToken.None);
+        _fileStorageServiceMock
+            .Setup(storage => storage.SaveAsync(
+                ownerId,
+                request.FileName,
+                It.IsAny<Stream>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync("/storage/uploads/" + ownerId + "/saved-report.pdf");
 
-    _fileStorageServiceMock.Verify(
-        storage => storage.SaveAsync(
-            ownerId,
-            request.FileName,
-            It.IsAny<Stream>(),
-            It.IsAny<CancellationToken>()),
-        Times.Once);
-}
+        await _sut.ExecuteAsync(request, CancellationToken.None);
+
+        _fileStorageServiceMock.Verify(
+            storage => storage.SaveAsync(
+                ownerId,
+                request.FileName,
+                It.IsAny<Stream>(),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
 
 
     [Fact]
@@ -106,7 +106,7 @@ public async Task ExecuteAsync_ShouldPassUploadedByUserIdToStorageService()
         Assert.Equal("UploadedByUserId", exception.ParamName);
 
         _fileStorageServiceMock.Verify(
-            storage => storage.SaveAsync(It.IsAny<string>(), It.IsAny<Stream>(), It.IsAny<CancellationToken>()),
+            storage => storage.SaveAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<Stream>(), It.IsAny<CancellationToken>()),
             Times.Never);
 
         _documentRepositoryMock.Verify(
