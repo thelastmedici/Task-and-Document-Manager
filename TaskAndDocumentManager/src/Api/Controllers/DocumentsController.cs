@@ -332,49 +332,53 @@ public class DocumentsController : ControllerBase
         }
     }
 
-    [HttpGet("{id:guid}")]
-    public async Task<IActionResult> GetMetadata(
-        Guid id,
-        CancellationToken cancellationToken)
+[HttpGet("{id:guid}")]
+public async Task<IActionResult> GetMetadata(
+    Guid id,
+    CancellationToken cancellationToken)
+{
+    var actorId = User.GetActorId();
+
+    if (User.IsAdmin())
     {
-        var actorId = User.GetActorId();
-
-        if (User.IsAdmin())
+        var adminDocument = await _documentRepository.GetByIdAsync(id, cancellationToken);
+        if (adminDocument is null)
         {
-            var adminDocument = await _documentRepository.GetByIdAsync(id, cancellationToken);
-            if (adminDocument is null)
-            {
-                return NotFound(new { message = "Document not found" });
-            }
-
-            return Ok(new DocumentMetadataDto(
-                adminDocument.Id,
-                adminDocument.FileName,
-                adminDocument.ContentType,
-                adminDocument.SizeInBytes,
-                adminDocument.UploadedByUserId,
-                adminDocument.UploadedAtUtc,
-                adminDocument.LinkedTaskId));
+            return NotFound(new { message = "Document not found" });
         }
 
-        try
-        {
-            var metadata = await _getDocumentMetadata.ExecuteAsync(
-                id,
-                actorId,
-                User.IsManager(),
-                cancellationToken);
-            return Ok(metadata);
-        }
-        catch (FileNotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
-        }
+        return Ok(new DocumentMetadataDto(
+            adminDocument.Id,
+            adminDocument.FileName,
+            adminDocument.ContentType,
+            adminDocument.SizeInBytes,
+            adminDocument.UploadedByUserId,
+            adminDocument.UploadedAtUtc,
+            adminDocument.LinkedTaskId));
     }
+
+    try
+    {
+        var allowTaskParticipationAccess = User.IsManager();
+
+        var metadata = await _getDocumentMetadata.ExecuteAsync(
+            id,
+            actorId,
+            allowTaskParticipationAccess,
+            cancellationToken);
+
+        return Ok(metadata);
+    }
+    catch (FileNotFoundException ex)
+    {
+        return NotFound(new { message = ex.Message });
+    }
+    catch (UnauthorizedAccessException ex)
+    {
+        return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
+    }
+}
+
 
     [HttpGet("{id:guid}/download")]
     public async Task<IActionResult> Download(
