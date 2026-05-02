@@ -14,6 +14,19 @@ namespace TaskAndDocumentManager.Controllers;
 [Route("api/documents")]
 public class DocumentsController : ControllerBase
 {
+    private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".pdf",
+        ".doc",
+        ".docx",
+        ".txt",
+        ".png",
+        ".jpg",
+        ".jpeg"
+    };
+
+    private const long MaxFileSizeBytes = 10 * 1024 * 1024;
+
     private readonly IDocumentRepository _documentRepository;
     private readonly IDocumentAccessRepository _documentAccessRepository;
     private readonly ITaskRepository _taskRepository;
@@ -56,8 +69,7 @@ public class DocumentsController : ControllerBase
     }
 
     [HttpPost]
-    [RequestSizeLimit(50_000_000)]
-// for upload
+    [RequestSizeLimit(MaxFileSizeBytes)]
     public async Task<IActionResult> Upload(
         [FromForm] UploadDocumentFormRequest request,
         CancellationToken cancellationToken)
@@ -67,6 +79,18 @@ public class DocumentsController : ControllerBase
         if (request.File is null || request.File.Length == 0)
         {
             return BadRequest(new { message = "A non-empty file is required." });
+        }
+
+        if (request.File.Length > MaxFileSizeBytes)
+        {
+            return BadRequest(new { message = "File size exceeds the 10 MB limit." });
+        }
+
+        var extension = Path.GetExtension(request.File.FileName);
+
+        if (string.IsNullOrWhiteSpace(extension) || !AllowedExtensions.Contains(extension))
+        {
+            return BadRequest(new { message = "File type is not allowed." });
         }
 
         try
