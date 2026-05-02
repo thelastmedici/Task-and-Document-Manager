@@ -8,7 +8,7 @@ public class LocalFileStorageService : IFileStorageService
 
     public LocalFileStorageService()
     {
-        _storageRoot = Path.Combine(AppContext.BaseDirectory, "storage", "documents");
+        _storageRoot = Path.Combine(AppContext.BaseDirectory, "storage", "uploads");
         Directory.CreateDirectory(_storageRoot);
     }
 
@@ -28,11 +28,12 @@ public class LocalFileStorageService : IFileStorageService
         }
 
         var safeFileName = Path.GetFileName(fileName);
-        var userFolder = Path.Combine(_storageRoot,uploadByUserId.ToString() );
+        var extension = Path.GetExtension(safeFileName).ToLowerInvariant();
+        var userFolder = Path.Combine(_storageRoot, uploadByUserId.ToString());
         Directory.CreateDirectory(userFolder);
 
-        var storedFileName = $"{Guid.NewGuid()}_{Path.GetFileName(fileName)}";
-        var fullPath = Path.Combine(_storageRoot, storedFileName);
+        var storedFileName = $"{Guid.NewGuid():N}{extension}";
+        var fullPath = Path.Combine(userFolder, storedFileName);
 
         await using var output = File.Create(fullPath);
         await content.CopyToAsync(output, cancellationToken);
