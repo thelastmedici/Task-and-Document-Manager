@@ -1,12 +1,12 @@
 using TaskAndDocumentManager.Application.Documents.Interfaces;
 
-namespace TaskAndDocumentManager.Infrastructure.Documents;
+namespace TaskAndDocumentManager.Infrastructure.Storage;
 
-public class LocalFileStorageService : IFileStorageService
+public class FileStorageService : IFileStorageService
 {
     private readonly string _storageRoot;
 
-    public LocalFileStorageService()
+    public FileStorageService()
     {
         _storageRoot = Path.Combine(AppContext.BaseDirectory, "storage", "uploads");
         Directory.CreateDirectory(_storageRoot);

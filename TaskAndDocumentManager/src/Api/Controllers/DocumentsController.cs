@@ -6,6 +6,7 @@ using TaskAndDocumentManager.Application.Documents.DTOs;
 using TaskAndDocumentManager.Application.Documents.Interfaces;
 using TaskAndDocumentManager.Application.Documents.UseCases;
 using TaskAndDocumentManager.Application.Tasks.Interfaces;
+using TaskAndDocumentManager.Domain.Entities;
 
 namespace TaskAndDocumentManager.Controllers;
 
@@ -523,7 +524,7 @@ public async Task<IActionResult> Download(
         return ownerId == actorId;
     }
 
-    private bool CanManageTaskLinkedDocument(Domain.Documents.Document document, Domain.Tasks.TaskItem task, Guid actorId)
+    private bool CanManageTaskLinkedDocument(Document document, Domain.Tasks.TaskItem task, Guid actorId)
     {
         if (User.IsAdmin())
         {

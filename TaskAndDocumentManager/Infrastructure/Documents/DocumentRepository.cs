@@ -1,5 +1,5 @@
 using TaskAndDocumentManager.Application.Documents.Interfaces;
-using TaskAndDocumentManager.Domain.Documents;
+using TaskAndDocumentManager.Domain.Entities;
 
 namespace TaskAndDocumentManager.Infrastructure.Documents;
 

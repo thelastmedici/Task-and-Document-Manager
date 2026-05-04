@@ -3,7 +3,7 @@ using TaskAndDocumentManager.Application.Documents.UseCases;
 using TaskAndDocumentManager.Application.Documents.Interfaces;
 using TaskAndDocumentManager.Application.Documents.Services;
 using TaskAndDocumentManager.Application.Tasks.Interfaces;
-using TaskAndDocumentManager.Domain.Documents;
+using TaskAndDocumentManager.Domain.Entities;
 using TaskAndDocumentManager.Domain.Tasks;
 
 namespace TaskAndDocumentManager.Application.Tests.Documents.UseCases;

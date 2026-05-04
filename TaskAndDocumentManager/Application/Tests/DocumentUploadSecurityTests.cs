@@ -7,7 +7,7 @@ using TaskAndDocumentManager.Application.Documents.Interfaces;
 using TaskAndDocumentManager.Application.Documents.UseCases;
 using TaskAndDocumentManager.Application.Tasks.Interfaces;
 using TaskAndDocumentManager.Controllers;
-using TaskAndDocumentManager.Infrastructure.Documents;
+using TaskAndDocumentManager.Infrastructure.Storage;
 
 namespace TaskAndDocumentManager.Application.Tests.Documents.Controllers;
 
@@ -58,7 +58,7 @@ public class DocumentUploadSecurityTests
     [Fact]
     public async Task SaveAsync_ShouldStoreFileInUserFolderWithSafeGuidFileName()
     {
-        var sut = new LocalFileStorageService();
+        var sut = new FileStorageService();
         var userId = Guid.NewGuid();
         var content = new byte[] { 1, 2, 3, 4 };
 

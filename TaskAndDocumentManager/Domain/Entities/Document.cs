@@ -1,4 +1,4 @@
-namespace TaskAndDocumentManager.Domain.Documents;
+namespace TaskAndDocumentManager.Domain.Entities;
 
 public class Document
 {
