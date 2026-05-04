@@ -24,9 +24,23 @@ public class UploadDocument
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        if (request.UploadedByUserId == Guid.Empty)
+        if(request.UploadedByUserId == Guid.Empty)
         {
             throw new ArgumentException("Uploaded by user ID is required.", nameof(request.UploadedByUserId));
+        }
+
+        if(string.IsNullOrWhiteSpace(request.FileName))
+        {
+            throw new ArgumentException("File name is required", nameof(request.FileName));
+        }
+
+        if (string.IsNullOrWhiteSpace(request.ContentType))
+        {
+            throw new ArgumentException("Content type is required", nameof(request.ContentType));
+        }
+        if(request.Content is null || request.Content.Length == 0)
+        {
+            throw new ArgumentException("FIle content is required", nameof(request.Content));
         }
 
         await using var contentStream = new MemoryStream(request.Content, writable: false);
