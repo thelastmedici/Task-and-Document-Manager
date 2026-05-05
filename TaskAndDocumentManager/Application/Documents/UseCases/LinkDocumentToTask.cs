@@ -26,7 +26,7 @@ public class LinkDocumentToTask
         var document = await _documentRepository.GetByIdAsync(request.DocumentId, cancellationToken)
             ?? throw new FileNotFoundException("Document not found.");
 
-        if (document.UploadedByUserId != request.RequestedByUserId)
+        if (document.OwnerId != request.RequestedByUserId)
         {
             throw new UnauthorizedAccessException("Only the owner can link this document to a task.");
         }

@@ -26,6 +26,10 @@ public class FileStorageService : IFileStorageService
         {
             throw new ArgumentException("File name is required.", nameof(fileName));
         }
+        if(content is null)
+        {
+            throw new ArgumentNullException(nameof(content));
+        }
 
         var safeFileName = Path.GetFileName(fileName);
         var extension = Path.GetExtension(safeFileName).ToLowerInvariant();
