@@ -26,7 +26,7 @@ public class DocumentAccessEvaluator
     {
         ArgumentNullException.ThrowIfNull(document);
 
-        if (document.UploadedByUserId == requestedByUserId)
+        if (document.OwnerId == requestedByUserId)
         {
             return true;
         }

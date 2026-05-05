@@ -48,10 +48,10 @@ public class UploadDocumentTests
             repository => repository.AddAsync(
                 It.Is<Document>(document =>
                     document.Id == result &&
-                    document.FileName == request.FileName &&
+                    document.OriginalFileName == request.FileName &&
                     document.ContentType == request.ContentType &&
                     document.SizeInBytes == request.Content.LongLength &&
-                    document.UploadedByUserId == ownerId),
+                    document.OwnerId == ownerId),
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }

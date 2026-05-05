@@ -43,10 +43,10 @@ public class ListAccessibleDocuments
 
             accessibleDocuments.Add(new DocumentMetadataDto(
                 document.Id,
-                document.FileName,
+                document.OriginalFileName,
                 document.ContentType,
                 document.SizeInBytes,
-                document.UploadedByUserId,
+                document.OwnerId,
                 document.UploadedAtUtc,
                 document.LinkedTaskId));
         }

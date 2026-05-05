@@ -44,7 +44,7 @@ public class GetDocumentMetadataTests
         var result = await _sut.ExecuteAsync(document.Id, ownerId);
 
         Assert.Equal(document.Id, result.Id);
-        Assert.Equal(document.FileName, result.FileName);
+        Assert.Equal(document.OriginalFileName, result.FileName);
         Assert.Equal(document.SizeInBytes, result.SizeInBytes);
         Assert.Equal(ownerId, result.UploadedByUserId);
     }
@@ -98,7 +98,7 @@ public class GetDocumentMetadataTests
         var result = await _sut.ExecuteAsync(document.Id, requesterId);
 
         Assert.Equal(document.Id, result.Id);
-        Assert.Equal(document.FileName, result.FileName);
+        Assert.Equal(document.OriginalFileName, result.FileName);
     }
 
     [Fact]
@@ -132,7 +132,7 @@ public class GetDocumentMetadataTests
         var result = await _sut.ExecuteAsync(document.Id, requesterId, true);
 
         Assert.Equal(document.Id, result.Id);
-        Assert.Equal(document.FileName, result.FileName);
+        Assert.Equal(document.OriginalFileName, result.FileName);
     }
 
     [Fact]

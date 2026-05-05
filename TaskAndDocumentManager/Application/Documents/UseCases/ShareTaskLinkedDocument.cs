@@ -53,7 +53,7 @@ public class ShareTaskLinkedDocument
         var document = await _documentRepository.GetByIdAsync(request.DocumentId, cancellationToken)
             ?? throw new FileNotFoundException("Document not found.");
 
-        if (document.UploadedByUserId != request.GrantedByUserId)
+        if (document.OwnerId != request.GrantedByUserId)
         {
             throw new UnauthorizedAccessException("Only the owner can share this document.");
         }

@@ -24,7 +24,7 @@ public class DeleteDocument
         var document = await _documentRepository.GetByIdAsync(documentId, cancellationToken)
             ?? throw new FileNotFoundException("Document not found.");
 
-        if (document.UploadedByUserId != requestedByUserId)
+        if (document.OwnerId != requestedByUserId)
         {
             throw new UnauthorizedAccessException("Only the owner can delete this document.");
         }

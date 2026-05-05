@@ -147,10 +147,10 @@ public class DocumentsController : ControllerBase
 
         var dtos = documents.Select(d => new DocumentMetadataDto(
             d.Id,
-            d.FileName,
+            d.OriginalFileName,
             d.ContentType,
             d.SizeInBytes,
-            d.UploadedByUserId,
+            d.OwnerId,
             d.UploadedAtUtc,
             d.LinkedTaskId)).ToList();
 
@@ -374,10 +374,10 @@ public async Task<IActionResult> GetMetadata(
 
         return Ok(new DocumentMetadataDto(
             adminDocument.Id,
-            adminDocument.FileName,
+            adminDocument.OriginalFileName,
             adminDocument.ContentType,
             adminDocument.SizeInBytes,
-            adminDocument.UploadedByUserId,
+            adminDocument.OwnerId,
             adminDocument.UploadedAtUtc,
             adminDocument.LinkedTaskId));
     }
@@ -421,7 +421,7 @@ public async Task<IActionResult> Download(
         }
 
         var stream = await _fileStorageService.OpenReadAsync(adminDocument.StoragePath, cancellationToken);
-        return File(stream, adminDocument.ContentType, adminDocument.FileName);
+        return File(stream, adminDocument.ContentType, adminDocument.OriginalFileName);
     }
 
     try
@@ -533,11 +533,11 @@ public async Task<IActionResult> Download(
 
         if (User.IsManager())
         {
-            return document.UploadedByUserId == actorId &&
+            return document.OwnerId == actorId &&
                    (task.OwnerId == actorId || task.AssignedToUserId == actorId);
         }
 
-        return document.UploadedByUserId == actorId &&
+        return document.OwnerId == actorId &&
                task.OwnerId == actorId;
     }
 }

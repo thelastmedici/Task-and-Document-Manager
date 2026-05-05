@@ -3,12 +3,19 @@ namespace TaskAndDocumentManager.Domain.Entities;
 public class Document
 {
     public Guid Id { get; private set; } = Guid.NewGuid();
-    public string FileName { get; private set; } = string.Empty;
+
+    public string OriginalFileName { get; private set; } = string.Empty;
+
     public string ContentType { get; private set; } = string.Empty;
+
     public long SizeInBytes { get; private set; }
+
     public string StoragePath { get; private set; } = string.Empty;
-    public Guid UploadedByUserId { get; private set; }
+
+    public Guid OwnerId { get; private set; }
+
     public DateTime UploadedAtUtc { get; private set; } = DateTime.UtcNow;
+
     public Guid? LinkedTaskId { get; private set; }
 
     protected Document()
@@ -16,15 +23,15 @@ public class Document
     }
 
     public Document(
-        string fileName,
+        string originalFileName,
         string contentType,
         long sizeInBytes,
         string storagePath,
-        Guid uploadedByUserId)
+        Guid ownerId)
     {
-        if (string.IsNullOrWhiteSpace(fileName))
+        if (string.IsNullOrWhiteSpace(originalFileName))
         {
-            throw new ArgumentException("File name is required.", nameof(fileName));
+            throw new ArgumentException("Original file name is required.", nameof(originalFileName));
         }
 
         if (string.IsNullOrWhiteSpace(contentType))
@@ -37,9 +44,9 @@ public class Document
             throw new ArgumentException("Storage path is required.", nameof(storagePath));
         }
 
-        if (uploadedByUserId == Guid.Empty)
+        if (ownerId == Guid.Empty)
         {
-            throw new ArgumentException("Uploaded by user ID is required.", nameof(uploadedByUserId));
+            throw new ArgumentException("Owner ID is required.", nameof(ownerId));
         }
 
         if (sizeInBytes < 0)
@@ -47,11 +54,11 @@ public class Document
             throw new ArgumentOutOfRangeException(nameof(sizeInBytes), "Size cannot be negative.");
         }
 
-        FileName = fileName.Trim();
+        OriginalFileName = originalFileName.Trim();
         ContentType = contentType.Trim();
         SizeInBytes = sizeInBytes;
         StoragePath = storagePath.Trim();
-        UploadedByUserId = uploadedByUserId;
+        OwnerId = ownerId;
     }
 
     public void LinkToTask(Guid taskId)
