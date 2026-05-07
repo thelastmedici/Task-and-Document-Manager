@@ -4,5 +4,6 @@ namespace TaskAndDocumentManager.Controllers;
 
 public sealed class UploadDocumentFormRequest
 {
-    public IFormFile? File{ get; init;}
+    public IFormFile? File { get; init; }
 }
+
