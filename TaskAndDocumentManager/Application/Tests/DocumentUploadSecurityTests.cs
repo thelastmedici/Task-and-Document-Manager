@@ -23,7 +23,7 @@ public class DocumentUploadSecurityTests
         fileMock.SetupGet(file => file.Length).Returns(128);
         fileMock.SetupGet(file => file.FileName).Returns("malware.exe");
 
-        var request = new DocumentsController.UploadDocumentFormRequest
+        var request = new UploadDocumentFormRequest
         {
             File = fileMock.Object
         };
@@ -44,7 +44,7 @@ public class DocumentUploadSecurityTests
         fileMock.SetupGet(file => file.Length).Returns(11L * 1024 * 1024);
         fileMock.SetupGet(file => file.FileName).Returns("report.pdf");
 
-        var request = new DocumentsController.UploadDocumentFormRequest
+        var request = new UploadDocumentFormRequest
         {
             File = fileMock.Object
         };

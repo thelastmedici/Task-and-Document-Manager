@@ -494,11 +494,6 @@ public async Task<IActionResult> Download(
         }
     }
 
-    public sealed class UploadDocumentFormRequest
-    {
-        public IFormFile? File { get; init; }
-    }
-
     public sealed class LinkDocumentToTaskBody
     {
         public Guid TaskId { get; init; }
