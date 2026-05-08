@@ -3,6 +3,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
+using TaskAndDocumentManager.Application.Documents.DTOs;
 using TaskAndDocumentManager.Application.Documents.Interfaces;
 using TaskAndDocumentManager.Application.Documents.UseCases;
 using TaskAndDocumentManager.Application.Tasks.Interfaces;
@@ -53,6 +54,45 @@ public class DocumentUploadSecurityTests
 
         var badRequest = Assert.IsType<BadRequestObjectResult>(result);
         Assert.NotNull(badRequest.Value);
+    }
+
+    [Fact]
+    public async Task Upload_ShouldReturnCreatedAtAction_WithTypedResponse()
+    {
+        var ownerId = Guid.NewGuid();
+        var controller = CreateController();
+        SetUser(controller, ownerId, "User");
+
+        var fileMock = new Mock<IFormFile>();
+        var stream = new MemoryStream(new byte[] { 1, 2, 3, 4 });
+
+        fileMock.SetupGet(file => file.Length).Returns(4);
+        fileMock.SetupGet(file => file.FileName).Returns("report.pdf");
+        fileMock.SetupGet(file => file.ContentType).Returns("application/pdf");
+        fileMock.Setup(file => file.OpenReadStream()).Returns(stream);
+
+        var request = new UploadDocumentFormRequest
+        {
+            File = fileMock.Object
+        };
+
+        _ = Mock.Get(GetFileStorageService(controller))
+            .Setup(storage => storage.SaveAsync(
+                ownerId,
+                "report.pdf",
+                It.IsAny<Stream>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync("/tmp/report.pdf");
+
+        var result = await controller.Upload(request, CancellationToken.None);
+
+        var createdResult = Assert.IsType<CreatedAtActionResult>(result);
+        Assert.Equal(nameof(DocumentsController.GetMetadata), createdResult.ActionName);
+
+        var response = Assert.IsType<UploadDocumentResponse>(createdResult.Value);
+        Assert.NotEqual(Guid.Empty, response.Id);
+        Assert.Equal("Document uploaded successfully", response.Message);
+        Assert.Equal(response.Id, createdResult.RouteValues?["id"]);
     }
 
     [Fact]
@@ -126,6 +166,14 @@ public class DocumentUploadSecurityTests
             deleteDocument,
             getDocumentMetadata,
             listAccessibleDocuments);
+    }
+
+    private static IFileStorageService GetFileStorageService(DocumentsController controller)
+    {
+        var field = typeof(DocumentsController)
+            .GetField("_fileStorageService", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+        return Assert.IsAssignableFrom<IFileStorageService>(field?.GetValue(controller));
     }
 
     private static void SetUser(ControllerBase controller, Guid userId, string role)

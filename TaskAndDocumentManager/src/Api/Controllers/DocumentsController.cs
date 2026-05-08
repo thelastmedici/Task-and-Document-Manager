@@ -112,11 +112,14 @@ public class DocumentsController : ControllerBase
                 },
                 cancellationToken);
 
-            return StatusCode(StatusCodes.Status201Created, new
-            {
-                id = documentId,
-                message = "Document uploaded successfully"
-            });
+            var response = new UploadDocumentResponse(
+                documentId,
+                "Document uploaded successfully");
+
+            return CreatedAtAction(
+                nameof(GetMetadata),
+                new { id = documentId },
+                response);
         }
         catch (ArgumentException ex)
         {
