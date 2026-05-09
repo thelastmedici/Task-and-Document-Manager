@@ -15,17 +15,6 @@ namespace TaskAndDocumentManager.Controllers;
 [Route("api/documents")]
 public class DocumentsController : ControllerBase
 {
-    private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ".pdf",
-        ".doc",
-        ".docx",
-        ".txt",
-        ".png",
-        ".jpg",
-        ".jpeg"
-    };
-
     private const long MaxFileSizeBytes = 10 * 1024 * 1024;
 
     private readonly IDocumentRepository _documentRepository;
@@ -75,19 +64,16 @@ public class DocumentsController : ControllerBase
         [FromForm] UploadDocumentFormRequest request,
         CancellationToken cancellationToken)
     {
-        var actorId = User.GetActorId();
-
         if (request.File is null || request.File.Length == 0)
         {
             return BadRequest(new { message = "A non-empty file is required." });
         }
 
+        var actorId = User.GetActorId();
 
         try
         {
             await using var stream = request.File.OpenReadStream();
-            using var memoryStream = new MemoryStream();
-            await stream.CopyToAsync(memoryStream, cancellationToken);
 
             var documentId = await _uploadDocument.ExecuteAsync(
                 new UploadDocumentRequest
@@ -96,19 +82,16 @@ public class DocumentsController : ControllerBase
                     ContentType = string.IsNullOrWhiteSpace(request.File.ContentType)
                         ? "application/octet-stream"
                         : request.File.ContentType,
-                    Content = memoryStream.ToArray(),
+                    Content = stream,
+                    SizeInBytes = request.File.Length,
                     UploadedByUserId = actorId
                 },
                 cancellationToken);
 
-            var response = new UploadDocumentResponse(
-                documentId,
-                "Document uploaded successfully");
-
             return CreatedAtAction(
                 nameof(GetMetadata),
                 new { id = documentId },
-                response);
+                new UploadDocumentResponse(documentId, "Document uploaded successfully"));
         }
         catch (ArgumentException ex)
         {
@@ -121,6 +104,7 @@ public class DocumentsController : ControllerBase
                 new { message = "An unexpected error occurred while uploading the document." });
         }
     }
+
     [HttpGet]
     public async Task<IActionResult> ListAll(CancellationToken cancellationToken)
     {
