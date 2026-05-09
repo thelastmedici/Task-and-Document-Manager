@@ -28,16 +28,23 @@ public class UploadDocumentTests
     public async Task ExecuteAsync_ShouldCreateDocument_WhenRequestIsValid()
     {
         var ownerId = Guid.NewGuid();
+        await using var content = new MemoryStream(new byte[] { 1, 2, 3, 4 });
+
         var request = new UploadDocumentRequest
         {
             FileName = "report.pdf",
             ContentType = "application/pdf",
-            Content = new byte[] { 1, 2, 3, 4 },
+            Content = content,
+            SizeInBytes = 4,
             UploadedByUserId = ownerId
         };
 
         _fileStorageServiceMock
-            .Setup(storage => storage.SaveAsync(ownerId, request.FileName, It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
+            .Setup(storage => storage.SaveAsync(
+                ownerId,
+                request.FileName,
+                It.IsAny<Stream>(),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync("/tmp/report.pdf");
 
         var result = await _sut.ExecuteAsync(request, CancellationToken.None);
@@ -50,7 +57,7 @@ public class UploadDocumentTests
                     document.Id == result &&
                     document.OriginalFileName == request.FileName &&
                     document.ContentType == request.ContentType &&
-                    document.SizeInBytes == request.Content.LongLength &&
+                    document.SizeInBytes == request.SizeInBytes &&
                     document.OwnerId == ownerId),
                 It.IsAny<CancellationToken>()),
             Times.Once);
@@ -60,12 +67,14 @@ public class UploadDocumentTests
     public async Task ExecuteAsync_ShouldPassUploadedByUserIdToStorageService()
     {
         var ownerId = Guid.NewGuid();
+        await using var content = new MemoryStream(new byte[] { 1, 2, 3, 4 });
 
         var request = new UploadDocumentRequest
         {
             FileName = "report.pdf",
             ContentType = "application/pdf",
-            Content = new byte[] { 1, 2, 3, 4 },
+            Content = content,
+            SizeInBytes = 4,
             UploadedByUserId = ownerId
         };
 
@@ -88,15 +97,17 @@ public class UploadDocumentTests
             Times.Once);
     }
 
-
     [Fact]
     public async Task ExecuteAsync_ShouldThrow_WhenUploadedByUserIdIsEmpty()
     {
+        await using var content = new MemoryStream(new byte[] { 1, 2, 3, 4 });
+
         var request = new UploadDocumentRequest
         {
             FileName = "report.pdf",
             ContentType = "application/pdf",
-            Content = new byte[] { 1, 2, 3, 4 },
+            Content = content,
+            SizeInBytes = 4,
             UploadedByUserId = Guid.Empty
         };
 
@@ -117,11 +128,14 @@ public class UploadDocumentTests
     [Fact]
     public async Task ExecuteAsync_ShouldThrow_WhenFileTypeIsNotAllowed()
     {
+        await using var content = new MemoryStream(new byte[] { 1, 2, 3, 4 });
+
         var request = new UploadDocumentRequest
         {
             FileName = "malware.exe",
             ContentType = "application/octet-stream",
-            Content = new byte[] { 1, 2, 3, 4 },
+            Content = content,
+            SizeInBytes = 4,
             UploadedByUserId = Guid.NewGuid()
         };
 
@@ -138,18 +152,21 @@ public class UploadDocumentTests
     [Fact]
     public async Task ExecuteAsync_ShouldThrow_WhenFileSizeExceedsLimit()
     {
+        await using var content = new MemoryStream(new byte[] { 1 });
+
         var request = new UploadDocumentRequest
         {
             FileName = "report.pdf",
             ContentType = "application/pdf",
-            Content = new byte[(10 * 1024 * 1024) + 1],
+            Content = content,
+            SizeInBytes = (10 * 1024 * 1024) + 1,
             UploadedByUserId = Guid.NewGuid()
         };
 
         var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
             _sut.ExecuteAsync(request, CancellationToken.None));
 
-        Assert.Equal("Content", exception.ParamName);
+        Assert.Equal("SizeInBytes", exception.ParamName);
 
         _fileStorageServiceMock.Verify(
             storage => storage.SaveAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<Stream>(), It.IsAny<CancellationToken>()),

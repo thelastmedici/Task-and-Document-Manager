@@ -37,14 +37,14 @@ public class UploadDocument
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        if(request.UploadedByUserId == Guid.Empty)
+        if (request.UploadedByUserId == Guid.Empty)
         {
             throw new ArgumentException("Uploaded by user ID is required.", nameof(request.UploadedByUserId));
         }
 
-        if(string.IsNullOrWhiteSpace(request.FileName))
+        if (string.IsNullOrWhiteSpace(request.FileName))
         {
-            throw new ArgumentException("File name is required", nameof(request.FileName));
+            throw new ArgumentException("File name is required.", nameof(request.FileName));
         }
 
         if (string.IsNullOrWhiteSpace(request.ContentType))
@@ -52,14 +52,19 @@ public class UploadDocument
             throw new ArgumentException("Content type is required.", nameof(request.ContentType));
         }
 
-        if (request.Content is null || request.Content.Length == 0)
+        if (request.Content is null)
         {
             throw new ArgumentException("File content is required.", nameof(request.Content));
         }
 
-        if (request.Content.LongLength > MaxFileSizeBytes)
+        if (request.SizeInBytes <= 0)
         {
-            throw new ArgumentException("File size exceeds the 10 MB limit.", nameof(request.Content));
+            throw new ArgumentException("File content is required.", nameof(request.SizeInBytes));
+        }
+
+        if (request.SizeInBytes > MaxFileSizeBytes)
+        {
+            throw new ArgumentException("File size exceeds the 10 MB limit.", nameof(request.SizeInBytes));
         }
 
         var extension = Path.GetExtension(request.FileName);
@@ -69,17 +74,16 @@ public class UploadDocument
             throw new ArgumentException("File type is not allowed.", nameof(request.FileName));
         }
 
-        await using var contentStream = new MemoryStream(request.Content, writable: false);
         var storagePath = await _fileStorageService.SaveAsync(
             request.UploadedByUserId,
             request.FileName,
-            contentStream,
+            request.Content,
             cancellationToken);
-    
+
         var document = new Document(
             request.FileName,
             request.ContentType,
-            request.Content.LongLength,
+            request.SizeInBytes,
             storagePath,
             request.UploadedByUserId);
 
