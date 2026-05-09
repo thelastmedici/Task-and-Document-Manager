@@ -113,4 +113,46 @@ public class UploadDocumentTests
             repository => repository.AddAsync(It.IsAny<Document>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
+
+    [Fact]
+    public async Task ExecuteAsync_ShouldThrow_WhenFileTypeIsNotAllowed()
+    {
+        var request = new UploadDocumentRequest
+        {
+            FileName = "malware.exe",
+            ContentType = "application/octet-stream",
+            Content = new byte[] { 1, 2, 3, 4 },
+            UploadedByUserId = Guid.NewGuid()
+        };
+
+        var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
+            _sut.ExecuteAsync(request, CancellationToken.None));
+
+        Assert.Equal("FileName", exception.ParamName);
+
+        _fileStorageServiceMock.Verify(
+            storage => storage.SaveAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<Stream>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_ShouldThrow_WhenFileSizeExceedsLimit()
+    {
+        var request = new UploadDocumentRequest
+        {
+            FileName = "report.pdf",
+            ContentType = "application/pdf",
+            Content = new byte[(10 * 1024 * 1024) + 1],
+            UploadedByUserId = Guid.NewGuid()
+        };
+
+        var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
+            _sut.ExecuteAsync(request, CancellationToken.None));
+
+        Assert.Equal("Content", exception.ParamName);
+
+        _fileStorageServiceMock.Verify(
+            storage => storage.SaveAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<Stream>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
 }
