@@ -7,6 +7,19 @@ namespace TaskAndDocumentManager.Application.Documents.UseCases;
 
 public class UploadDocument
 {
+    private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".pdf",
+        ".doc",
+        ".docx",
+        ".txt",
+        ".png",
+        ".jpg",
+        ".jpeg"
+    };
+
+    private const long MaxFileSizeBytes = 10 * 1024 * 1024;
+
     private readonly IDocumentRepository _documentRepository;
     private readonly IFileStorageService _fileStorageService;
 
@@ -36,11 +49,24 @@ public class UploadDocument
 
         if (string.IsNullOrWhiteSpace(request.ContentType))
         {
-            throw new ArgumentException("Content type is required", nameof(request.ContentType));
+            throw new ArgumentException("Content type is required.", nameof(request.ContentType));
         }
-        if(request.Content is null || request.Content.Length == 0)
+
+        if (request.Content is null || request.Content.Length == 0)
         {
-            throw new ArgumentException("FIle content is required", nameof(request.Content));
+            throw new ArgumentException("File content is required.", nameof(request.Content));
+        }
+
+        if (request.Content.LongLength > MaxFileSizeBytes)
+        {
+            throw new ArgumentException("File size exceeds the 10 MB limit.", nameof(request.Content));
+        }
+
+        var extension = Path.GetExtension(request.FileName);
+
+        if (string.IsNullOrWhiteSpace(extension) || !AllowedExtensions.Contains(extension))
+        {
+            throw new ArgumentException("File type is not allowed.", nameof(request.FileName));
         }
 
         await using var contentStream = new MemoryStream(request.Content, writable: false);
@@ -56,7 +82,6 @@ public class UploadDocument
             request.Content.LongLength,
             storagePath,
             request.UploadedByUserId);
-        
 
         await _documentRepository.AddAsync(document, cancellationToken);
         return document.Id;

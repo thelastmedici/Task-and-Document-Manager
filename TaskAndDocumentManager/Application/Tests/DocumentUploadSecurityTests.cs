@@ -15,18 +15,14 @@ namespace TaskAndDocumentManager.Application.Tests.Documents.Controllers;
 public class DocumentUploadSecurityTests
 {
     [Fact]
-    public async Task Upload_ShouldReturnBadRequest_WhenFileExtensionIsNotAllowed()
+    public async Task Upload_ShouldReturnBadRequest_WhenFileIsMissing()
     {
         var controller = CreateController();
         SetUser(controller, Guid.NewGuid(), "User");
 
-        var fileMock = new Mock<IFormFile>();
-        fileMock.SetupGet(file => file.Length).Returns(128);
-        fileMock.SetupGet(file => file.FileName).Returns("malware.exe");
-
         var request = new UploadDocumentFormRequest
         {
-            File = fileMock.Object
+            File = null
         };
 
         var result = await controller.Upload(request, CancellationToken.None);
@@ -36,13 +32,13 @@ public class DocumentUploadSecurityTests
     }
 
     [Fact]
-    public async Task Upload_ShouldReturnBadRequest_WhenFileIsTooLarge()
+    public async Task Upload_ShouldReturnBadRequest_WhenFileIsEmpty()
     {
         var controller = CreateController();
         SetUser(controller, Guid.NewGuid(), "User");
 
         var fileMock = new Mock<IFormFile>();
-        fileMock.SetupGet(file => file.Length).Returns(11L * 1024 * 1024);
+        fileMock.SetupGet(file => file.Length).Returns(0);
         fileMock.SetupGet(file => file.FileName).Returns("report.pdf");
 
         var request = new UploadDocumentFormRequest

@@ -82,17 +82,6 @@ public class DocumentsController : ControllerBase
             return BadRequest(new { message = "A non-empty file is required." });
         }
 
-        if (request.File.Length > MaxFileSizeBytes)
-        {
-            return BadRequest(new { message = "File size exceeds the 10 MB limit." });
-        }
-
-        var extension = Path.GetExtension(request.File.FileName);
-
-        if (string.IsNullOrWhiteSpace(extension) || !AllowedExtensions.Contains(extension))
-        {
-            return BadRequest(new { message = "File type is not allowed." });
-        }
 
         try
         {
@@ -132,7 +121,6 @@ public class DocumentsController : ControllerBase
                 new { message = "An unexpected error occurred while uploading the document." });
         }
     }
-
     [HttpGet]
     public async Task<IActionResult> ListAll(CancellationToken cancellationToken)
     {
