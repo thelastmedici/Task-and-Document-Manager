@@ -87,7 +87,7 @@ public class DocumentUploadSecurityTests
 
         var response = Assert.IsType<UploadDocumentResponse>(createdResult.Value);
         Assert.NotEqual(Guid.Empty, response.Id);
-        Assert.Equal("Document uploaded successfully", response.Message);
+        Assert.Equal("report.pdf", response.FileName);
         Assert.Equal(response.Id, createdResult.RouteValues?["id"]);
     }
 

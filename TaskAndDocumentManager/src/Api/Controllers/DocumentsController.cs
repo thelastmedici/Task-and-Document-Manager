@@ -91,7 +91,7 @@ public class DocumentsController : ControllerBase
             return CreatedAtAction(
                 nameof(GetMetadata),
                 new { id = documentId },
-                new UploadDocumentResponse(documentId, "Document uploaded successfully"));
+                new UploadDocumentResponse(documentId, request.File.FileName));
         }
         catch (ArgumentException ex)
         {
