@@ -7,18 +7,19 @@ namespace TaskAndDocumentManager.Application.Documents.UseCases;
 
 public class UploadDocument
 {
-    private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
+    private static readonly Dictionary<string, string[]> AllowedFileTypes = new(StringComparer.OrdinalIgnoreCase)
     {
-        ".pdf",
-        ".doc",
-        ".docx",
-        ".txt",
-        ".png",
-        ".jpg",
-        ".jpeg"
+        [".pdf"] = ["application/pdf"],
+        [".png"] = ["image/png"],
+        [".jpg"] = ["image/jpeg"],
+        [".jpeg"] = ["image/jpeg"],
+        [".docx"] =
+        [
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        ]
     };
 
-    private const long MaxFileSizeBytes = 10 * 1024 * 1024;
+    private const long MaxFileSizeBytes = 20 * 1024 * 1024;
 
     private readonly IDocumentRepository _documentRepository;
     private readonly IFileStorageService _fileStorageService;
@@ -64,14 +65,19 @@ public class UploadDocument
 
         if (request.SizeInBytes > MaxFileSizeBytes)
         {
-            throw new ArgumentException("File size exceeds the 10 MB limit.", nameof(request.SizeInBytes));
+            throw new ArgumentException("File size exceeds the 20 MB limit.", nameof(request.SizeInBytes));
         }
 
         var extension = Path.GetExtension(request.FileName);
 
-        if (string.IsNullOrWhiteSpace(extension) || !AllowedExtensions.Contains(extension))
+        if (string.IsNullOrWhiteSpace(extension) || !AllowedFileTypes.TryGetValue(extension, out var allowedContentTypes))
         {
             throw new ArgumentException("File type is not allowed.", nameof(request.FileName));
+        }
+
+        if (!allowedContentTypes.Contains(request.ContentType, StringComparer.OrdinalIgnoreCase))
+        {
+            throw new ArgumentException("File content type is not allowed for the given file extension.", nameof(request.ContentType));
         }
 
         var storagePath = await _fileStorageService.SaveAsync(

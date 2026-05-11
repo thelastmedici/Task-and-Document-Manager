@@ -15,7 +15,7 @@ namespace TaskAndDocumentManager.Controllers;
 [Route("api/documents")]
 public class DocumentsController : ControllerBase
 {
-    private const long MaxFileSizeBytes = 10 * 1024 * 1024;
+    private const long MaxFileSizeBytes = 20 * 1024 * 1024;
 
     private readonly IDocumentRepository _documentRepository;
     private readonly IDocumentAccessRepository _documentAccessRepository;
