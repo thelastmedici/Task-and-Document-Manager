@@ -98,6 +98,43 @@ public class UploadDocumentTests
     }
 
     [Fact]
+    public async Task ExecuteAsync_ShouldDeleteSavedFile_WhenMetadataPersistenceFails()
+    {
+        var ownerId = Guid.NewGuid();
+        await using var content = new MemoryStream(new byte[] { 1, 2, 3, 4 });
+
+        var request = new UploadDocumentRequest
+        {
+            FileName = "report.pdf",
+            ContentType = "application/pdf",
+            Content = content,
+            SizeInBytes = 4,
+            UploadedByUserId = ownerId
+        };
+
+        _fileStorageServiceMock
+            .Setup(storage => storage.SaveAsync(
+                ownerId,
+                request.FileName,
+                It.IsAny<Stream>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync("/tmp/report.pdf");
+
+        _documentRepositoryMock
+            .Setup(repository => repository.AddAsync(It.IsAny<Document>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("Database save failed."));
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            _sut.ExecuteAsync(request, CancellationToken.None));
+
+        Assert.Equal("Database save failed.", exception.Message);
+
+        _fileStorageServiceMock.Verify(
+            storage => storage.DeleteAsync("/tmp/report.pdf", It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
     public async Task ExecuteAsync_ShouldThrow_WhenUploadedByUserIdIsEmpty()
     {
         await using var content = new MemoryStream(new byte[] { 1, 2, 3, 4 });
@@ -171,5 +208,42 @@ public class UploadDocumentTests
         _fileStorageServiceMock.Verify(
             storage => storage.SaveAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<Stream>(), It.IsAny<CancellationToken>()),
             Times.Never);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_ShouldRethrowOriginalPersistenceException_WhenCleanupFails()
+    {
+        var ownerId = Guid.NewGuid();
+        await using var content = new MemoryStream(new byte[] { 1, 2, 3, 4 });
+
+        var request = new UploadDocumentRequest
+        {
+            FileName = "report.pdf",
+            ContentType = "application/pdf",
+            Content = content,
+            SizeInBytes = 4,
+            UploadedByUserId = ownerId
+        };
+
+        _fileStorageServiceMock
+            .Setup(storage => storage.SaveAsync(
+                ownerId,
+                request.FileName,
+                It.IsAny<Stream>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync("/tmp/report.pdf");
+
+        _documentRepositoryMock
+            .Setup(repository => repository.AddAsync(It.IsAny<Document>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("Database save failed."));
+
+        _fileStorageServiceMock
+            .Setup(storage => storage.DeleteAsync("/tmp/report.pdf", It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new IOException("Cleanup failed."));
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            _sut.ExecuteAsync(request, CancellationToken.None));
+
+        Assert.Equal("Database save failed.", exception.Message);
     }
 }

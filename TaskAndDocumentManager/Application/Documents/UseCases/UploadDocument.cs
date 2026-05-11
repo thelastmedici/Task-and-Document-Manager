@@ -87,7 +87,24 @@ public class UploadDocument
             storagePath,
             request.UploadedByUserId);
 
-        await _documentRepository.AddAsync(document, cancellationToken);
+        try
+        {
+            await _documentRepository.AddAsync(document, cancellationToken);
+        }
+        catch
+        {
+            try
+            {
+                await _fileStorageService.DeleteAsync(storagePath, cancellationToken);
+            }
+            catch
+            {
+                // Preserve the original persistence failure if cleanup also fails.
+            }
+
+            throw;
+        }
+
         return document.Id;
     }
 }
