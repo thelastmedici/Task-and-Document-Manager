@@ -75,7 +75,7 @@ public class DocumentsController : ControllerBase
         {
             await using var stream = request.File.OpenReadStream();
 
-            var documentId = await _uploadDocument.ExecuteAsync(
+            var result = await _uploadDocument.ExecuteAsync(
                 new UploadDocumentRequest
                 {
                     FileName = request.File.FileName,
@@ -90,8 +90,8 @@ public class DocumentsController : ControllerBase
 
             return CreatedAtAction(
                 nameof(GetMetadata),
-                new { id = documentId },
-                new UploadDocumentResponse(documentId, request.File.FileName));
+                new { id = result.DocumentId},
+                new UploadDocumentResponse(result.DocumentId, request.File.FileName));
         }
         catch (ArgumentException ex)
         {
