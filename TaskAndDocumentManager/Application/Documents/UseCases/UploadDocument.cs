@@ -32,7 +32,7 @@ public class UploadDocument
         _fileStorageService = fileStorageService;
     }
 
-    public async Task<Guid> ExecuteAsync(
+    public async Task<UploadDocumentResult> ExecuteAsync(
         UploadDocumentRequest request,
         CancellationToken cancellationToken = default)
     {
@@ -111,6 +111,10 @@ public class UploadDocument
             throw;
         }
 
-        return document.Id;
+        return new UploadDocumentResult(
+            document.Id,
+            document.OriginalFileName
+        
+        );
     }
 }
