@@ -90,8 +90,8 @@ public class DocumentsController : ControllerBase
 
             return CreatedAtAction(
                 nameof(GetMetadata),
-                new { id = result.DocumentId},
-                new UploadDocumentResponse(result.DocumentId, request.File.FileName));
+                new { id = result.DocumentId },
+                new UploadDocumentResponse(result.DocumentId, result.FileName));
         }
         catch (ArgumentException ex)
         {

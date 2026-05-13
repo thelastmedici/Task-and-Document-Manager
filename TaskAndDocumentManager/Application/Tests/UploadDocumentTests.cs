@@ -49,12 +49,13 @@ public class UploadDocumentTests
 
         var result = await _sut.ExecuteAsync(request, CancellationToken.None);
 
-        Assert.NotEqual(Guid.Empty, result);
+        Assert.NotEqual(Guid.Empty, result.DocumentId);
+        Assert.Equal(request.FileName, result.FileName);
 
         _documentRepositoryMock.Verify(
             repository => repository.AddAsync(
                 It.Is<Document>(document =>
-                    document.Id == result &&
+                    document.Id == result.DocumentId &&
                     document.OriginalFileName == request.FileName &&
                     document.ContentType == request.ContentType &&
                     document.SizeInBytes == request.SizeInBytes &&
