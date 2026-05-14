@@ -378,54 +378,36 @@ public async Task<IActionResult> GetMetadata(
         return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
     }
 }
-
-
- [HttpGet("{id:guid}/download")]
-public async Task<IActionResult> Download(
-    Guid id,
-    CancellationToken cancellationToken)
-{
-    var actorId = User.GetActorId();
-
-    if (User.IsAdmin())
+    [HttpGet("{id:guid}/download")]
+    public async Task<IActionResult> Download(
+        Guid id,
+        CancellationToken cancellationToken)
     {
-        var adminDocument = await _documentRepository.GetByIdAsync(id, cancellationToken);
-        if (adminDocument is null)
+        var actorId = User.GetActorId();
+
+        try
         {
-            return NotFound(new { message = "Document not found" });
+            var result = await _downloadDocument.ExecuteAsync(
+                id,
+                actorId,
+                User.IsAdmin(),
+                cancellationToken);
+
+            return File(result.Content, result.ContentType, result.FileName);
         }
-
-        var stream = await _fileStorageService.OpenReadAsync(adminDocument.StoragePath, cancellationToken);
-        return File(stream, adminDocument.ContentType, adminDocument.OriginalFileName);
+        catch (FileNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = ex.Message });
+        }
     }
-
-    try
-    {
-        var allowTaskParticipationAccess = User.IsManager();
-
-        var metadata = await _getDocumentMetadata.ExecuteAsync(
-            id,
-            actorId,
-            allowTaskParticipationAccess,
-            cancellationToken);
-
-        var stream = await _downloadDocument.ExecuteAsync(
-            id,
-            actorId,
-            allowTaskParticipationAccess,
-            cancellationToken);
-
-        return File(stream, metadata.ContentType, metadata.FileName);
-    }
-    catch (FileNotFoundException ex)
-    {
-        return NotFound(new { message = ex.Message });
-    }
-    catch (UnauthorizedAccessException ex)
-    {
-        return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
-    }
-}
 
 
     [HttpDelete("{id:guid}")]

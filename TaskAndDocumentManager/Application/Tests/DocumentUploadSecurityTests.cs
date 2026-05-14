@@ -2,6 +2,7 @@ using System.IO;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using TaskAndDocumentManager.Application.Documents.DTOs;
 using TaskAndDocumentManager.Application.Documents.Interfaces;
@@ -143,8 +144,8 @@ public class DocumentUploadSecurityTests
             taskRepositoryMock.Object);
         var downloadDocument = new DownloadDocument(
             documentRepositoryMock.Object,
-            documentAccessEvaluator,
-            fileStorageServiceMock.Object);
+            fileStorageServiceMock.Object,
+            NullLogger<DownloadDocument>.Instance);
         var deleteDocument = new DeleteDocument(documentRepositoryMock.Object, fileStorageServiceMock.Object);
         var getDocumentMetadata = new GetDocumentMetadata(documentRepositoryMock.Object, documentAccessEvaluator);
         var listAccessibleDocuments = new ListAccessibleDocuments(documentRepositoryMock.Object, documentAccessEvaluator);
