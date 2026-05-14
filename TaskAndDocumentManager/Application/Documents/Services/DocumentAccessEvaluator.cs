@@ -24,6 +24,19 @@ public class DocumentAccessEvaluator
         bool allowTaskParticipationAccess,
         CancellationToken cancellationToken = default)
     {
+        return await CanDownloadAsync(
+            document,
+            requestedByUserId,
+            allowTaskParticipationAccess,
+            cancellationToken);
+    }
+
+    public async Task<bool> CanDownloadAsync(
+        Document document,
+        Guid requestedByUserId,
+        bool allowTaskParticipationAccess,
+        CancellationToken cancellationToken = default)
+    {
         ArgumentNullException.ThrowIfNull(document);
 
         if (document.OwnerId == requestedByUserId)

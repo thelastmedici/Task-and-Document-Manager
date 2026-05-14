@@ -29,7 +29,7 @@ public class DownloadDocument
         var document = await _documentRepository.GetByIdAsync(documentId, cancellationToken)
             ?? throw new FileNotFoundException("Document not found.");
 
-        var hasAccess = await _documentAccessEvaluator.HasAccessAsync(
+        var hasAccess = await _documentAccessEvaluator.CanDownloadAsync(
             document,
             requestedByUserId,
             allowTaskParticipationAccess,
