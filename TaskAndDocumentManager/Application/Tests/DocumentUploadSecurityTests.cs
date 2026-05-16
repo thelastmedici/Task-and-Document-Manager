@@ -144,6 +144,7 @@ public class DocumentUploadSecurityTests
             taskRepositoryMock.Object);
         var downloadDocument = new DownloadDocument(
             documentRepositoryMock.Object,
+            documentAccessRepositoryMock.Object,
             fileStorageServiceMock.Object,
             NullLogger<DownloadDocument>.Instance);
         var deleteDocument = new DeleteDocument(documentRepositoryMock.Object, fileStorageServiceMock.Object);

@@ -8,15 +8,18 @@ namespace TaskAndDocumentManager.Application.Documents.UseCases;
 public class DownloadDocument
 {
     private readonly IDocumentRepository _documentRepository;
+    private readonly IDocumentAccessRepository _documentAccessRepository;
     private readonly IFileStorageService _fileStorageService;
     private readonly ILogger<DownloadDocument> _logger;
 
     public DownloadDocument(
         IDocumentRepository documentRepository,
+        IDocumentAccessRepository documentAccessRepository,
         IFileStorageService fileStorageService,
         ILogger<DownloadDocument> logger)
     {
         _documentRepository = documentRepository;
+        _documentAccessRepository = documentAccessRepository;
         _fileStorageService = fileStorageService;
         _logger = logger;
     }
@@ -37,7 +40,15 @@ public class DownloadDocument
 
         if (!isAdmin && document.OwnerId != requestedByUserId)
         {
-            throw new UnauthorizedAccessException("You do not have access to this document.");
+            var hasSharedAccess = await _documentAccessRepository.HasAccessAsync(
+                document.Id,
+                requestedByUserId,
+                cancellationToken);
+
+            if (!hasSharedAccess)
+            {
+                throw new UnauthorizedAccessException("You do not have access to this document.");
+            }
         }
 
         try
