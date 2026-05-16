@@ -10,16 +10,19 @@ namespace TaskAndDocumentManager.Application.Tests.Documents.UseCases;
 public class DownloadDocumentTests
 {
     private readonly Mock<IDocumentRepository> _documentRepositoryMock;
+    private readonly Mock<IDocumentAccessRepository> _documentAccessRepositoryMock;
     private readonly Mock<IFileStorageService> _fileStorageServiceMock;
     private readonly DownloadDocument _sut;
 
     public DownloadDocumentTests()
     {
         _documentRepositoryMock = new Mock<IDocumentRepository>();
+        _documentAccessRepositoryMock = new Mock<IDocumentAccessRepository>();
         _fileStorageServiceMock = new Mock<IFileStorageService>();
 
         _sut = new DownloadDocument(
             _documentRepositoryMock.Object,
+            _documentAccessRepositoryMock.Object,
             _fileStorageServiceMock.Object,
             NullLogger<DownloadDocument>.Instance);
     }
@@ -70,6 +73,33 @@ public class DownloadDocumentTests
     }
 
     [Fact]
+    public async Task ExecuteAsync_ShouldReturnResult_WhenDocumentWasSharedWithRequester()
+    {
+        var ownerId = Guid.NewGuid();
+        var requesterId = Guid.NewGuid();
+        var document = new Document("report.pdf", "application/pdf", 1024, "/tmp/report.pdf", ownerId);
+        var expectedStream = new MemoryStream(new byte[] { 1, 2, 3 });
+
+        _documentRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(document.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(document);
+
+        _documentAccessRepositoryMock
+            .Setup(repository => repository.HasAccessAsync(document.Id, requesterId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        _fileStorageServiceMock
+            .Setup(storage => storage.OpenReadAsync(document.StoragePath, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expectedStream);
+
+        var result = await _sut.ExecuteAsync(document.Id, requesterId);
+
+        Assert.Same(expectedStream, result.Content);
+        Assert.Equal("application/pdf", result.ContentType);
+        Assert.Equal("report.pdf", result.FileName);
+    }
+
+    [Fact]
     public async Task ExecuteAsync_ShouldThrow_WhenRequesterIsNotOwnerAndNotAdmin()
     {
         var ownerId = Guid.NewGuid();
@@ -79,6 +109,10 @@ public class DownloadDocumentTests
         _documentRepositoryMock
             .Setup(repository => repository.GetByIdAsync(document.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(document);
+
+        _documentAccessRepositoryMock
+            .Setup(repository => repository.HasAccessAsync(document.Id, requesterId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
 
         var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
             _sut.ExecuteAsync(document.Id, requesterId));
