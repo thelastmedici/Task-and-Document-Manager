@@ -139,6 +139,12 @@ public class DocumentUploadSecurityTests
             documentRepositoryMock.Object,
             documentAccessRepositoryMock.Object,
             taskRepositoryMock.Object);
+        var revokeDocumentAccess = new RevokeDocumentAccess(
+            documentRepositoryMock.Object,
+            documentAccessRepositoryMock.Object);
+        var getSharedDocuments = new GetSharedDocuments(
+            documentRepositoryMock.Object,
+            documentAccessRepositoryMock.Object);
         var documentAccessEvaluator = new Application.Documents.Services.DocumentAccessEvaluator(
             documentAccessRepositoryMock.Object,
             taskRepositoryMock.Object);
@@ -160,6 +166,8 @@ public class DocumentUploadSecurityTests
             linkDocumentToTask,
             shareDocument,
             shareTaskLinkedDocument,
+            revokeDocumentAccess,
+            getSharedDocuments,
             downloadDocument,
             deleteDocument,
             getDocumentMetadata,
