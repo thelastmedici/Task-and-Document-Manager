@@ -97,8 +97,10 @@ Application/Documents/
   DeleteDocument.cs
   DownloadDocument.cs
   GetDocumentMetadata.cs
+  GetSharedDocuments.cs
   LinkDocumentToTask.cs
   ListAccessibleDocuments.cs
+  RevokeDocumentAccess.cs
   ShareDocument.cs
   ShareTaskLinkedDocument.cs
   UploadDocument.cs

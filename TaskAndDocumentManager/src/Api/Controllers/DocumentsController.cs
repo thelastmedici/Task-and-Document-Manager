@@ -25,6 +25,8 @@ public class DocumentsController : ControllerBase
     private readonly LinkDocumentToTask _linkDocumentToTask;
     private readonly ShareDocument _shareDocument;
     private readonly ShareTaskLinkedDocument _shareTaskLinkedDocument;
+    private readonly RevokeDocumentAccess _revokeDocumentAccess;
+    private readonly GetSharedDocuments _getSharedDocuments;
     private readonly DownloadDocument _downloadDocument;
     private readonly DeleteDocument _deleteDocument;
     private readonly GetDocumentMetadata _getDocumentMetadata;
@@ -39,6 +41,8 @@ public class DocumentsController : ControllerBase
         LinkDocumentToTask linkDocumentToTask,
         ShareDocument shareDocument,
         ShareTaskLinkedDocument shareTaskLinkedDocument,
+        RevokeDocumentAccess revokeDocumentAccess,
+        GetSharedDocuments getSharedDocuments,
         DownloadDocument downloadDocument,
         DeleteDocument deleteDocument,
         GetDocumentMetadata getDocumentMetadata,
@@ -52,6 +56,8 @@ public class DocumentsController : ControllerBase
         _linkDocumentToTask = linkDocumentToTask;
         _shareDocument = shareDocument;
         _shareTaskLinkedDocument = shareTaskLinkedDocument;
+        _revokeDocumentAccess = revokeDocumentAccess;
+        _getSharedDocuments = getSharedDocuments;
         _downloadDocument = downloadDocument;
         _deleteDocument = deleteDocument;
         _getDocumentMetadata = getDocumentMetadata;
@@ -130,6 +136,14 @@ public class DocumentsController : ControllerBase
             d.LinkedTaskId)).ToList();
 
         return Ok(dtos);
+    }
+
+    [HttpGet("shared-with-me")]
+    public async Task<IActionResult> SharedWithMe(CancellationToken cancellationToken)
+    {
+        var actorId = User.GetActorId();
+        var documents = await _getSharedDocuments.ExecuteAsync(actorId, cancellationToken);
+        return Ok(documents);
     }
 
     [HttpPost("{id:guid}/link-task")]
@@ -329,6 +343,49 @@ public class DocumentsController : ControllerBase
             return StatusCode(
                 StatusCodes.Status500InternalServerError,
                 new { message = "An unexpected error occurred while sharing the task-linked document." });
+        }
+    }
+
+    [HttpDelete("{id:guid}/share/{userId:guid}")]
+    public async Task<IActionResult> RevokeShare(
+        Guid id,
+        Guid userId,
+        CancellationToken cancellationToken)
+    {
+        var actorId = User.GetActorId();
+
+        try
+        {
+            await _revokeDocumentAccess.ExecuteAsync(
+                id,
+                userId,
+                actorId,
+                User.IsAdmin(),
+                cancellationToken);
+
+            return NoContent();
+        }
+        catch (FileNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception)
+        {
+            return StatusCode(
+                StatusCodes.Status500InternalServerError,
+                new { message = "An unexpected error occurred while revoking document access." });
         }
     }
 

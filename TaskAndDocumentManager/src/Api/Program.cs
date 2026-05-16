@@ -54,6 +54,8 @@ builder.Services.AddScoped<DownloadDocument>();
 builder.Services.AddScoped<DeleteDocument>();
 builder.Services.AddScoped<ShareDocument>();
 builder.Services.AddScoped<ShareTaskLinkedDocument>();
+builder.Services.AddScoped<RevokeDocumentAccess>();
+builder.Services.AddScoped<GetSharedDocuments>();
 builder.Services.AddScoped<LinkDocumentToTask>();
 builder.Services.AddScoped<GetDocumentMetadata>();
 builder.Services.AddScoped<DocumentAccessEvaluator>();

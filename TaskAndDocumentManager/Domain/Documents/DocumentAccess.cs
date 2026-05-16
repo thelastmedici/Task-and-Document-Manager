@@ -2,6 +2,7 @@ namespace TaskAndDocumentManager.Domain.Documents;
 
 public class DocumentAccess
 {
+    public Guid Id { get; private set; } = Guid.NewGuid();
     public Guid DocumentId { get; private set; }
     public Guid UserId { get; private set; }
     public Guid GrantedByUserId { get; private set; }
