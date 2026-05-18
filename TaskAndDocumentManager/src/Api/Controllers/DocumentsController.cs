@@ -214,21 +214,6 @@ public class DocumentsController : ControllerBase
     {
         var actorId = User.GetActorId();
 
-        if (User.IsAdmin())
-        {
-            var adminDocument = await _documentRepository.GetByIdAsync(id, cancellationToken);
-            if (adminDocument is null)
-            {
-                return NotFound(new { message = "Document not found" });
-            }
-
-            await _documentAccessRepository.GrantAccessAsync(
-                new Domain.Documents.DocumentAccess(id, request.TargetUserId, actorId),
-                cancellationToken);
-
-            return NoContent();
-        }
-
         try
         {
             await _shareDocument.ExecuteAsync(
@@ -238,6 +223,7 @@ public class DocumentsController : ControllerBase
                     TargetUserId = request.TargetUserId,
                     GrantedByUserId = actorId
                 },
+                User.IsAdmin(),
                 cancellationToken);
 
             return NoContent();
@@ -276,38 +262,6 @@ public class DocumentsController : ControllerBase
     {
         var actorId = User.GetActorId();
 
-        if (User.IsAdmin())
-        {
-            var adminDocument = await _documentRepository.GetByIdAsync(id, cancellationToken);
-            if (adminDocument is null)
-            {
-                return NotFound(new { message = "Document not found" });
-            }
-
-            if (adminDocument.LinkedTaskId is null)
-            {
-                return Conflict(new { message = "Document is not linked to a task." });
-            }
-
-            if (adminDocument.LinkedTaskId.Value != taskId)
-            {
-                return Conflict(new { message = "Document is linked to a different task." });
-            }
-
-            var adminTask = await _taskRepository.GetByIdAsync(taskId, cancellationToken);
-            if (adminTask is null)
-            {
-                return NotFound(new { message = "Task not found" });
-            }
-
-            await _documentAccessRepository.GrantAccessAsync(
-                new Domain.Documents.DocumentAccess(id, request.TargetUserId, actorId),
-                cancellationToken);
-
-            return NoContent();
-        }
-
-
         try
         {
             await _shareTaskLinkedDocument.ExecuteAsync(
@@ -318,6 +272,7 @@ public class DocumentsController : ControllerBase
                     TargetUserId = request.TargetUserId,
                     GrantedByUserId = actorId
                 },
+                User.IsAdmin(),
                 cancellationToken);
 
             return NoContent();

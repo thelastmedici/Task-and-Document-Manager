@@ -158,11 +158,12 @@ public IActionResult CreateUser([FromBody] CreateUserByAdminRequest request)
 
 [Authorize(Policy = AppPolicies.AdminOnly)]
 [HttpPut("users/{id:guid}/role")]
-public IActionResult ChangeRole(Guid id, [FromBody] ChangeRoleRequest request)
+public async Task<IActionResult> ChangeRole(Guid id, [FromBody] ChangeRoleRequest request)
 {
     try
     {
-        _changeUserRole.Execute(id, request.RoleId);
+        var actorId = User.GetActorId();
+        await _changeUserRole.ExecuteAsync(id, request.RoleId, actorId);
         return NoContent();
     }
     catch (KeyNotFoundException ex)
