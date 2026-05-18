@@ -4,6 +4,8 @@ public static class AuditActions
 {
     public const string DocumentUploaded = nameof(DocumentUploaded);
     public const string DocumentDeleted = nameof(DocumentDeleted);
+    public const string DocumentShared = nameof(DocumentShared);
+    public const string DocumentAccessRevoked = nameof(DocumentAccessRevoked);
     public const string TaskCreated = nameof(TaskCreated);
     public const string TaskCompleted = nameof(TaskCompleted);
     public const string UserRoleChanged = nameof(UserRoleChanged);
@@ -12,6 +14,8 @@ public static class AuditActions
     {
         DocumentUploaded,
         DocumentDeleted,
+        DocumentShared,
+        DocumentAccessRevoked,
         TaskCreated,
         TaskCompleted,
         UserRoleChanged

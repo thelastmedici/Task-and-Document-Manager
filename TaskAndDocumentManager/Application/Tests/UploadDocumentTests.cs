@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Moq;
+using TaskAndDocumentManager.Application.Audit.Interfaces;
 using TaskAndDocumentManager.Application.Documents.DTOs;
 using TaskAndDocumentManager.Application.Documents.Interfaces;
 using TaskAndDocumentManager.Application.Documents.UseCases;
@@ -13,15 +14,20 @@ namespace TaskAndDocumentManager.Application.Tests.Documents.UseCases;
 
 public class UploadDocumentTests
 {
+    private readonly Mock<IAuditLogRepository> _auditLogRepositoryMock;
     private readonly Mock<IDocumentRepository> _documentRepositoryMock;
     private readonly Mock<IFileStorageService> _fileStorageServiceMock;
     private readonly UploadDocument _sut;
 
     public UploadDocumentTests()
     {
+        _auditLogRepositoryMock = new Mock<IAuditLogRepository>();
         _documentRepositoryMock = new Mock<IDocumentRepository>();
         _fileStorageServiceMock = new Mock<IFileStorageService>();
-        _sut = new UploadDocument(_documentRepositoryMock.Object, _fileStorageServiceMock.Object);
+        _sut = new UploadDocument(
+            _auditLogRepositoryMock.Object,
+            _documentRepositoryMock.Object,
+            _fileStorageServiceMock.Object);
     }
 
     [Fact]
@@ -51,6 +57,15 @@ public class UploadDocumentTests
 
         Assert.NotEqual(Guid.Empty, result.DocumentId);
         Assert.Equal(request.FileName, result.FileName);
+        _auditLogRepositoryMock.Verify(
+            repository => repository.AddAsync(
+                It.Is<AuditLog>(auditLog =>
+                    auditLog.UserId == ownerId &&
+                    auditLog.Action == AuditActions.DocumentUploaded &&
+                    auditLog.EntityType == nameof(Document) &&
+                    auditLog.EntityId == result.DocumentId),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
 
         _documentRepositoryMock.Verify(
             repository => repository.AddAsync(
@@ -133,6 +148,10 @@ public class UploadDocumentTests
         _fileStorageServiceMock.Verify(
             storage => storage.DeleteAsync("/tmp/report.pdf", It.IsAny<CancellationToken>()),
             Times.Once);
+
+        _auditLogRepositoryMock.Verify(
+            repository => repository.AddAsync(It.IsAny<AuditLog>(), It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 
     [Fact]
@@ -160,6 +179,10 @@ public class UploadDocumentTests
 
         _documentRepositoryMock.Verify(
             repository => repository.AddAsync(It.IsAny<Document>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+
+        _auditLogRepositoryMock.Verify(
+            repository => repository.AddAsync(It.IsAny<AuditLog>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 

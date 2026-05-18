@@ -1,4 +1,5 @@
 using System.IO;
+using TaskAndDocumentManager.Application.Audit.Interfaces;
 using TaskAndDocumentManager.Application.Documents.DTOs;
 using TaskAndDocumentManager.Application.Documents.Interfaces;
 using TaskAndDocumentManager.Domain.Entities;
@@ -21,13 +22,16 @@ public class UploadDocument
 
     private const long MaxFileSizeBytes = 20 * 1024 * 1024;
 
+    private readonly IAuditLogRepository _auditLogRepository;
     private readonly IDocumentRepository _documentRepository;
     private readonly IFileStorageService _fileStorageService;
 
     public UploadDocument(
+        IAuditLogRepository auditLogRepository,
         IDocumentRepository documentRepository,
         IFileStorageService fileStorageService)
     {
+        _auditLogRepository = auditLogRepository;
         _documentRepository = documentRepository;
         _fileStorageService = fileStorageService;
     }
@@ -111,10 +115,17 @@ public class UploadDocument
             throw;
         }
 
+        await _auditLogRepository.AddAsync(
+            new AuditLog(
+                request.UploadedByUserId,
+                AuditActions.DocumentUploaded,
+                nameof(Document),
+                document.Id),
+            cancellationToken);
+
         return new UploadDocumentResult(
             document.Id,
             document.OriginalFileName
-        
         );
     }
 }
