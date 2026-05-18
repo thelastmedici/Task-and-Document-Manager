@@ -29,6 +29,11 @@ public class AuditLog
             throw new ArgumentException("Action is required.", nameof(action));
         }
 
+        if (!AuditActions.IsValid(action))
+        {
+            throw new ArgumentException("Action must be a supported audit action.", nameof(action));
+        }
+
         if (string.IsNullOrWhiteSpace(entityType))
         {
             throw new ArgumentException("Entity type is required.", nameof(entityType));
