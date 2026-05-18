@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Moq;
+using TaskAndDocumentManager.Application.Audit.Interfaces;
 using TaskAndDocumentManager.Application.Documents.Interfaces;
 using TaskAndDocumentManager.Application.Documents.UseCases;
 using TaskAndDocumentManager.Domain.Entities;
@@ -12,15 +13,20 @@ namespace TaskAndDocumentManager.Application.Tests.Documents.UseCases;
 
 public class DeleteDocumentTests
 {
+    private readonly Mock<IAuditLogRepository> _auditLogRepositoryMock;
     private readonly Mock<IDocumentRepository> _documentRepositoryMock;
     private readonly Mock<IFileStorageService> _fileStorageServiceMock;
     private readonly DeleteDocument _sut;
 
     public DeleteDocumentTests()
     {
+        _auditLogRepositoryMock = new Mock<IAuditLogRepository>();
         _documentRepositoryMock = new Mock<IDocumentRepository>();
         _fileStorageServiceMock = new Mock<IFileStorageService>();
-        _sut = new DeleteDocument(_documentRepositoryMock.Object, _fileStorageServiceMock.Object);
+        _sut = new DeleteDocument(
+            _auditLogRepositoryMock.Object,
+            _documentRepositoryMock.Object,
+            _fileStorageServiceMock.Object);
     }
 
     [Fact]
@@ -47,6 +53,16 @@ public class DeleteDocumentTests
         _documentRepositoryMock.Verify(
             repository => repository.DeleteAsync(document.Id, It.IsAny<CancellationToken>()),
             Times.Once);
+
+        _auditLogRepositoryMock.Verify(
+            repository => repository.AddAsync(
+                It.Is<AuditLog>(auditLog =>
+                    auditLog.UserId == ownerId &&
+                    auditLog.Action == AuditActions.DocumentDeleted &&
+                    auditLog.EntityType == nameof(Document) &&
+                    auditLog.EntityId == document.Id),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [Fact]
@@ -70,6 +86,10 @@ public class DeleteDocumentTests
 
         _documentRepositoryMock.Verify(
             repository => repository.DeleteAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+
+        _auditLogRepositoryMock.Verify(
+            repository => repository.AddAsync(It.IsAny<AuditLog>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -101,6 +121,10 @@ public class DeleteDocumentTests
 
         _documentRepositoryMock.Verify(
             repository => repository.DeleteAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+
+        _auditLogRepositoryMock.Verify(
+            repository => repository.AddAsync(It.IsAny<AuditLog>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 }

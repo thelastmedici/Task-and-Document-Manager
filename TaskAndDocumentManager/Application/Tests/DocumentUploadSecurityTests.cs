@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using TaskAndDocumentManager.Application.Audit.Interfaces;
 using TaskAndDocumentManager.Application.Documents.DTOs;
 using TaskAndDocumentManager.Application.Documents.Interfaces;
 using TaskAndDocumentManager.Application.Documents.UseCases;
@@ -131,8 +132,12 @@ public class DocumentUploadSecurityTests
         var documentAccessRepositoryMock = new Mock<IDocumentAccessRepository>();
         var taskRepositoryMock = new Mock<ITaskRepository>();
         var fileStorageServiceMock = new Mock<IFileStorageService>();
+        var auditLogRepositoryMock = new Mock<IAuditLogRepository>();
 
-        var uploadDocument = new UploadDocument(documentRepositoryMock.Object, fileStorageServiceMock.Object);
+        var uploadDocument = new UploadDocument(
+            auditLogRepositoryMock.Object,
+            documentRepositoryMock.Object,
+            fileStorageServiceMock.Object);
         var linkDocumentToTask = new LinkDocumentToTask(documentRepositoryMock.Object, taskRepositoryMock.Object);
         var shareDocument = new ShareDocument(documentRepositoryMock.Object, documentAccessRepositoryMock.Object);
         var shareTaskLinkedDocument = new ShareTaskLinkedDocument(
@@ -153,7 +158,10 @@ public class DocumentUploadSecurityTests
             documentAccessRepositoryMock.Object,
             fileStorageServiceMock.Object,
             NullLogger<DownloadDocument>.Instance);
-        var deleteDocument = new DeleteDocument(documentRepositoryMock.Object, fileStorageServiceMock.Object);
+        var deleteDocument = new DeleteDocument(
+            auditLogRepositoryMock.Object,
+            documentRepositoryMock.Object,
+            fileStorageServiceMock.Object);
         var getDocumentMetadata = new GetDocumentMetadata(documentRepositoryMock.Object, documentAccessEvaluator);
         var listAccessibleDocuments = new ListAccessibleDocuments(documentRepositoryMock.Object, documentAccessEvaluator);
 
