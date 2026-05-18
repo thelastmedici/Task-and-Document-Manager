@@ -1,4 +1,5 @@
 using System.IO;
+using TaskAndDocumentManager.Application.Audit.Interfaces;
 using TaskAndDocumentManager.Application.Documents.DTOs;
 using TaskAndDocumentManager.Application.Documents.Interfaces;
 using TaskAndDocumentManager.Domain.Documents;
@@ -8,19 +9,23 @@ namespace TaskAndDocumentManager.Application.Documents.UseCases;
 
 public class ShareDocument
 {
+    private readonly IAuditLogRepository _auditLogRepository;
     private readonly IDocumentRepository _documentRepository;
     private readonly IDocumentAccessRepository _documentAccessRepository;
 
     public ShareDocument(
+        IAuditLogRepository auditLogRepository,
         IDocumentRepository documentRepository,
         IDocumentAccessRepository documentAccessRepository)
     {
+        _auditLogRepository = auditLogRepository;
         _documentRepository = documentRepository;
         _documentAccessRepository = documentAccessRepository;
     }
 
     public async Task ExecuteAsync(
         ShareDocumentRequest request,
+        bool isAdmin = false,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
@@ -38,7 +43,7 @@ public class ShareDocument
         var document = await _documentRepository.GetByIdAsync(request.DocumentId, cancellationToken)
             ?? throw new FileNotFoundException("Document not found.");
 
-        if (document.OwnerId != request.GrantedByUserId)
+        if (!isAdmin && document.OwnerId != request.GrantedByUserId)
         {
             throw new UnauthorizedAccessException("Only the owner can share this document.");
         }
@@ -50,5 +55,12 @@ public class ShareDocument
 
         var access = new DocumentAccess(request.DocumentId, request.TargetUserId, request.GrantedByUserId);
         await _documentAccessRepository.GrantAccessAsync(access, cancellationToken);
+        await _auditLogRepository.AddAsync(
+            new AuditLog(
+                request.GrantedByUserId,
+                AuditActions.DocumentShared,
+                nameof(Document),
+                request.DocumentId),
+            cancellationToken);
     }
 }

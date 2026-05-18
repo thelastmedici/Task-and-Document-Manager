@@ -1,4 +1,5 @@
 using Moq;
+using TaskAndDocumentManager.Application.Audit.Interfaces;
 using TaskAndDocumentManager.Application.Documents.DTOs;
 using TaskAndDocumentManager.Application.Documents.Interfaces;
 using TaskAndDocumentManager.Application.Documents.UseCases;
@@ -9,15 +10,20 @@ namespace TaskAndDocumentManager.Application.Tests.Documents.UseCases;
 
 public class ShareDocumentTests
 {
+    private readonly Mock<IAuditLogRepository> _auditLogRepositoryMock;
     private readonly Mock<IDocumentRepository> _documentRepositoryMock;
     private readonly Mock<IDocumentAccessRepository> _documentAccessRepositoryMock;
     private readonly ShareDocument _sut;
 
     public ShareDocumentTests()
     {
+        _auditLogRepositoryMock = new Mock<IAuditLogRepository>();
         _documentRepositoryMock = new Mock<IDocumentRepository>();
         _documentAccessRepositoryMock = new Mock<IDocumentAccessRepository>();
-        _sut = new ShareDocument(_documentRepositoryMock.Object, _documentAccessRepositoryMock.Object);
+        _sut = new ShareDocument(
+            _auditLogRepositoryMock.Object,
+            _documentRepositoryMock.Object,
+            _documentAccessRepositoryMock.Object);
     }
 
     [Fact]
@@ -51,6 +57,16 @@ public class ShareDocumentTests
                     access.GrantedByUserId == ownerId),
                 It.IsAny<CancellationToken>()),
             Times.Once);
+
+        _auditLogRepositoryMock.Verify(
+            repository => repository.AddAsync(
+                It.Is<AuditLog>(auditLog =>
+                    auditLog.UserId == ownerId &&
+                    auditLog.Action == AuditActions.DocumentShared &&
+                    auditLog.EntityType == nameof(Document) &&
+                    auditLog.EntityId == document.Id),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [Fact]
@@ -72,5 +88,8 @@ public class ShareDocumentTests
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.ExecuteAsync(request));
 
         Assert.Equal("You cannot share a document with yourself.", exception.Message);
+        _auditLogRepositoryMock.Verify(
+            repository => repository.AddAsync(It.IsAny<AuditLog>(), It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 }

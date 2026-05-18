@@ -1,16 +1,22 @@
 using TaskAndDocumentManager.Application.Documents.Interfaces;
 
+using TaskAndDocumentManager.Application.Audit.Interfaces;
+using TaskAndDocumentManager.Domain.Entities;
+
 namespace TaskAndDocumentManager.Application.Documents.UseCases;
 
 public class RevokeDocumentAccess
 {
+    private readonly IAuditLogRepository _auditLogRepository;
     private readonly IDocumentRepository _documentRepository;
     private readonly IDocumentAccessRepository _documentAccessRepository;
 
     public RevokeDocumentAccess(
+        IAuditLogRepository auditLogRepository,
         IDocumentRepository documentRepository,
         IDocumentAccessRepository documentAccessRepository)
     {
+        _auditLogRepository = auditLogRepository;
         _documentRepository = documentRepository;
         _documentAccessRepository = documentAccessRepository;
     }
@@ -46,5 +52,12 @@ public class RevokeDocumentAccess
         }
 
         await _documentAccessRepository.RevokeAccessAsync(documentId, targetUserId, cancellationToken);
+        await _auditLogRepository.AddAsync(
+            new AuditLog(
+                revokedByUserId,
+                AuditActions.DocumentAccessRevoked,
+                nameof(Document),
+                documentId),
+            cancellationToken);
     }
 }

@@ -139,12 +139,17 @@ public class DocumentUploadSecurityTests
             documentRepositoryMock.Object,
             fileStorageServiceMock.Object);
         var linkDocumentToTask = new LinkDocumentToTask(documentRepositoryMock.Object, taskRepositoryMock.Object);
-        var shareDocument = new ShareDocument(documentRepositoryMock.Object, documentAccessRepositoryMock.Object);
+        var shareDocument = new ShareDocument(
+            auditLogRepositoryMock.Object,
+            documentRepositoryMock.Object,
+            documentAccessRepositoryMock.Object);
         var shareTaskLinkedDocument = new ShareTaskLinkedDocument(
+            auditLogRepositoryMock.Object,
             documentRepositoryMock.Object,
             documentAccessRepositoryMock.Object,
             taskRepositoryMock.Object);
         var revokeDocumentAccess = new RevokeDocumentAccess(
+            auditLogRepositoryMock.Object,
             documentRepositoryMock.Object,
             documentAccessRepositoryMock.Object);
         var getSharedDocuments = new GetSharedDocuments(

@@ -1,4 +1,5 @@
 using Moq;
+using TaskAndDocumentManager.Application.Audit.Interfaces;
 using TaskAndDocumentManager.Application.Documents.Interfaces;
 using TaskAndDocumentManager.Application.Documents.UseCases;
 using TaskAndDocumentManager.Domain.Entities;
@@ -7,15 +8,20 @@ namespace TaskAndDocumentManager.Application.Tests.Documents.UseCases;
 
 public class RevokeDocumentAccessTests
 {
+    private readonly Mock<IAuditLogRepository> _auditLogRepositoryMock;
     private readonly Mock<IDocumentRepository> _documentRepositoryMock;
     private readonly Mock<IDocumentAccessRepository> _documentAccessRepositoryMock;
     private readonly RevokeDocumentAccess _sut;
 
     public RevokeDocumentAccessTests()
     {
+        _auditLogRepositoryMock = new Mock<IAuditLogRepository>();
         _documentRepositoryMock = new Mock<IDocumentRepository>();
         _documentAccessRepositoryMock = new Mock<IDocumentAccessRepository>();
-        _sut = new RevokeDocumentAccess(_documentRepositoryMock.Object, _documentAccessRepositoryMock.Object);
+        _sut = new RevokeDocumentAccess(
+            _auditLogRepositoryMock.Object,
+            _documentRepositoryMock.Object,
+            _documentAccessRepositoryMock.Object);
     }
 
     [Fact]
@@ -33,6 +39,16 @@ public class RevokeDocumentAccessTests
 
         _documentAccessRepositoryMock.Verify(
             repository => repository.RevokeAccessAsync(document.Id, targetUserId, It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        _auditLogRepositoryMock.Verify(
+            repository => repository.AddAsync(
+                It.Is<AuditLog>(auditLog =>
+                    auditLog.UserId == ownerId &&
+                    auditLog.Action == AuditActions.DocumentAccessRevoked &&
+                    auditLog.EntityType == nameof(Document) &&
+                    auditLog.EntityId == document.Id),
+                It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -52,6 +68,9 @@ public class RevokeDocumentAccessTests
             _sut.ExecuteAsync(document.Id, targetUserId, otherUserId, false, CancellationToken.None));
 
         Assert.Equal("Only the owner can revoke document access.", exception.Message);
+        _auditLogRepositoryMock.Verify(
+            repository => repository.AddAsync(It.IsAny<AuditLog>(), It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 
     [Fact]
@@ -68,5 +87,8 @@ public class RevokeDocumentAccessTests
             _sut.ExecuteAsync(document.Id, ownerId, ownerId, false, CancellationToken.None));
 
         Assert.Equal("Owner access cannot be revoked.", exception.Message);
+        _auditLogRepositoryMock.Verify(
+            repository => repository.AddAsync(It.IsAny<AuditLog>(), It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 }

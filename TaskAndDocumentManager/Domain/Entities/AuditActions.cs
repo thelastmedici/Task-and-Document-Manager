@@ -3,21 +3,31 @@ namespace TaskAndDocumentManager.Domain.Entities;
 public static class AuditActions
 {
     public const string DocumentUploaded = nameof(DocumentUploaded);
+    public const string DocumentDownloaded = nameof(DocumentDownloaded);
     public const string DocumentDeleted = nameof(DocumentDeleted);
     public const string DocumentShared = nameof(DocumentShared);
     public const string DocumentAccessRevoked = nameof(DocumentAccessRevoked);
     public const string TaskCreated = nameof(TaskCreated);
+    public const string TaskUpdated = nameof(TaskUpdated);
+    public const string TaskDeleted = nameof(TaskDeleted);
     public const string TaskCompleted = nameof(TaskCompleted);
+    public const string UserLoginSucceeded = nameof(UserLoginSucceeded);
+    public const string UserLoginFailed = nameof(UserLoginFailed);
     public const string UserRoleChanged = nameof(UserRoleChanged);
 
     private static readonly HashSet<string> AllowedValues = new(StringComparer.Ordinal)
     {
         DocumentUploaded,
+        DocumentDownloaded,
         DocumentDeleted,
         DocumentShared,
         DocumentAccessRevoked,
         TaskCreated,
+        TaskUpdated,
+        TaskDeleted,
         TaskCompleted,
+        UserLoginSucceeded,
+        UserLoginFailed,
         UserRoleChanged
     };
 

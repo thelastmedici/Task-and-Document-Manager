@@ -1,4 +1,5 @@
 using System.IO;
+using TaskAndDocumentManager.Application.Audit.Interfaces;
 using TaskAndDocumentManager.Application.Documents.DTOs;
 using TaskAndDocumentManager.Application.Documents.Interfaces;
 using TaskAndDocumentManager.Application.Tasks.Interfaces;
@@ -10,15 +11,18 @@ namespace TaskAndDocumentManager.Application.Documents.UseCases;
 
 public class ShareTaskLinkedDocument
 {
+    private readonly IAuditLogRepository _auditLogRepository;
     private readonly IDocumentRepository _documentRepository;
     private readonly IDocumentAccessRepository _documentAccessRepository;
     private readonly ITaskRepository _taskRepository;
 
     public ShareTaskLinkedDocument(
+        IAuditLogRepository auditLogRepository,
         IDocumentRepository documentRepository,
         IDocumentAccessRepository documentAccessRepository,
         ITaskRepository taskRepository)
     {
+        _auditLogRepository = auditLogRepository;
         _documentRepository = documentRepository;
         _documentAccessRepository = documentAccessRepository;
         _taskRepository = taskRepository;
@@ -26,6 +30,7 @@ public class ShareTaskLinkedDocument
 
     public async Task ExecuteAsync(
         ShareTaskLinkedDocumentRequest request,
+        bool isAdmin = false,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
@@ -53,7 +58,7 @@ public class ShareTaskLinkedDocument
         var document = await _documentRepository.GetByIdAsync(request.DocumentId, cancellationToken)
             ?? throw new FileNotFoundException("Document not found.");
 
-        if (document.OwnerId != request.GrantedByUserId)
+        if (!isAdmin && document.OwnerId != request.GrantedByUserId)
         {
             throw new UnauthorizedAccessException("Only the owner can share this document.");
         }
@@ -71,18 +76,25 @@ public class ShareTaskLinkedDocument
         var task = await _taskRepository.GetByIdAsync(request.TaskId, cancellationToken)
             ?? throw new FileNotFoundException("Task not found.");
 
-        if (!IsTaskParticipant(task, request.GrantedByUserId))
+        if (!isAdmin && !IsTaskParticipant(task, request.GrantedByUserId))
         {
             throw new UnauthorizedAccessException("Only a task participant can share a task-linked document.");
         }
 
-        if (!IsTaskParticipant(task, request.TargetUserId))
+        if (!isAdmin && !IsTaskParticipant(task, request.TargetUserId))
         {
             throw new InvalidOperationException("Target user must be a participant in the linked task.");
         }
 
         var access = new DocumentAccess(request.DocumentId, request.TargetUserId, request.GrantedByUserId);
         await _documentAccessRepository.GrantAccessAsync(access, cancellationToken);
+        await _auditLogRepository.AddAsync(
+            new AuditLog(
+                request.GrantedByUserId,
+                AuditActions.DocumentShared,
+                nameof(Document),
+                request.DocumentId),
+            cancellationToken);
     }
 
     private static bool IsTaskParticipant(TaskItem task, Guid userId)
