@@ -2,6 +2,7 @@ using System.IO;
 using TaskAndDocumentManager.Application.Audit.Interfaces;
 using TaskAndDocumentManager.Application.Documents.DTOs;
 using TaskAndDocumentManager.Application.Documents.Interfaces;
+using TaskAndDocumentManager.Application.Notifications.Interfaces;
 using TaskAndDocumentManager.Application.Tasks.Interfaces;
 using TaskAndDocumentManager.Domain.Documents;
 using TaskAndDocumentManager.Domain.Entities;
@@ -14,17 +15,20 @@ public class ShareTaskLinkedDocument
     private readonly IAuditLogRepository _auditLogRepository;
     private readonly IDocumentRepository _documentRepository;
     private readonly IDocumentAccessRepository _documentAccessRepository;
+    private readonly INotificationRepository _notificationRepository;
     private readonly ITaskRepository _taskRepository;
 
     public ShareTaskLinkedDocument(
         IAuditLogRepository auditLogRepository,
         IDocumentRepository documentRepository,
         IDocumentAccessRepository documentAccessRepository,
+        INotificationRepository notificationRepository,
         ITaskRepository taskRepository)
     {
         _auditLogRepository = auditLogRepository;
         _documentRepository = documentRepository;
         _documentAccessRepository = documentAccessRepository;
+        _notificationRepository = notificationRepository;
         _taskRepository = taskRepository;
     }
 
@@ -88,6 +92,12 @@ public class ShareTaskLinkedDocument
 
         var access = new DocumentAccess(request.DocumentId, request.TargetUserId, request.GrantedByUserId);
         await _documentAccessRepository.GrantAccessAsync(access, cancellationToken);
+        await _notificationRepository.AddAsync(
+            new Notification(
+                request.TargetUserId,
+                "Document shared with you",
+                $"{document.OriginalFileName} was shared with you for a task you participate in."),
+            cancellationToken);
         await _auditLogRepository.AddAsync(
             new AuditLog(
                 request.GrantedByUserId,
