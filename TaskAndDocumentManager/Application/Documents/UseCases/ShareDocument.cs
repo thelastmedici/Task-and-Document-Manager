@@ -2,6 +2,7 @@ using System.IO;
 using TaskAndDocumentManager.Application.Audit.Interfaces;
 using TaskAndDocumentManager.Application.Documents.DTOs;
 using TaskAndDocumentManager.Application.Documents.Interfaces;
+using TaskAndDocumentManager.Application.Notifications.Interfaces;
 using TaskAndDocumentManager.Domain.Documents;
 using TaskAndDocumentManager.Domain.Entities;
 
@@ -12,15 +13,18 @@ public class ShareDocument
     private readonly IAuditLogRepository _auditLogRepository;
     private readonly IDocumentRepository _documentRepository;
     private readonly IDocumentAccessRepository _documentAccessRepository;
+    private readonly INotificationRepository _notificationRepository;
 
     public ShareDocument(
         IAuditLogRepository auditLogRepository,
         IDocumentRepository documentRepository,
-        IDocumentAccessRepository documentAccessRepository)
+        IDocumentAccessRepository documentAccessRepository,
+        INotificationRepository notificationRepository)
     {
         _auditLogRepository = auditLogRepository;
         _documentRepository = documentRepository;
         _documentAccessRepository = documentAccessRepository;
+        _notificationRepository = notificationRepository;
     }
 
     public async Task ExecuteAsync(
@@ -55,6 +59,12 @@ public class ShareDocument
 
         var access = new DocumentAccess(request.DocumentId, request.TargetUserId, request.GrantedByUserId);
         await _documentAccessRepository.GrantAccessAsync(access, cancellationToken);
+        await _notificationRepository.AddAsync(
+            new Notification(
+                request.TargetUserId,
+                "Document shared with you",
+                $"{document.OriginalFileName} was shared with you."),
+            cancellationToken);
         await _auditLogRepository.AddAsync(
             new AuditLog(
                 request.GrantedByUserId,

@@ -3,6 +3,7 @@ using TaskAndDocumentManager.Application.Audit.Interfaces;
 using TaskAndDocumentManager.Application.Documents.DTOs;
 using TaskAndDocumentManager.Application.Documents.Interfaces;
 using TaskAndDocumentManager.Application.Documents.UseCases;
+using TaskAndDocumentManager.Application.Notifications.Interfaces;
 using TaskAndDocumentManager.Application.Tasks.Interfaces;
 using TaskAndDocumentManager.Domain.Documents;
 using TaskAndDocumentManager.Domain.Entities;
@@ -15,6 +16,7 @@ public class ShareTaskLinkedDocumentTests
     private readonly Mock<IAuditLogRepository> _auditLogRepositoryMock;
     private readonly Mock<IDocumentRepository> _documentRepositoryMock;
     private readonly Mock<IDocumentAccessRepository> _documentAccessRepositoryMock;
+    private readonly Mock<INotificationRepository> _notificationRepositoryMock;
     private readonly Mock<ITaskRepository> _taskRepositoryMock;
     private readonly ShareTaskLinkedDocument _sut;
 
@@ -23,11 +25,13 @@ public class ShareTaskLinkedDocumentTests
         _auditLogRepositoryMock = new Mock<IAuditLogRepository>();
         _documentRepositoryMock = new Mock<IDocumentRepository>();
         _documentAccessRepositoryMock = new Mock<IDocumentAccessRepository>();
+        _notificationRepositoryMock = new Mock<INotificationRepository>();
         _taskRepositoryMock = new Mock<ITaskRepository>();
         _sut = new ShareTaskLinkedDocument(
             _auditLogRepositoryMock.Object,
             _documentRepositoryMock.Object,
             _documentAccessRepositoryMock.Object,
+            _notificationRepositoryMock.Object,
             _taskRepositoryMock.Object);
     }
 
@@ -73,6 +77,16 @@ public class ShareTaskLinkedDocumentTests
                 It.IsAny<CancellationToken>()),
             Times.Once);
 
+        _notificationRepositoryMock.Verify(
+            repository => repository.AddAsync(
+                It.Is<Notification>(notification =>
+                    notification.UserId == targetUserId &&
+                    notification.Title == "Document shared with you" &&
+                    notification.Message == "report.pdf was shared with you for a task you participate in." &&
+                    notification.IsRead == false),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+
         _auditLogRepositoryMock.Verify(
             repository => repository.AddAsync(
                 It.Is<AuditLog>(auditLog =>
@@ -110,6 +124,9 @@ public class ShareTaskLinkedDocumentTests
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.ExecuteAsync(request));
 
         Assert.Equal("Document is linked to a different task.", exception.Message);
+        _notificationRepositoryMock.Verify(
+            repository => repository.AddAsync(It.IsAny<Notification>(), It.IsAny<CancellationToken>()),
+            Times.Never);
         _auditLogRepositoryMock.Verify(
             repository => repository.AddAsync(It.IsAny<AuditLog>(), It.IsAny<CancellationToken>()),
             Times.Never);
@@ -144,6 +161,9 @@ public class ShareTaskLinkedDocumentTests
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.ExecuteAsync(request));
 
         Assert.Equal("Target user must be a participant in the linked task.", exception.Message);
+        _notificationRepositoryMock.Verify(
+            repository => repository.AddAsync(It.IsAny<Notification>(), It.IsAny<CancellationToken>()),
+            Times.Never);
         _auditLogRepositoryMock.Verify(
             repository => repository.AddAsync(It.IsAny<AuditLog>(), It.IsAny<CancellationToken>()),
             Times.Never);
