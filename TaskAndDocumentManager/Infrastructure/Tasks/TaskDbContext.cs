@@ -11,6 +11,7 @@ public class TaskDbContext(DbContextOptions<TaskDbContext> options) : DbContext(
     public DbSet<TaskItem> Tasks => Set<TaskItem>();
     public DbSet<User> Users => Set<User>();
     public DbSet<Role> Roles => Set<Role>();
+    public DbSet<Notification> Notifications => Set<Notification>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -61,6 +62,28 @@ public class TaskDbContext(DbContextOptions<TaskDbContext> options) : DbContext(
                 .WithMany()
                 .HasForeignKey(user => user.RoleId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<Notification>(entity =>
+        {
+            entity.HasKey(notification => notification.Id);
+
+            entity.Property(notification => notification.Title)
+                .HasMaxLength(200)
+                .IsRequired();
+
+            entity.Property(notification => notification.Message)
+                .HasMaxLength(4000)
+                .IsRequired();
+
+            entity.Property(notification => notification.UserId)
+                .IsRequired();
+
+            entity.Property(notification => notification.CreatedAtUtc)
+                .IsRequired();
+
+            entity.Property(notification => notification.IsRead)
+                .IsRequired();
         });
     }
 }

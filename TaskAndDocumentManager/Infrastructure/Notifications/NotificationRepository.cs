@@ -1,26 +1,44 @@
+using Microsoft.EntityFrameworkCore;
 using TaskAndDocumentManager.Application.Notifications.Interfaces;
 using TaskAndDocumentManager.Domain.Entities;
+using TaskAndDocumentManager.Infrastructure.Tasks;
 
 namespace TaskAndDocumentManager.Infrastructure.Notifications;
 
-public class NotificationRepository : INotificationRepository
+public class NotificationRepository(TaskDbContext dbContext) : INotificationRepository
 {
-    private static readonly List<Notification> Notifications = new();
+    private readonly TaskDbContext _dbContext = dbContext;
 
-    public Task AddAsync(Notification notification, CancellationToken cancellationToken = default)
+    public async Task AddAsync(Notification notification, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(notification);
-        Notifications.Add(notification);
-        return Task.CompletedTask;
+        await _dbContext.Notifications.AddAsync(notification, cancellationToken);
+        await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public Task<IReadOnlyCollection<Notification>> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
+    public async Task<Notification?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var notifications = Notifications
+        return await _dbContext.Notifications.FirstOrDefaultAsync(
+            notification => notification.Id == id,
+            cancellationToken);
+    }
+
+    public async Task<IReadOnlyCollection<Notification>> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        var notifications = await _dbContext.Notifications
+            .AsNoTracking()
             .Where(notification => notification.UserId == userId)
             .OrderByDescending(notification => notification.CreatedAtUtc)
-            .ToList();
+            .ToListAsync(cancellationToken);
 
-        return Task.FromResult((IReadOnlyCollection<Notification>)notifications);
+        return notifications;
+    }
+
+    public async Task UpdateAsync(Notification notification, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(notification);
+
+        _dbContext.Notifications.Update(notification);
+        await _dbContext.SaveChangesAsync(cancellationToken);
     }
 }
