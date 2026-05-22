@@ -1,23 +1,28 @@
 using System.IO;
 using Microsoft.Extensions.Logging;
+using TaskAndDocumentManager.Application.Audit.Interfaces;
 using TaskAndDocumentManager.Application.Documents.DTOs;
 using TaskAndDocumentManager.Application.Documents.Interfaces;
+using TaskAndDocumentManager.Domain.Entities;
 
 namespace TaskAndDocumentManager.Application.Documents.UseCases;
 
 public class DownloadDocument
 {
+    private readonly IAuditLogRepository _auditLogRepository;
     private readonly IDocumentRepository _documentRepository;
     private readonly IDocumentAccessRepository _documentAccessRepository;
     private readonly IFileStorageService _fileStorageService;
     private readonly ILogger<DownloadDocument> _logger;
 
     public DownloadDocument(
+        IAuditLogRepository auditLogRepository,
         IDocumentRepository documentRepository,
         IDocumentAccessRepository documentAccessRepository,
         IFileStorageService fileStorageService,
         ILogger<DownloadDocument> logger)
     {
+        _auditLogRepository = auditLogRepository;
         _documentRepository = documentRepository;
         _documentAccessRepository = documentAccessRepository;
         _fileStorageService = fileStorageService;
@@ -54,6 +59,14 @@ public class DownloadDocument
         try
         {
             var stream = await _fileStorageService.OpenReadAsync(document.StoragePath, cancellationToken);
+
+            await _auditLogRepository.AddAsync(
+                new AuditLog(
+                    requestedByUserId,
+                    AuditActions.DocumentDownloaded,
+                    nameof(Document),
+                    document.Id),
+                cancellationToken);
 
             return new DownloadDocumentResult(
                 stream,

@@ -71,11 +71,11 @@ public class AuthController : ControllerBase
 
     [AllowAnonymous]
     [HttpPost("login")]
-    public IActionResult Login([FromBody] LoginRequest request)
+    public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
         try
         {
-            var authResult = _authenticateUser.Execute(request.Email, request.Password);
+            var authResult = await _authenticateUser.ExecuteAsync(request.Email, request.Password);
             return Ok(authResult);
         }
         catch (UnauthorizedAccessException ex)

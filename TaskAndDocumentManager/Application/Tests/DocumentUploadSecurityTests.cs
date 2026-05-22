@@ -163,6 +163,7 @@ public class DocumentUploadSecurityTests
             documentAccessRepositoryMock.Object,
             taskRepositoryMock.Object);
         var downloadDocument = new DownloadDocument(
+            auditLogRepositoryMock.Object,
             documentRepositoryMock.Object,
             documentAccessRepositoryMock.Object,
             fileStorageServiceMock.Object,

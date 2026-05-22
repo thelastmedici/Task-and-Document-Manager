@@ -2,6 +2,7 @@ using Moq;
 using TaskAndDocumentManager.Application.Auth.DTOs;
 using TaskAndDocumentManager.Application.Auth.Interfaces;
 using TaskAndDocumentManager.Application.Auth.UseCases;
+using TaskAndDocumentManager.Application.Audit.Interfaces;
 using TaskAndDocumentManager.Domain.Auth;
 using TaskAndDocumentManager.Domain.Entities;
 
@@ -9,6 +10,7 @@ namespace TaskAndDocumentManager.Application.Tests.Auth.UseCases;
 
 public class AuthenticateUserTests
 {
+    private readonly Mock<IAuditLogRepository> _auditLogRepositoryMock;
     private readonly Mock<IUserRepository> _userRepositoryMock;
     private readonly Mock<IPasswordHasher> _passwordHasherMock;
     private readonly Mock<ITokenService> _tokenServiceMock;
@@ -17,12 +19,14 @@ public class AuthenticateUserTests
 
     public AuthenticateUserTests()
     {
+        _auditLogRepositoryMock = new Mock<IAuditLogRepository>();
         _userRepositoryMock = new Mock<IUserRepository>();
         _passwordHasherMock = new Mock<IPasswordHasher>();
         _tokenServiceMock = new Mock<ITokenService>();
         _roleCatalogMock = new Mock<IRoleCatalog>();
 
         _sut = new AuthenticateUser(
+            _auditLogRepositoryMock.Object,
             _userRepositoryMock.Object,
             _passwordHasherMock.Object,
             _tokenServiceMock.Object,
@@ -30,7 +34,7 @@ public class AuthenticateUserTests
     }
 
     [Fact]
-    public void Execute_ShouldUpgradeLegacyHash_WhenPasswordIsValid()
+    public async Task ExecuteAsync_ShouldUpgradeLegacyHash_WhenPasswordIsValid()
     {
         var userId = Guid.NewGuid();
         var roleId = Guid.NewGuid();
@@ -78,13 +82,62 @@ public class AuthenticateUserTests
                 ExpiresAtUtc = DateTime.UtcNow.AddHours(1)
             });
 
-        var result = _sut.Execute(email, password);
+        var result = await _sut.ExecuteAsync(email, password);
 
         Assert.Equal("token", result.Token);
         _userRepositoryMock.Verify(repository => repository.Save(
             It.Is<User>(savedUser =>
                 savedUser.Id == userId &&
                 savedUser.PasswordHash == upgradedHash)),
+            Times.Once);
+        _auditLogRepositoryMock.Verify(
+            repository => repository.AddAsync(
+                It.Is<AuditLog>(auditLog =>
+                    auditLog.UserId == userId &&
+                    auditLog.Action == AuditActions.UserLoginSucceeded &&
+                    auditLog.EntityType == nameof(User) &&
+                    auditLog.EntityId == userId),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_ShouldAuditFailedLogin_WhenPasswordIsInvalid()
+    {
+        var userId = Guid.NewGuid();
+        var roleId = Guid.NewGuid();
+        var email = "person@example.com";
+        var password = "wrong-password";
+
+        var user = new User
+        {
+            Id = userId,
+            Email = email,
+            PasswordHash = "stored.hash",
+            RoleId = roleId,
+            IsActive = true
+        };
+
+        _userRepositoryMock
+            .Setup(repository => repository.GetByEmail(email))
+            .Returns(user);
+
+        _passwordHasherMock
+            .Setup(hasher => hasher.VerifyPassword(password, user.PasswordHash))
+            .Returns(false);
+
+        var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+            _sut.ExecuteAsync(email, password));
+
+        Assert.Equal("Invalid email or password.", exception.Message);
+        _auditLogRepositoryMock.Verify(
+            repository => repository.AddAsync(
+                It.Is<AuditLog>(auditLog =>
+                    auditLog.UserId == userId &&
+                    auditLog.Action == AuditActions.UserLoginFailed &&
+                    auditLog.EntityType == nameof(User) &&
+                    auditLog.EntityId == userId),
+                It.IsAny<CancellationToken>()),
             Times.Once);
     }
 }
