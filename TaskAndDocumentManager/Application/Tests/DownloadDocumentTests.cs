@@ -1,6 +1,7 @@
 using System.IO;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using TaskAndDocumentManager.Application.Audit.Interfaces;
 using TaskAndDocumentManager.Application.Documents.Interfaces;
 using TaskAndDocumentManager.Application.Documents.UseCases;
 using TaskAndDocumentManager.Domain.Entities;
@@ -9,6 +10,7 @@ namespace TaskAndDocumentManager.Application.Tests.Documents.UseCases;
 
 public class DownloadDocumentTests
 {
+    private readonly Mock<IAuditLogRepository> _auditLogRepositoryMock;
     private readonly Mock<IDocumentRepository> _documentRepositoryMock;
     private readonly Mock<IDocumentAccessRepository> _documentAccessRepositoryMock;
     private readonly Mock<IFileStorageService> _fileStorageServiceMock;
@@ -16,11 +18,13 @@ public class DownloadDocumentTests
 
     public DownloadDocumentTests()
     {
+        _auditLogRepositoryMock = new Mock<IAuditLogRepository>();
         _documentRepositoryMock = new Mock<IDocumentRepository>();
         _documentAccessRepositoryMock = new Mock<IDocumentAccessRepository>();
         _fileStorageServiceMock = new Mock<IFileStorageService>();
 
         _sut = new DownloadDocument(
+            _auditLogRepositoryMock.Object,
             _documentRepositoryMock.Object,
             _documentAccessRepositoryMock.Object,
             _fileStorageServiceMock.Object,
@@ -47,6 +51,15 @@ public class DownloadDocumentTests
         Assert.Same(expectedStream, result.Content);
         Assert.Equal("application/pdf", result.ContentType);
         Assert.Equal("report.pdf", result.FileName);
+        _auditLogRepositoryMock.Verify(
+            repository => repository.AddAsync(
+                It.Is<AuditLog>(auditLog =>
+                    auditLog.UserId == ownerId &&
+                    auditLog.Action == AuditActions.DocumentDownloaded &&
+                    auditLog.EntityType == nameof(Document) &&
+                    auditLog.EntityId == document.Id),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [Fact]
@@ -70,6 +83,15 @@ public class DownloadDocumentTests
         Assert.Same(expectedStream, result.Content);
         Assert.Equal("application/pdf", result.ContentType);
         Assert.Equal("report.pdf", result.FileName);
+        _auditLogRepositoryMock.Verify(
+            repository => repository.AddAsync(
+                It.Is<AuditLog>(auditLog =>
+                    auditLog.UserId == adminId &&
+                    auditLog.Action == AuditActions.DocumentDownloaded &&
+                    auditLog.EntityType == nameof(Document) &&
+                    auditLog.EntityId == document.Id),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [Fact]
@@ -97,6 +119,15 @@ public class DownloadDocumentTests
         Assert.Same(expectedStream, result.Content);
         Assert.Equal("application/pdf", result.ContentType);
         Assert.Equal("report.pdf", result.FileName);
+        _auditLogRepositoryMock.Verify(
+            repository => repository.AddAsync(
+                It.Is<AuditLog>(auditLog =>
+                    auditLog.UserId == requesterId &&
+                    auditLog.Action == AuditActions.DocumentDownloaded &&
+                    auditLog.EntityType == nameof(Document) &&
+                    auditLog.EntityId == document.Id),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [Fact]
@@ -122,6 +153,9 @@ public class DownloadDocumentTests
         _fileStorageServiceMock.Verify(
             storage => storage.OpenReadAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Never);
+        _auditLogRepositoryMock.Verify(
+            repository => repository.AddAsync(It.IsAny<AuditLog>(), It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 
     [Fact]
@@ -142,5 +176,8 @@ public class DownloadDocumentTests
             _sut.ExecuteAsync(document.Id, ownerId));
 
         Assert.Equal("Document could not be retrieved.", exception.Message);
+        _auditLogRepositoryMock.Verify(
+            repository => repository.AddAsync(It.IsAny<AuditLog>(), It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 }

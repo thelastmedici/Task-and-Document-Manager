@@ -1,28 +1,37 @@
 using TaskAndDocumentManager.Application.Auth.DTOs;
 using TaskAndDocumentManager.Application.Auth.Interfaces;
+using TaskAndDocumentManager.Application.Audit.Interfaces;
+using TaskAndDocumentManager.Domain.Auth;
+using TaskAndDocumentManager.Domain.Entities;
 
 namespace TaskAndDocumentManager.Application.Auth.UseCases;
 
 public class AuthenticateUser
 {
+    private readonly IAuditLogRepository _auditLogRepository;
     private readonly IUserRepository _userRepository;
     private readonly IPasswordHasher _passwordHasher;
     private readonly ITokenService _tokenService;
     private readonly IRoleCatalog _roleCatalog;
 
     public AuthenticateUser(
+        IAuditLogRepository auditLogRepository,
         IUserRepository userRepository,
         IPasswordHasher passwordHasher,
         ITokenService tokenService,
         IRoleCatalog roleCatalog)
     {
+        _auditLogRepository = auditLogRepository;
         _userRepository = userRepository;
         _passwordHasher = passwordHasher;
         _tokenService = tokenService;
         _roleCatalog = roleCatalog;
     }
 
-    public AuthResponse Execute(string email, string password)
+    public async Task<AuthResponse> ExecuteAsync(
+        string email,
+        string password,
+        CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(email))
         {
@@ -44,11 +53,13 @@ public class AuthenticateUser
 
         if (!user.IsActive)
         {
+            await LogFailedLoginAsync(user.Id, cancellationToken);
             throw new UnauthorizedAccessException("This account is deactivated.");
         }
 
         if (!_passwordHasher.VerifyPassword(password, user.PasswordHash))
         {
+            await LogFailedLoginAsync(user.Id, cancellationToken);
             throw new UnauthorizedAccessException("Invalid email or password.");
         }
 
@@ -62,6 +73,14 @@ public class AuthenticateUser
 
         var tokenResult = _tokenService.GenerateToken(user.Id.ToString(), user.Email, role);
 
+        await _auditLogRepository.AddAsync(
+            new AuditLog(
+                user.Id,
+                AuditActions.UserLoginSucceeded,
+                nameof(User),
+                user.Id),
+            cancellationToken);
+
         return new AuthResponse
         {
             Token = tokenResult.Token,
@@ -74,5 +93,16 @@ public class AuthenticateUser
                 IsActive = user.IsActive
             }
         };
+    }
+
+    private Task LogFailedLoginAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        return _auditLogRepository.AddAsync(
+            new AuditLog(
+                userId,
+                AuditActions.UserLoginFailed,
+                nameof(User),
+                userId),
+            cancellationToken);
     }
 }
