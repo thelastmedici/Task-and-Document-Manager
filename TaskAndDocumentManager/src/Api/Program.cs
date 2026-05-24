@@ -99,7 +99,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 var path = context.HttpContext.Request.Path;
 
                 if (!string.IsNullOrWhiteSpace(accessToken) &&
-                    path.StartsWithSegments("/hubs/realtime"))
+                    path.StartsWithSegments("/hubs"))
                 {
                     context.Token = accessToken;
                 }
@@ -145,5 +145,6 @@ if (app.Environment.IsDevelopment())
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHub<NotificationHub>("/hubs/notifications");
 app.MapHub<RealtimeHub>("/hubs/realtime");
 app.Run();
