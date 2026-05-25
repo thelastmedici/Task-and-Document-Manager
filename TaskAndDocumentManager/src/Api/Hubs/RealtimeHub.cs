@@ -2,19 +2,32 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using TaskAndDocumentManager.Api.Authorization;
 using TaskAndDocumentManager.Api.Extensions;
+using TaskAndDocumentManager.Api.Realtime;
 
 namespace TaskAndDocumentManager.Api.Hubs;
 
 [Authorize(Policy = AppPolicies.Authenticated)]
 public class RealtimeHub : Hub
 {
+    private readonly IUserConnectionTracker _connectionTracker;
+
+    public RealtimeHub(IUserConnectionTracker connectionTracker)
+    {
+        _connectionTracker = connectionTracker;
+    }
+
     public override async Task OnConnectedAsync()
     {
         var actorId = Context.User?.GetActorId()
             ?? throw new UnauthorizedAccessException("Authenticated user context is required.");
 
         await Groups.AddToGroupAsync(Context.ConnectionId, GetUserGroupName(actorId));
-        await Clients.Others.SendAsync("UserOnline", actorId);
+        var change = _connectionTracker.AddConnection(actorId, Context.ConnectionId);
+
+        if (change.IsFirstConnection)
+        {
+            await Clients.AllExcept(Context.ConnectionId).SendAsync("UserOnline", actorId);
+        }
 
         await base.OnConnectedAsync();
     }
@@ -26,7 +39,12 @@ public class RealtimeHub : Hub
         if (actorId.HasValue)
         {
             await Groups.RemoveFromGroupAsync(Context.ConnectionId, GetUserGroupName(actorId.Value));
-            await Clients.Others.SendAsync("UserOffline", actorId.Value);
+            var change = _connectionTracker.RemoveConnection(actorId.Value, Context.ConnectionId);
+
+            if (change.IsLastConnection)
+            {
+                await Clients.All.SendAsync("UserOffline", actorId.Value);
+            }
         }
 
         await base.OnDisconnectedAsync(exception);

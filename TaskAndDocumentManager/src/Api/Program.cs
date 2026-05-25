@@ -19,6 +19,7 @@ using TaskAndDocumentManager.Infrastructure.Tasks;
 using TaskAndDocumentManager.Api.Authorization;
 using TaskAndDocumentManager.Application.Documents.Services;
 using TaskAndDocumentManager.Api.Hubs;
+using TaskAndDocumentManager.Api.Realtime;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -76,6 +77,7 @@ builder.Services.AddScoped<ListUsers>();
 builder.Services.AddScoped<CreateUserAsAdmin>();
 builder.Services.AddScoped<ChangeUserRole>();
 builder.Services.AddScoped<DeleteUser>();
+builder.Services.AddSingleton<IUserConnectionTracker, InMemoryUserConnectionTracker>();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
