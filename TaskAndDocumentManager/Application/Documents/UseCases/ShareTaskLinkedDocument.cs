@@ -15,6 +15,7 @@ public class ShareTaskLinkedDocument
     private readonly IAuditLogRepository _auditLogRepository;
     private readonly IDocumentRepository _documentRepository;
     private readonly IDocumentAccessRepository _documentAccessRepository;
+    private readonly INotificationPublisher _notificationPublisher;
     private readonly INotificationRepository _notificationRepository;
     private readonly ITaskRepository _taskRepository;
 
@@ -22,12 +23,14 @@ public class ShareTaskLinkedDocument
         IAuditLogRepository auditLogRepository,
         IDocumentRepository documentRepository,
         IDocumentAccessRepository documentAccessRepository,
+        INotificationPublisher notificationPublisher,
         INotificationRepository notificationRepository,
         ITaskRepository taskRepository)
     {
         _auditLogRepository = auditLogRepository;
         _documentRepository = documentRepository;
         _documentAccessRepository = documentAccessRepository;
+        _notificationPublisher = notificationPublisher;
         _notificationRepository = notificationRepository;
         _taskRepository = taskRepository;
     }
@@ -92,12 +95,12 @@ public class ShareTaskLinkedDocument
 
         var access = new DocumentAccess(request.DocumentId, request.TargetUserId, request.GrantedByUserId);
         await _documentAccessRepository.GrantAccessAsync(access, cancellationToken);
-        await _notificationRepository.AddAsync(
-            new Notification(
-                request.TargetUserId,
-                "Document shared with you",
-                $"{document.OriginalFileName} was shared with you for a task you participate in."),
-            cancellationToken);
+        var notification = new Notification(
+            request.TargetUserId,
+            "Document shared with you",
+            $"{document.OriginalFileName} was shared with you for a task you participate in.");
+        await _notificationRepository.AddAsync(notification, cancellationToken);
+        await _notificationPublisher.PublishCreatedAsync(notification, cancellationToken);
         await _auditLogRepository.AddAsync(
             new AuditLog(
                 request.GrantedByUserId,
