@@ -30,7 +30,7 @@ public class NotificationHub : Hub
 
         if (change.IsFirstConnection)
         {
-            await _realtimeHubContext.Clients.All.SendAsync("UserOnline", actorId);
+            await _realtimeHubContext.Clients.All.SendAsync(RealtimeEventNames.UserOnline, actorId);
         }
 
         await base.OnConnectedAsync();
@@ -47,7 +47,7 @@ public class NotificationHub : Hub
 
             if (change.IsLastConnection)
             {
-                await _realtimeHubContext.Clients.All.SendAsync("UserOffline", actorId.Value);
+                await _realtimeHubContext.Clients.All.SendAsync(RealtimeEventNames.UserOffline, actorId.Value);
             }
         }
 

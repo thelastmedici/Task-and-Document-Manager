@@ -34,7 +34,7 @@ public class SignalRNotificationPublisher : INotificationPublisher
         {
             await _notificationHubContext.Clients
                 .Group(NotificationHub.GetUserGroupName(notification.UserId))
-                .SendAsync("NotificationCreated", payload, cancellationToken);
+                .SendAsync(RealtimeEventNames.NotificationCreated, payload, cancellationToken);
         }
         catch (Exception ex)
         {
