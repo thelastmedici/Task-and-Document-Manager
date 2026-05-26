@@ -26,7 +26,7 @@ public class RealtimeHub : Hub
 
         if (change.IsFirstConnection)
         {
-            await Clients.AllExcept(Context.ConnectionId).SendAsync("UserOnline", actorId);
+            await Clients.AllExcept(Context.ConnectionId).SendAsync(RealtimeEventNames.UserOnline, actorId);
         }
 
         await base.OnConnectedAsync();
@@ -43,7 +43,7 @@ public class RealtimeHub : Hub
 
             if (change.IsLastConnection)
             {
-                await Clients.All.SendAsync("UserOffline", actorId.Value);
+                await Clients.All.SendAsync(RealtimeEventNames.UserOffline, actorId.Value);
             }
         }
 
