@@ -1,8 +1,141 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Realtime Workspace";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="workspace-shell" id="realtime-app">
+    <section class="hero-panel">
+        <div>
+            <p class="eyebrow">Step 16.8</p>
+            <h1>Realtime updates, backed by API truth.</h1>
+            <p class="hero-copy">
+                This workspace subscribes to SignalR hubs for instant UI updates, but it always re-syncs
+                from the API after reconnects and important events so missed realtime messages do not leave
+                the UI stale.
+            </p>
+        </div>
+        <div class="hero-metrics">
+            <div class="metric-card">
+                <span class="metric-label">Session</span>
+                <strong id="session-status">Signed out</strong>
+                <small id="session-detail">Authenticate to connect to hubs.</small>
+            </div>
+            <div class="metric-card">
+                <span class="metric-label">API Sync</span>
+                <strong id="sync-status">Idle</strong>
+                <small id="sync-detail">No refresh has happened yet.</small>
+            </div>
+            <div class="metric-card">
+                <span class="metric-label">Realtime</span>
+                <strong id="realtime-status">Offline</strong>
+                <small id="realtime-detail">Waiting for an authenticated session.</small>
+            </div>
+        </div>
+    </section>
+
+    <section class="workspace-grid">
+        <article class="panel auth-panel">
+            <div class="panel-header">
+                <div>
+                    <p class="panel-kicker">Auth</p>
+                    <h2>API session</h2>
+                </div>
+                <button type="button" class="ghost-button" id="logout-button" disabled>Log out</button>
+            </div>
+
+            <form class="stack-form" id="login-form">
+                <h3>Login</h3>
+                <label>
+                    <span>Email</span>
+                    <input type="email" name="email" autocomplete="email" required />
+                </label>
+                <label>
+                    <span>Password</span>
+                    <input type="password" name="password" autocomplete="current-password" required />
+                </label>
+                <button type="submit" class="primary-button">Sign in</button>
+            </form>
+
+            <form class="stack-form" id="register-form">
+                <h3>Register</h3>
+                <label>
+                    <span>Email</span>
+                    <input type="email" name="email" autocomplete="email" required />
+                </label>
+                <label>
+                    <span>Password</span>
+                    <input type="password" name="password" autocomplete="new-password" required />
+                </label>
+                <button type="submit" class="secondary-button">Create account</button>
+            </form>
+
+            <div class="token-panel">
+                <label for="jwt-token">JWT token</label>
+                <textarea id="jwt-token" rows="5" placeholder="Stored automatically after login. You can also paste a token here and click Save token."></textarea>
+                <div class="token-actions">
+                    <button type="button" class="ghost-button" id="save-token-button">Save token</button>
+                    <button type="button" class="ghost-button" id="load-profile-button">Refresh profile</button>
+                </div>
+            </div>
+
+            <p class="inline-message" id="auth-message" aria-live="polite"></p>
+        </article>
+
+        <article class="panel profile-panel">
+            <div class="panel-header">
+                <div>
+                    <p class="panel-kicker">Identity</p>
+                    <h2>Current user</h2>
+                </div>
+            </div>
+            <dl class="profile-grid" id="profile-grid">
+                <div>
+                    <dt>Email</dt>
+                    <dd>Not loaded</dd>
+                </div>
+                <div>
+                    <dt>Role</dt>
+                    <dd>Not loaded</dd>
+                </div>
+                <div>
+                    <dt>Status</dt>
+                    <dd>Unknown</dd>
+                </div>
+                <div>
+                    <dt>User ID</dt>
+                    <dd>Unknown</dd>
+                </div>
+            </dl>
+            <div class="presence-feed">
+                <div class="presence-header">
+                    <div>
+                        <p class="panel-kicker">Realtime</p>
+                        <h3>Presence feed</h3>
+                    </div>
+                    <span class="presence-count" id="presence-count">0 events</span>
+                </div>
+                <ul id="presence-feed" class="event-feed">
+                    <li class="empty-state">Presence events will appear here after the realtime connection starts.</li>
+                </ul>
+            </div>
+        </article>
+
+        <article class="panel notifications-panel">
+            <div class="panel-header">
+                <div>
+                    <p class="panel-kicker">Notifications</p>
+                    <h2>Realtime plus API reconciliation</h2>
+                </div>
+                <button type="button" class="ghost-button" id="refresh-notifications-button" disabled>Refresh now</button>
+            </div>
+
+            <div class="status-strip">
+                <span id="notification-connection-badge" class="status-pill">Hub offline</span>
+                <span id="notification-count" class="status-pill neutral">0 notifications</span>
+            </div>
+
+            <ul id="notifications-list" class="notification-list">
+                <li class="empty-state">Sign in to load notifications from the API and subscribe to realtime events.</li>
+            </ul>
+        </article>
+    </section>
 </div>
