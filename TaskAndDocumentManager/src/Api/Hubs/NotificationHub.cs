@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.SignalR;
 using TaskAndDocumentManager.Api.Authorization;
 using TaskAndDocumentManager.Api.Extensions;
 using TaskAndDocumentManager.Api.Realtime;
+using TaskAndDocumentManager.Application.Presence.Interfaces;
 
 namespace TaskAndDocumentManager.Api.Hubs;
 
@@ -11,13 +12,16 @@ public class NotificationHub : Hub
 {
     private readonly IUserConnectionTracker _connectionTracker;
     private readonly IHubContext<RealtimeHub> _realtimeHubContext;
+    private readonly IPresenceService _presenceService;
 
     public NotificationHub(
         IUserConnectionTracker connectionTracker,
-        IHubContext<RealtimeHub> realtimeHubContext)
+        IHubContext<RealtimeHub> realtimeHubContext,
+        IPresenceService presenceService)
     {
         _connectionTracker = connectionTracker;
         _realtimeHubContext = realtimeHubContext;
+        _presenceService = presenceService;
     }
 
     public override async Task OnConnectedAsync()
@@ -30,7 +34,8 @@ public class NotificationHub : Hub
 
         if (change.IsFirstConnection)
         {
-            await _realtimeHubContext.Clients.All.SendAsync(RealtimeEventNames.UserOnline, actorId);
+            var presence = _presenceService.SetOnline(actorId);
+            await _realtimeHubContext.Clients.All.SendAsync(RealtimeEventNames.UserPresenceUpdated, presence);
         }
 
         await base.OnConnectedAsync();
@@ -47,7 +52,8 @@ public class NotificationHub : Hub
 
             if (change.IsLastConnection)
             {
-                await _realtimeHubContext.Clients.All.SendAsync(RealtimeEventNames.UserOffline, actorId.Value);
+                var presence = _presenceService.SetOffline(actorId.Value);
+                await _realtimeHubContext.Clients.All.SendAsync(RealtimeEventNames.UserPresenceUpdated, presence);
             }
         }
 

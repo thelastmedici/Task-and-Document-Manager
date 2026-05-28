@@ -9,4 +9,5 @@ public static class RealtimeEventNames
     public const string NotificationCreated = nameof(NotificationCreated);
     public const string UserOnline = nameof(UserOnline);
     public const string UserOffline = nameof(UserOffline);
+    public const string UserPresenceUpdated = nameof(UserPresenceUpdated);
 }
