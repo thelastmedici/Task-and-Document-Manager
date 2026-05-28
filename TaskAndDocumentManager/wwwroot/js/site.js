@@ -266,6 +266,33 @@
             render();
         });
 
+        connection.on("UserPresenceUpdated", presence => {
+            try {
+                const p = presence;
+                let message = `User ${p.userId} is ${p.isOnline ? 'online' : 'offline'}`;
+
+                if (p.isEditing && p.currentDocumentId) {
+                    message += ` and editing document ${p.currentDocumentId}`;
+                }
+
+                if (p.connectedAtUtc) {
+                    const dt = new Date(p.connectedAtUtc);
+                    message += ` (connected ${dt.toLocaleTimeString()})`;
+                }
+
+                if (p.disconnectedAtUtc) {
+                    const dt2 = new Date(p.disconnectedAtUtc);
+                    message += ` (disconnected ${dt2.toLocaleTimeString()})`;
+                }
+
+                prependPresenceEvent(message);
+                setRealtimeState("Presence update", "Presence state updated from the server.");
+                render();
+            } catch (e) {
+                console.warn('Failed to handle UserPresenceUpdated', e);
+            }
+        });
+
         connection.onreconnecting(() => {
             setRealtimeState("Recovering", "Presence hub is reconnecting. Fresh data will come from the API after reconnection.");
             render();

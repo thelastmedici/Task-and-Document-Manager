@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.SignalR;
 using TaskAndDocumentManager.Api.Authorization;
 using TaskAndDocumentManager.Api.Extensions;
 using TaskAndDocumentManager.Api.Realtime;
+using TaskAndDocumentManager.Application.Presence.Interfaces;
+using TaskAndDocumentManager.Application.Presence.DTOs;
 
 namespace TaskAndDocumentManager.Api.Hubs;
 
@@ -10,10 +12,12 @@ namespace TaskAndDocumentManager.Api.Hubs;
 public class RealtimeHub : Hub
 {
     private readonly IUserConnectionTracker _connectionTracker;
+    private readonly IPresenceService _presenceService;
 
-    public RealtimeHub(IUserConnectionTracker connectionTracker)
+    public RealtimeHub(IUserConnectionTracker connectionTracker, IPresenceService presenceService)
     {
         _connectionTracker = connectionTracker;
+        _presenceService = presenceService;
     }
 
     public override async Task OnConnectedAsync()
@@ -26,7 +30,8 @@ public class RealtimeHub : Hub
 
         if (change.IsFirstConnection)
         {
-            await Clients.AllExcept(Context.ConnectionId).SendAsync(RealtimeEventNames.UserOnline, actorId);
+            var presence = _presenceService.SetOnline(actorId);
+            await Clients.AllExcept(Context.ConnectionId).SendAsync(RealtimeEventNames.UserPresenceUpdated, presence);
         }
 
         await base.OnConnectedAsync();
@@ -43,7 +48,8 @@ public class RealtimeHub : Hub
 
             if (change.IsLastConnection)
             {
-                await Clients.All.SendAsync(RealtimeEventNames.UserOffline, actorId.Value);
+                var presence = _presenceService.SetOffline(actorId.Value);
+                await Clients.All.SendAsync(RealtimeEventNames.UserPresenceUpdated, presence);
             }
         }
 
@@ -58,6 +64,40 @@ public class RealtimeHub : Hub
         }
 
         return Groups.AddToGroupAsync(Context.ConnectionId, GetTaskGroupName(taskId));
+    }
+
+    public async Task StartEditingDocument(Guid documentId)
+    {
+        var actorId = Context.User?.GetActorId()
+            ?? throw new UnauthorizedAccessException("Authenticated user context is required.");
+
+        if (documentId == Guid.Empty)
+        {
+            throw new HubException("Document ID is required.");
+        }
+
+        var presence = _presenceService.SetEditing(actorId, documentId, true);
+        if (presence is not null)
+        {
+            await Clients.Group(GetUserGroupName(actorId)).SendAsync(RealtimeEventNames.UserPresenceUpdated, presence);
+        }
+    }
+
+    public async Task StopEditingDocument(Guid documentId)
+    {
+        var actorId = Context.User?.GetActorId()
+            ?? throw new UnauthorizedAccessException("Authenticated user context is required.");
+
+        if (documentId == Guid.Empty)
+        {
+            throw new HubException("Document ID is required.");
+        }
+
+        var presence = _presenceService.SetEditing(actorId, null, false);
+        if (presence is not null)
+        {
+            await Clients.Group(GetUserGroupName(actorId)).SendAsync(RealtimeEventNames.UserPresenceUpdated, presence);
+        }
     }
 
     public Task LeaveTask(Guid taskId)
