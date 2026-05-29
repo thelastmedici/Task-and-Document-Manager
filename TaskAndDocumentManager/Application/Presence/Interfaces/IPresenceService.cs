@@ -8,4 +8,6 @@ public interface IPresenceService
     PresenceDto SetOffline(Guid userId);
     PresenceDto? SetEditing(Guid userId, Guid? documentId, bool isEditing);
     PresenceDto? GetPresence(Guid userId);
+    IReadOnlyCollection<PresenceDto> GetOnlineUsers();
+    IReadOnlyCollection<PresenceDto> GetActiveCollaborators(Guid documentId);
 }
