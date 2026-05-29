@@ -5,6 +5,7 @@ using TaskAndDocumentManager.Application.Documents.Interfaces;
 using TaskAndDocumentManager.Application.Documents.UseCases;
 using TaskAndDocumentManager.Application.Notifications.Interfaces;
 using TaskAndDocumentManager.Application.Notifications.UseCases;
+using TaskAndDocumentManager.Application.Presence.Interfaces;
 using TaskAndDocumentManager.Application.Tasks.Interfaces;
 using TaskAndDocumentManager.Application.Tasks.UseCases;
 using TaskAndDocumentManager.Infrastructure.Audit;
@@ -79,6 +80,7 @@ builder.Services.AddScoped<CreateUserAsAdmin>();
 builder.Services.AddScoped<ChangeUserRole>();
 builder.Services.AddScoped<DeleteUser>();
 builder.Services.AddSingleton<IUserConnectionTracker, InMemoryUserConnectionTracker>();
+builder.Services.AddSingleton<IPresenceService, InMemoryPresenceService>();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
