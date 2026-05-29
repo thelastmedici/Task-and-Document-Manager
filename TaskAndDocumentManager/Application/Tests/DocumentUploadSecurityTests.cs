@@ -134,7 +134,7 @@ public class DocumentUploadSecurityTests
         var taskRepositoryMock = new Mock<ITaskRepository>();
         var fileStorageServiceMock = new Mock<IFileStorageService>();
         var auditLogRepositoryMock = new Mock<IAuditLogRepository>();
-        var notificationPublisherMock = new Mock<INotificationPublisher>();
+        var notificationDispatcherMock = new Mock<INotificationDispatcher>();
         var notificationRepositoryMock = new Mock<INotificationRepository>();
 
         var uploadDocument = new UploadDocument(
@@ -146,13 +146,13 @@ public class DocumentUploadSecurityTests
             auditLogRepositoryMock.Object,
             documentRepositoryMock.Object,
             documentAccessRepositoryMock.Object,
-            notificationPublisherMock.Object,
+            notificationDispatcherMock.Object,
             notificationRepositoryMock.Object);
         var shareTaskLinkedDocument = new ShareTaskLinkedDocument(
             auditLogRepositoryMock.Object,
             documentRepositoryMock.Object,
             documentAccessRepositoryMock.Object,
-            notificationPublisherMock.Object,
+            notificationDispatcherMock.Object,
             notificationRepositoryMock.Object,
             taskRepositoryMock.Object);
         var revokeDocumentAccess = new RevokeDocumentAccess(
