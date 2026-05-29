@@ -6,20 +6,20 @@ using TaskAndDocumentManager.Domain.Entities;
 
 namespace TaskAndDocumentManager.Api.Realtime;
 
-public class SignalRNotificationPublisher : INotificationPublisher
+public class SignalRNotificationDispatcher : INotificationDispatcher
 {
     private readonly IHubContext<NotificationHub> _notificationHubContext;
-    private readonly ILogger<SignalRNotificationPublisher> _logger;
+    private readonly ILogger<SignalRNotificationDispatcher> _logger;
 
-    public SignalRNotificationPublisher(
+    public SignalRNotificationDispatcher(
         IHubContext<NotificationHub> notificationHubContext,
-        ILogger<SignalRNotificationPublisher> logger)
+        ILogger<SignalRNotificationDispatcher> logger)
     {
         _notificationHubContext = notificationHubContext;
         _logger = logger;
     }
 
-    public async Task PublishCreatedAsync(Notification notification, CancellationToken cancellationToken = default)
+    public async Task DispatchCreatedAsync(Notification notification, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(notification);
 

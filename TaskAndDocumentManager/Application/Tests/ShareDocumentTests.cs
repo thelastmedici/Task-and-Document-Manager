@@ -14,7 +14,7 @@ public class ShareDocumentTests
     private readonly Mock<IAuditLogRepository> _auditLogRepositoryMock;
     private readonly Mock<IDocumentRepository> _documentRepositoryMock;
     private readonly Mock<IDocumentAccessRepository> _documentAccessRepositoryMock;
-    private readonly Mock<INotificationPublisher> _notificationPublisherMock;
+    private readonly Mock<INotificationDispatcher> _notificationDispatcherMock;
     private readonly Mock<INotificationRepository> _notificationRepositoryMock;
     private readonly ShareDocument _sut;
 
@@ -23,13 +23,13 @@ public class ShareDocumentTests
         _auditLogRepositoryMock = new Mock<IAuditLogRepository>();
         _documentRepositoryMock = new Mock<IDocumentRepository>();
         _documentAccessRepositoryMock = new Mock<IDocumentAccessRepository>();
-        _notificationPublisherMock = new Mock<INotificationPublisher>();
+        _notificationDispatcherMock = new Mock<INotificationDispatcher>();
         _notificationRepositoryMock = new Mock<INotificationRepository>();
         _sut = new ShareDocument(
             _auditLogRepositoryMock.Object,
             _documentRepositoryMock.Object,
             _documentAccessRepositoryMock.Object,
-            _notificationPublisherMock.Object,
+            _notificationDispatcherMock.Object,
             _notificationRepositoryMock.Object);
     }
 
@@ -75,8 +75,8 @@ public class ShareDocumentTests
                 It.IsAny<CancellationToken>()),
             Times.Once);
 
-        _notificationPublisherMock.Verify(
-            publisher => publisher.PublishCreatedAsync(
+        _notificationDispatcherMock.Verify(
+            dispatcher => dispatcher.DispatchCreatedAsync(
                 It.Is<Notification>(notification =>
                     notification.UserId == targetUserId &&
                     notification.Title == "Document shared with you" &&
@@ -114,8 +114,8 @@ public class ShareDocumentTests
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.ExecuteAsync(request));
 
         Assert.Equal("You cannot share a document with yourself.", exception.Message);
-        _notificationPublisherMock.Verify(
-            publisher => publisher.PublishCreatedAsync(It.IsAny<Notification>(), It.IsAny<CancellationToken>()),
+        _notificationDispatcherMock.Verify(
+            dispatcher => dispatcher.DispatchCreatedAsync(It.IsAny<Notification>(), It.IsAny<CancellationToken>()),
             Times.Never);
         _notificationRepositoryMock.Verify(
             repository => repository.AddAsync(It.IsAny<Notification>(), It.IsAny<CancellationToken>()),

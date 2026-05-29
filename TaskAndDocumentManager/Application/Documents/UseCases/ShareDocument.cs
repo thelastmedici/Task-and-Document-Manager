@@ -13,20 +13,20 @@ public class ShareDocument
     private readonly IAuditLogRepository _auditLogRepository;
     private readonly IDocumentRepository _documentRepository;
     private readonly IDocumentAccessRepository _documentAccessRepository;
-    private readonly INotificationPublisher _notificationPublisher;
+    private readonly INotificationDispatcher _notificationDispatcher;
     private readonly INotificationRepository _notificationRepository;
 
     public ShareDocument(
         IAuditLogRepository auditLogRepository,
         IDocumentRepository documentRepository,
         IDocumentAccessRepository documentAccessRepository,
-        INotificationPublisher notificationPublisher,
+        INotificationDispatcher notificationDispatcher,
         INotificationRepository notificationRepository)
     {
         _auditLogRepository = auditLogRepository;
         _documentRepository = documentRepository;
         _documentAccessRepository = documentAccessRepository;
-        _notificationPublisher = notificationPublisher;
+        _notificationDispatcher = notificationDispatcher;
         _notificationRepository = notificationRepository;
     }
 
@@ -67,7 +67,7 @@ public class ShareDocument
             "Document shared with you",
             $"{document.OriginalFileName} was shared with you.");
         await _notificationRepository.AddAsync(notification, cancellationToken);
-        await _notificationPublisher.PublishCreatedAsync(notification, cancellationToken);
+        await _notificationDispatcher.DispatchCreatedAsync(notification, cancellationToken);
         await _auditLogRepository.AddAsync(
             new AuditLog(
                 request.GrantedByUserId,
