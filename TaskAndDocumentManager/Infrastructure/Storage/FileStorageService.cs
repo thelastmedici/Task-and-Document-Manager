@@ -2,7 +2,7 @@ using TaskAndDocumentManager.Application.Documents.Interfaces;
 
 namespace TaskAndDocumentManager.Infrastructure.Storage;
 
-public class FileStorageService : IFileStorageService
+public class FileStorageService : IFileStorageService, IFileStorageMaintenanceService
 {
     private readonly string _storageRoot;
 
@@ -64,5 +64,19 @@ public class FileStorageService : IFileStorageService
         }
 
         return Task.CompletedTask;
+    }
+
+    public Task<IReadOnlyCollection<string>> GetStoredFilePathsAsync(CancellationToken cancellationToken = default)
+    {
+        if (!Directory.Exists(_storageRoot))
+        {
+            return Task.FromResult((IReadOnlyCollection<string>)Array.Empty<string>());
+        }
+
+        var filePaths = Directory
+            .EnumerateFiles(_storageRoot, "*", SearchOption.AllDirectories)
+            .ToList();
+
+        return Task.FromResult((IReadOnlyCollection<string>)filePaths);
     }
 }
