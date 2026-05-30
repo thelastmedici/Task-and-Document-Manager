@@ -1,6 +1,7 @@
 using TaskAndDocumentManager.Application.Auth.Interfaces;
 using TaskAndDocumentManager.Application.Auth.UseCases;
 using TaskAndDocumentManager.Application.Audit.Interfaces;
+using TaskAndDocumentManager.Application.BackgroundJobs;
 using TaskAndDocumentManager.Application.Documents.Interfaces;
 using TaskAndDocumentManager.Application.Documents.UseCases;
 using TaskAndDocumentManager.Application.Notifications.Interfaces;
@@ -17,6 +18,7 @@ using TaskAndDocumentManager.Infrastructure.Notifications;
 using TaskAndDocumentManager.Infrastructure.Persistence;
 using TaskAndDocumentManager.Infrastructure.Storage;
 using TaskAndDocumentManager.Infrastructure.Tasks;
+using TaskAndDocumentManager.Api.BackgroundJobs;
 using TaskAndDocumentManager.Api.Authorization;
 using TaskAndDocumentManager.Application.Documents.Services;
 using TaskAndDocumentManager.Api.Hubs;
@@ -47,6 +49,7 @@ builder.Services.AddScoped<IDocumentAccessRepository, DocumentAccessRepository>(
 builder.Services.AddScoped<INotificationDispatcher, SignalRNotificationDispatcher>();
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 builder.Services.AddScoped<IFileStorageService, FileStorageService>();
+builder.Services.AddScoped<IFileStorageMaintenanceService, FileStorageService>();
 builder.Services.AddSingleton<IRoleCatalog, RoleCatalog>();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IEmailValidator, EmailValidator>();
@@ -63,6 +66,7 @@ builder.Services.AddScoped<DeleteTask>();
 builder.Services.AddScoped<UploadDocument>();
 builder.Services.AddScoped<DownloadDocument>();
 builder.Services.AddScoped<DeleteDocument>();
+builder.Services.AddScoped<IBackgroundJob, CleanupOrphanedDocumentFiles>();
 builder.Services.AddScoped<ShareDocument>();
 builder.Services.AddScoped<ShareTaskLinkedDocument>();
 builder.Services.AddScoped<RevokeDocumentAccess>();
@@ -81,6 +85,8 @@ builder.Services.AddScoped<ChangeUserRole>();
 builder.Services.AddScoped<DeleteUser>();
 builder.Services.AddSingleton<IUserConnectionTracker, InMemoryUserConnectionTracker>();
 builder.Services.AddSingleton<IPresenceService, InMemoryPresenceService>();
+builder.Services.Configure<BackgroundJobOptions>(builder.Configuration.GetSection("BackgroundJobs"));
+builder.Services.AddHostedService<ScheduledBackgroundJobService>();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
