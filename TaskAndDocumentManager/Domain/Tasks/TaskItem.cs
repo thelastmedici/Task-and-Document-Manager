@@ -19,13 +19,17 @@ public class TaskItem
 
     public DateTime? UpdatedAt { get; private set; }
 
+    public DateTime? DueAtUtc { get; private set; }
+
+    public DateTime? DeadlineReminderSentAtUtc { get; private set; }
+
     public bool IsCompleted { get; private set; }
 
     public DateTime? CompletedAt { get; private set; }
 
     protected TaskItem() { }
 
-    public TaskItem(string title, string description, Guid ownerId)
+    public TaskItem(string title, string description, Guid ownerId, DateTime? dueAtUtc = null)
     {
         if (ownerId == Guid.Empty)
         {
@@ -37,6 +41,7 @@ public class TaskItem
         CreatedAt = DateTime.UtcNow;
         Title = NormalizeRequiredText(title, nameof(title), MaxTitleLength);
         Description = NormalizeRequiredText(description, nameof(description), MaxDescriptionLength);
+        DueAtUtc = dueAtUtc;
         IsCompleted = false;
     }
 
@@ -63,21 +68,37 @@ public class TaskItem
         AssignTask(null);
     }
 
-    public void UpdateTask(string title, string description)
+    public void UpdateTask(string title, string description, DateTime? dueAtUtc)
     {
         EnsureTaskIsNotCompleted();
 
         var normalizedTitle = NormalizeRequiredText(title, nameof(title), MaxTitleLength);
         var normalizedDescription = NormalizeRequiredText(description, nameof(description), MaxDescriptionLength);
 
-        if (Title == normalizedTitle && Description == normalizedDescription)
+        if (Title == normalizedTitle && Description == normalizedDescription && DueAtUtc == dueAtUtc)
         {
             return;
         }
 
         Title = normalizedTitle;
         Description = normalizedDescription;
+        if (DueAtUtc != dueAtUtc)
+        {
+            DueAtUtc = dueAtUtc;
+            DeadlineReminderSentAtUtc = null;
+        }
+
         UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void MarkDeadlineReminderSent()
+    {
+        if (!DueAtUtc.HasValue)
+        {
+            throw new InvalidOperationException("Cannot mark a reminder sent for a task without a due date.");
+        }
+
+        DeadlineReminderSentAtUtc ??= DateTime.UtcNow;
     }
 
 

@@ -8,6 +8,8 @@ public sealed record TaskListItemDto(
     Guid OwnerId,
     DateTime CreatedAt,
     DateTime? UpdatedAt,
+    DateTime? DueAtUtc,
+    DateTime? DeadlineReminderSentAtUtc,
     bool IsCompleted,
     DateTime? CompletedAt
     );

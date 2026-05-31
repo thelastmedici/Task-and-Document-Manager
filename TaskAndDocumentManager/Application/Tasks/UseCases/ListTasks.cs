@@ -39,6 +39,8 @@ public class ListTasks
                 task.OwnerId,
                 task.CreatedAt,
                 task.UpdatedAt,
+                task.DueAtUtc,
+                task.DeadlineReminderSentAtUtc,
                 task.IsCompleted,
                 task.CompletedAt))
                 .ToList();

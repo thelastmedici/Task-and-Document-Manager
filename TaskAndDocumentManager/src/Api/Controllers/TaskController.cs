@@ -49,6 +49,7 @@ public class TaskController : ControllerBase
                 request.Title,
                 request.Description,
                 actorId,
+                request.DueAtUtc,
                 cancellationToken);
 
             return StatusCode(StatusCodes.Status201Created, new
@@ -113,7 +114,7 @@ public class TaskController : ControllerBase
 
         try
         {
-            await _updateTask.ExecuteAsync(id, request.Title, request.Description, cancellationToken);
+            await _updateTask.ExecuteAsync(id, request.Title, request.Description, request.DueAtUtc, cancellationToken);
             return NoContent();
         }
         catch (InvalidOperationException ex) when (ex.Message == "Task not found")
@@ -159,6 +160,8 @@ public class TaskController : ControllerBase
             task.OwnerId,
             task.CreatedAt,
             task.UpdatedAt,
+            task.DueAtUtc,
+            task.DeadlineReminderSentAtUtc,
             task.IsCompleted,
             task.CompletedAt
         ));
@@ -246,12 +249,14 @@ public class TaskController : ControllerBase
     {
         public required string Title { get; init; }
         public required string Description { get; init; }
+        public DateTime? DueAtUtc { get; init; }
     }
 
     public sealed class UpdateTaskRequest
     {
         public required string Title { get; init; }
         public required string Description { get; init; }
+        public DateTime? DueAtUtc { get; init; }
     }
 
     public sealed class AssignTaskRequest
