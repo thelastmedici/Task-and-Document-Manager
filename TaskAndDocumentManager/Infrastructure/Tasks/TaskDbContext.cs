@@ -29,6 +29,8 @@ public class TaskDbContext(DbContextOptions<TaskDbContext> options) : DbContext(
                 .IsRequired();
             entity.Property(task => task.CreatedAt)
                 .IsRequired();
+            entity.Property(task => task.DueAtUtc);
+            entity.Property(task => task.DeadlineReminderSentAtUtc);
         });
 
         modelBuilder.Entity<Role>(entity =>

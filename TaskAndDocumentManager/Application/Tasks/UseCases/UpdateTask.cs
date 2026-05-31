@@ -16,7 +16,21 @@ public class UpdateTask
         _taskRepository = taskRepository;
     }
 
-    public async Task ExecuteAsync(Guid taskId,string title,string description,CancellationToken cancellationToken= default)
+    public Task ExecuteAsync(
+        Guid taskId,
+        string title,
+        string description,
+        CancellationToken cancellationToken= default)
+    {
+        return ExecuteAsync(taskId, title, description, null, cancellationToken);
+    }
+
+    public async Task ExecuteAsync(
+        Guid taskId,
+        string title,
+        string description,
+        DateTime? dueAtUtc = null,
+        CancellationToken cancellationToken= default)
     {
         var task = await _taskRepository.GetByIdAsync(taskId, cancellationToken);
         if (task == null)
@@ -25,7 +39,7 @@ public class UpdateTask
 
         }
 
-        task.UpdateTask(title, description);
+        task.UpdateTask(title, description, dueAtUtc);
 
         await _taskRepository.UpdateAsync(task, cancellationToken);
     }

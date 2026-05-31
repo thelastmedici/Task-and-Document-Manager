@@ -67,6 +67,7 @@ builder.Services.AddScoped<UploadDocument>();
 builder.Services.AddScoped<DownloadDocument>();
 builder.Services.AddScoped<DeleteDocument>();
 builder.Services.AddScoped<IBackgroundJob, CleanupOrphanedDocumentFiles>();
+builder.Services.AddScoped<IBackgroundJob, SendTaskDeadlineReminders>();
 builder.Services.AddScoped<ShareDocument>();
 builder.Services.AddScoped<ShareTaskLinkedDocument>();
 builder.Services.AddScoped<RevokeDocumentAccess>();
