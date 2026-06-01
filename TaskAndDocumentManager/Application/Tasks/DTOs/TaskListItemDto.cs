@@ -1,3 +1,5 @@
+using TaskAndDocumentManager.Domain.Tasks;
+
 namespace TaskAndDocumentManager.Application.Tasks.DTOs;
 
 public sealed record TaskListItemDto(
@@ -10,6 +12,7 @@ public sealed record TaskListItemDto(
     DateTime? UpdatedAt,
     DateTime? DueAtUtc,
     DateTime? DeadlineReminderSentAtUtc,
+    TaskPriority Priority,
     bool IsCompleted,
     DateTime? CompletedAt
     );

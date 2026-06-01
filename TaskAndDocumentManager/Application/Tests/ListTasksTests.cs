@@ -46,7 +46,9 @@ public class ListTasksTests
     [Fact]
     public async Task ExecuteAsync_ShouldReturnTaskDtos()
     {
-        var task = CreateTaskWithCreatedAt(new DateTime(2026, 03, 29, 9, 0, 0, DateTimeKind.Utc));
+        var task = CreateTaskWithCreatedAt(
+            new DateTime(2026, 03, 29, 9, 0, 0, DateTimeKind.Utc),
+            TaskPriority.High);
         var actorId = Guid.NewGuid();
 
         _taskRepositoryMock
@@ -59,6 +61,7 @@ public class ListTasksTests
         Assert.Equal(task.Title, item.Title);
         Assert.Equal(task.Description, item.Description);
         Assert.Equal(task.OwnerId, item.OwnerId);
+        Assert.Equal(task.Priority, item.Priority);
     }
 
     [Fact]
@@ -81,6 +84,60 @@ public class ListTasksTests
         await _sut.ExecuteAsync(query, actorId, true, false);
 
         _taskRepositoryMock.VerifyAll();
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_ShouldPassSearchFiltersAndSortingToRepository()
+    {
+        var ownerId = Guid.NewGuid();
+        var assignedToUserId = Guid.NewGuid();
+        var actorId = Guid.NewGuid();
+        var dueFromUtc = new DateTime(2026, 04, 01, 0, 0, 0, DateTimeKind.Utc);
+        var dueToUtc = new DateTime(2026, 04, 30, 23, 59, 59, DateTimeKind.Utc);
+        var query = new ListTasksQuery(
+            SearchTerm: "  report  ",
+            AssignedToUserId: assignedToUserId,
+            OwnerId: ownerId,
+            Status: TaskStatusFilter.Completed,
+            Priority: TaskPriority.High,
+            DueFromUtc: dueFromUtc,
+            DueToUtc: dueToUtc,
+            SortBy: TaskSortBy.DueAt,
+            SortDirection: SortDirection.Ascending);
+
+        _taskRepositoryMock
+            .Setup(repo => repo.SearchAsync(
+                It.Is<ListTasksQuery>(requestedQuery =>
+                    requestedQuery.SearchTerm == "report" &&
+                    requestedQuery.AssignedToUserId == assignedToUserId &&
+                    requestedQuery.OwnerId == ownerId &&
+                    requestedQuery.IsCompleted == true &&
+                    requestedQuery.Status == TaskStatusFilter.Completed &&
+                    requestedQuery.Priority == TaskPriority.High &&
+                    requestedQuery.DueFromUtc == dueFromUtc &&
+                    requestedQuery.DueToUtc == dueToUtc &&
+                    requestedQuery.SortBy == TaskSortBy.DueAt &&
+                    requestedQuery.SortDirection == SortDirection.Ascending),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<TaskItem>());
+
+        await _sut.ExecuteAsync(query, actorId, true, false);
+
+        _taskRepositoryMock.VerifyAll();
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_ShouldThrow_WhenDueFromIsAfterDueTo()
+    {
+        var actorId = Guid.NewGuid();
+        var query = new ListTasksQuery(
+            DueFromUtc: new DateTime(2026, 05, 02, 0, 0, 0, DateTimeKind.Utc),
+            DueToUtc: new DateTime(2026, 05, 01, 0, 0, 0, DateTimeKind.Utc));
+
+        var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
+            _sut.ExecuteAsync(query, actorId, true, false));
+
+        Assert.Equal("query", exception.ParamName);
     }
 
     [Fact]
@@ -119,9 +176,11 @@ public class ListTasksTests
         _taskRepositoryMock.VerifyAll();
     }
 
-    private static TaskItem CreateTaskWithCreatedAt(DateTime createdAt)
+    private static TaskItem CreateTaskWithCreatedAt(
+        DateTime createdAt,
+        TaskPriority priority = TaskPriority.Medium)
     {
-        var task = new TaskItem("Title", "Description", Guid.NewGuid());
+        var task = new TaskItem("Title", "Description", Guid.NewGuid(), priority: priority);
         var createdAtProperty = typeof(TaskItem).GetProperty(
             nameof(TaskItem.CreatedAt),
             BindingFlags.Instance | BindingFlags.Public);

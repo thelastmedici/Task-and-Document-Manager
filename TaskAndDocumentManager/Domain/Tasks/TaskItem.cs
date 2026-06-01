@@ -23,13 +23,20 @@ public class TaskItem
 
     public DateTime? DeadlineReminderSentAtUtc { get; private set; }
 
+    public TaskPriority Priority { get; private set; }
+
     public bool IsCompleted { get; private set; }
 
     public DateTime? CompletedAt { get; private set; }
 
     protected TaskItem() { }
 
-    public TaskItem(string title, string description, Guid ownerId, DateTime? dueAtUtc = null)
+    public TaskItem(
+        string title,
+        string description,
+        Guid ownerId,
+        DateTime? dueAtUtc = null,
+        TaskPriority priority = TaskPriority.Medium)
     {
         if (ownerId == Guid.Empty)
         {
@@ -42,6 +49,7 @@ public class TaskItem
         Title = NormalizeRequiredText(title, nameof(title), MaxTitleLength);
         Description = NormalizeRequiredText(description, nameof(description), MaxDescriptionLength);
         DueAtUtc = dueAtUtc;
+        Priority = ValidatePriority(priority);
         IsCompleted = false;
     }
 
@@ -68,20 +76,29 @@ public class TaskItem
         AssignTask(null);
     }
 
-    public void UpdateTask(string title, string description, DateTime? dueAtUtc)
+    public void UpdateTask(
+        string title,
+        string description,
+        DateTime? dueAtUtc,
+        TaskPriority priority)
     {
         EnsureTaskIsNotCompleted();
 
         var normalizedTitle = NormalizeRequiredText(title, nameof(title), MaxTitleLength);
         var normalizedDescription = NormalizeRequiredText(description, nameof(description), MaxDescriptionLength);
+        var validatedPriority = ValidatePriority(priority);
 
-        if (Title == normalizedTitle && Description == normalizedDescription && DueAtUtc == dueAtUtc)
+        if (Title == normalizedTitle &&
+            Description == normalizedDescription &&
+            DueAtUtc == dueAtUtc &&
+            Priority == validatedPriority)
         {
             return;
         }
 
         Title = normalizedTitle;
         Description = normalizedDescription;
+        Priority = validatedPriority;
         if (DueAtUtc != dueAtUtc)
         {
             DueAtUtc = dueAtUtc;
@@ -129,6 +146,16 @@ public class TaskItem
         }
 
         return normalizedValue;
+    }
+
+    private static TaskPriority ValidatePriority(TaskPriority priority)
+    {
+        if (!Enum.IsDefined(priority))
+        {
+            throw new ArgumentException("Priority is not supported.", nameof(priority));
+        }
+
+        return priority;
     }
 
     private void EnsureTaskIsNotCompleted()
