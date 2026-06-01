@@ -29,8 +29,7 @@ public class ListTasks
 
         var tasks = await _taskRepository.SearchAsync(scopedQuery, cancellationToken);
 
-        return tasks
-            .OrderByDescending(task => task.CreatedAt)
+        return ApplySort(tasks, scopedQuery)
             .Select(task => new TaskListItemDto(
                 task.Id,
                 task.Title,
@@ -41,6 +40,7 @@ public class ListTasks
                 task.UpdatedAt,
                 task.DueAtUtc,
                 task.DeadlineReminderSentAtUtc,
+                task.Priority,
                 task.IsCompleted,
                 task.CompletedAt))
                 .ToList();
@@ -60,11 +60,45 @@ public class ListTasks
             ? null
             : query.SearchTerm.Trim();
 
+        if (query.DueFromUtc.HasValue && query.DueToUtc.HasValue &&
+            query.DueFromUtc.Value > query.DueToUtc.Value)
+        {
+            throw new ArgumentException("Due from date cannot be later than due to date.", nameof(query));
+        }
+
+        if (query.Status.HasValue && !Enum.IsDefined(query.Status.Value))
+        {
+            throw new ArgumentException("Status filter is not supported.", nameof(query));
+        }
+
+        if (query.Priority.HasValue && !Enum.IsDefined(query.Priority.Value))
+        {
+            throw new ArgumentException("Priority filter is not supported.", nameof(query));
+        }
+
+        if (!Enum.IsDefined(query.SortBy))
+        {
+            throw new ArgumentException("Sort field is not supported.", nameof(query));
+        }
+
+        if (!Enum.IsDefined(query.SortDirection))
+        {
+            throw new ArgumentException("Sort direction is not supported.", nameof(query));
+        }
+
+        var isCompleted = query.Status switch
+        {
+            TaskStatusFilter.Pending => false,
+            TaskStatusFilter.Completed => true,
+            _ => query.IsCompleted
+        };
+
         return query with
         {
             PageNumber = pageNumber,
             PageSize = pageSize,
-            SearchTerm = searchTerm
+            SearchTerm = searchTerm,
+            IsCompleted = isCompleted
         };
     }
 
@@ -81,17 +115,36 @@ public class ListTasks
 
         if (isAdmin)
         {
-            return query with
-            {
-                OwnerId = null,
-                IncludeAssignedTasks = false
-            };
+            return query with { IncludeAssignedTasks = false };
         }
 
         return query with
         {
             OwnerId = actorId,
             IncludeAssignedTasks = isManager
+        };
+    }
+
+    private static IOrderedEnumerable<Domain.Tasks.TaskItem> ApplySort(
+        IEnumerable<Domain.Tasks.TaskItem> tasks,
+        ListTasksQuery query)
+    {
+        return (query.SortBy, query.SortDirection) switch
+        {
+            (TaskSortBy.DueAt, SortDirection.Ascending) => tasks
+                .OrderBy(task => task.DueAtUtc ?? DateTime.MaxValue)
+                .ThenByDescending(task => task.CreatedAt),
+            (TaskSortBy.DueAt, SortDirection.Descending) => tasks
+                .OrderByDescending(task => task.DueAtUtc ?? DateTime.MinValue)
+                .ThenByDescending(task => task.CreatedAt),
+            (TaskSortBy.Priority, SortDirection.Ascending) => tasks
+                .OrderBy(task => task.Priority)
+                .ThenByDescending(task => task.CreatedAt),
+            (TaskSortBy.Priority, SortDirection.Descending) => tasks
+                .OrderByDescending(task => task.Priority)
+                .ThenByDescending(task => task.CreatedAt),
+            (TaskSortBy.CreatedAt, SortDirection.Ascending) => tasks.OrderBy(task => task.CreatedAt),
+            _ => tasks.OrderByDescending(task => task.CreatedAt)
         };
     }
 }

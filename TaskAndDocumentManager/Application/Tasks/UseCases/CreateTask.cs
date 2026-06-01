@@ -20,7 +20,7 @@ public class CreateTask
         Guid ownerId,
         CancellationToken cancellationToken = default)
     {
-        return ExecuteAsync(title, description, ownerId, null, cancellationToken);
+        return ExecuteAsync(title, description, ownerId, dueAtUtc: null, cancellationToken: cancellationToken);
     }
 
     public async Task<Guid> ExecuteAsync(
@@ -28,6 +28,7 @@ public class CreateTask
         string description,
         Guid ownerId,
         DateTime? dueAtUtc = null,
+        TaskPriority priority = TaskPriority.Medium,
         CancellationToken cancellationToken = default
         )
     {
@@ -36,7 +37,7 @@ public class CreateTask
             throw new ArgumentException("Owner ID is required.", nameof(ownerId));
         }
 
-        var task = new TaskItem(title, description, ownerId, dueAtUtc);
+        var task = new TaskItem(title, description, ownerId, dueAtUtc, priority);
 
         await _taskRepository.CreateAsync(task, cancellationToken);
 

@@ -1,4 +1,6 @@
 using System;
+using TaskAndDocumentManager.Domain.Tasks;
+
 namespace TaskAndDocumentManager.Application.Tasks.DTOs;
 
 
@@ -9,7 +11,13 @@ public sealed record ListTasksQuery(
     bool? IsCompleted = null,
     Guid? AssignedToUserId = null,
     Guid? OwnerId = null,
-    bool IncludeAssignedTasks = false
+    bool IncludeAssignedTasks = false,
+    TaskStatusFilter? Status = null,
+    TaskPriority? Priority = null,
+    DateTime? DueFromUtc = null,
+    DateTime? DueToUtc = null,
+    TaskSortBy SortBy = TaskSortBy.CreatedAt,
+    SortDirection SortDirection = SortDirection.Descending
     )
 {
     public const int DefaultPageSize = 50;

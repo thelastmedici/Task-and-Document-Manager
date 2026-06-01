@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using TaskAndDocumentManager.Application.Tasks.Interfaces;
+using TaskAndDocumentManager.Domain.Tasks;
 
 namespace TaskAndDocumentManager.Application.Tasks.UseCases;
 
@@ -22,7 +23,7 @@ public class UpdateTask
         string description,
         CancellationToken cancellationToken= default)
     {
-        return ExecuteAsync(taskId, title, description, null, cancellationToken);
+        return ExecuteAsync(taskId, title, description, dueAtUtc: null, cancellationToken: cancellationToken);
     }
 
     public async Task ExecuteAsync(
@@ -30,6 +31,7 @@ public class UpdateTask
         string title,
         string description,
         DateTime? dueAtUtc = null,
+        TaskPriority priority = TaskPriority.Medium,
         CancellationToken cancellationToken= default)
     {
         var task = await _taskRepository.GetByIdAsync(taskId, cancellationToken);
@@ -39,7 +41,7 @@ public class UpdateTask
 
         }
 
-        task.UpdateTask(title, description, dueAtUtc);
+        task.UpdateTask(title, description, dueAtUtc, priority);
 
         await _taskRepository.UpdateAsync(task, cancellationToken);
     }

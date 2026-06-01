@@ -58,6 +58,21 @@ public class TaskRepository(TaskDbContext dbContext) : ITaskRepository
             tasks = tasks.Where(task => task.AssignedToUserId == query.AssignedToUserId.Value);
         }
 
+        if (query.Priority.HasValue)
+        {
+            tasks = tasks.Where(task => task.Priority == query.Priority.Value);
+        }
+
+        if (query.DueFromUtc.HasValue)
+        {
+            tasks = tasks.Where(task => task.DueAtUtc >= query.DueFromUtc.Value);
+        }
+
+        if (query.DueToUtc.HasValue)
+        {
+            tasks = tasks.Where(task => task.DueAtUtc <= query.DueToUtc.Value);
+        }
+
         if (query.OwnerId.HasValue)
         {
             if (query.IncludeAssignedTasks)
@@ -80,11 +95,35 @@ public class TaskRepository(TaskDbContext dbContext) : ITaskRepository
                 EF.Functions.ILike(task.Description, pattern));
         }
 
+        tasks = ApplySort(tasks, query);
+
         return await tasks
-            .OrderByDescending(task => task.CreatedAt)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync(cancellationToken);
+    }
+
+    private static IQueryable<TaskItem> ApplySort(IQueryable<TaskItem> tasks, ListTasksQuery query)
+    {
+        return (query.SortBy, query.SortDirection) switch
+        {
+            (TaskSortBy.DueAt, SortDirection.Ascending) => tasks
+                .OrderBy(task => task.DueAtUtc == null)
+                .ThenBy(task => task.DueAtUtc)
+                .ThenByDescending(task => task.CreatedAt),
+            (TaskSortBy.DueAt, SortDirection.Descending) => tasks
+                .OrderBy(task => task.DueAtUtc == null)
+                .ThenByDescending(task => task.DueAtUtc)
+                .ThenByDescending(task => task.CreatedAt),
+            (TaskSortBy.Priority, SortDirection.Ascending) => tasks
+                .OrderBy(task => task.Priority)
+                .ThenByDescending(task => task.CreatedAt),
+            (TaskSortBy.Priority, SortDirection.Descending) => tasks
+                .OrderByDescending(task => task.Priority)
+                .ThenByDescending(task => task.CreatedAt),
+            (TaskSortBy.CreatedAt, SortDirection.Ascending) => tasks.OrderBy(task => task.CreatedAt),
+            _ => tasks.OrderByDescending(task => task.CreatedAt)
+        };
     }
 
     public async Task UpdateAsync(TaskItem task, CancellationToken cancellationToken = default)

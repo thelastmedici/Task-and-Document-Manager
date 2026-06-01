@@ -5,6 +5,7 @@ using TaskAndDocumentManager.Api.Extensions;
 using TaskAndDocumentManager.Application.Tasks.DTOs;
 using TaskAndDocumentManager.Application.Tasks.Interfaces;
 using TaskAndDocumentManager.Application.Tasks.UseCases;
+using TaskAndDocumentManager.Domain.Tasks;
 
 namespace TaskAndDocumentManager.Controllers;
 
@@ -50,6 +51,7 @@ public class TaskController : ControllerBase
                 request.Description,
                 actorId,
                 request.DueAtUtc,
+                request.Priority,
                 cancellationToken);
 
             return StatusCode(StatusCodes.Status201Created, new
@@ -81,16 +83,31 @@ public class TaskController : ControllerBase
             request.PageSize,
             request.SearchTerm,
             request.IsCompleted,
-            request.AssignedToUserId);
+            request.AssignedToUserId,
+            request.OwnerId,
+            false,
+            request.Status,
+            request.Priority,
+            request.DueFromUtc,
+            request.DueToUtc,
+            request.SortBy,
+            request.SortDirection);
 
-        var tasks = await _listTasks.ExecuteAsync(
-            query,
-            actorId,
-            User.IsAdmin(),
-            User.IsManager(),
-            cancellationToken);
+        try
+        {
+            var tasks = await _listTasks.ExecuteAsync(
+                query,
+                actorId,
+                User.IsAdmin(),
+                User.IsManager(),
+                cancellationToken);
 
-        return Ok(tasks);
+            return Ok(tasks);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     [HttpPut("{id:guid}")]
@@ -114,7 +131,13 @@ public class TaskController : ControllerBase
 
         try
         {
-            await _updateTask.ExecuteAsync(id, request.Title, request.Description, request.DueAtUtc, cancellationToken);
+            await _updateTask.ExecuteAsync(
+                id,
+                request.Title,
+                request.Description,
+                request.DueAtUtc,
+                request.Priority,
+                cancellationToken);
             return NoContent();
         }
         catch (InvalidOperationException ex) when (ex.Message == "Task not found")
@@ -162,6 +185,7 @@ public class TaskController : ControllerBase
             task.UpdatedAt,
             task.DueAtUtc,
             task.DeadlineReminderSentAtUtc,
+            task.Priority,
             task.IsCompleted,
             task.CompletedAt
         ));
@@ -250,6 +274,7 @@ public class TaskController : ControllerBase
         public required string Title { get; init; }
         public required string Description { get; init; }
         public DateTime? DueAtUtc { get; init; }
+        public TaskPriority Priority { get; init; } = TaskPriority.Medium;
     }
 
     public sealed class UpdateTaskRequest
@@ -257,6 +282,7 @@ public class TaskController : ControllerBase
         public required string Title { get; init; }
         public required string Description { get; init; }
         public DateTime? DueAtUtc { get; init; }
+        public TaskPriority Priority { get; init; } = TaskPriority.Medium;
     }
 
     public sealed class AssignTaskRequest
@@ -270,18 +296,25 @@ public class TaskController : ControllerBase
         public int PageSize { get; init; } = ListTasksQuery.DefaultPageSize;
         public string? SearchTerm { get; init; }
         public bool? IsCompleted { get; init; }
+        public TaskStatusFilter? Status { get; init; }
+        public TaskPriority? Priority { get; init; }
+        public DateTime? DueFromUtc { get; init; }
+        public DateTime? DueToUtc { get; init; }
+        public Guid? OwnerId { get; init; }
         public Guid? AssignedToUserId { get; init; }
+        public TaskSortBy SortBy { get; init; } = TaskSortBy.CreatedAt;
+        public SortDirection SortDirection { get; init; } = SortDirection.Descending;
     }
 
     private bool CanOwnTask(Domain.Tasks.TaskItem task, Guid actorId)
-{
-    if (User.IsAdmin())
     {
-        return true;
-    }
+        if (User.IsAdmin())
+        {
+            return true;
+        }
 
-    return task.OwnerId == actorId;
-}
+        return task.OwnerId == actorId;
+    }
 
 
     private bool CanManageTask(Domain.Tasks.TaskItem task, Guid actorId)
