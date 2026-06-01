@@ -112,30 +112,36 @@ public class DocumentsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> ListAll(CancellationToken cancellationToken)
+    public async Task<IActionResult> ListAll(
+        [FromQuery] DocumentListRequest request,
+        CancellationToken cancellationToken)
     {
-        if (!User.IsAdmin())
+        var query = new DocumentSearchQuery(
+            request.SearchTerm,
+            request.ContentType,
+            request.UploadedFromUtc,
+            request.UploadedToUtc);
+
+        try
         {
-            var actorId = User.GetActorId();
-            var accessibleDocuments = await _listAccessibleDocuments.ExecuteAsync(
-                actorId,
-                User.IsManager(),
-                cancellationToken);
-            return Ok(accessibleDocuments);
+            if (!User.IsAdmin())
+            {
+                var actorId = User.GetActorId();
+                var accessibleDocuments = await _listAccessibleDocuments.ExecuteAsync(
+                    actorId,
+                    User.IsManager(),
+                    query,
+                    cancellationToken);
+                return Ok(accessibleDocuments);
+            }
+
+            var documents = await _listAccessibleDocuments.ExecuteForAdminAsync(query, cancellationToken);
+            return Ok(documents);
         }
-
-        var documents = await _documentRepository.GetAllAsync(cancellationToken);
-
-        var dtos = documents.Select(d => new DocumentMetadataDto(
-            d.Id,
-            d.OriginalFileName,
-            d.ContentType,
-            d.SizeInBytes,
-            d.OwnerId,
-            d.UploadedAtUtc,
-            d.LinkedTaskId)).ToList();
-
-        return Ok(dtos);
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     [HttpGet("shared-with-me")]
@@ -466,6 +472,14 @@ public async Task<IActionResult> GetMetadata(
     public sealed class LinkDocumentToTaskBody
     {
         public Guid TaskId { get; init; }
+    }
+
+    public sealed class DocumentListRequest
+    {
+        public string? SearchTerm { get; init; }
+        public string? ContentType { get; init; }
+        public DateTime? UploadedFromUtc { get; init; }
+        public DateTime? UploadedToUtc { get; init; }
     }
 
     public sealed class ShareDocumentBody
