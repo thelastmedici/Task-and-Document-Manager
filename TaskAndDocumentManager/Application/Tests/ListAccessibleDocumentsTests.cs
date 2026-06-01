@@ -1,4 +1,6 @@
 using Moq;
+using System.Reflection;
+using TaskAndDocumentManager.Application.Documents.DTOs;
 using TaskAndDocumentManager.Application.Documents.Interfaces;
 using TaskAndDocumentManager.Application.Documents.Services;
 using TaskAndDocumentManager.Application.Documents.UseCases;
@@ -100,5 +102,79 @@ public class ListAccessibleDocumentsTests
         Assert.Single(result);
         Assert.Contains(result, document => document.Id == ownDocument.Id);
         Assert.DoesNotContain(result, document => document.Id == taskLinkedDocument.Id);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_ShouldFilterAccessibleDocuments_ByOriginalFileName()
+    {
+        var requesterId = Guid.NewGuid();
+        var reportDocument = new Document("quarterly-report.pdf", "application/pdf", 128, "/tmp/report.pdf", requesterId);
+        var imageDocument = new Document("diagram.png", "image/png", 256, "/tmp/diagram.png", requesterId);
+
+        _documentRepositoryMock
+            .Setup(repository => repository.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { reportDocument, imageDocument });
+
+        var result = await _sut.ExecuteAsync(
+            requesterId,
+            false,
+            new DocumentSearchQuery(SearchTerm: "report"),
+            CancellationToken.None);
+
+        var document = Assert.Single(result);
+        Assert.Equal(reportDocument.Id, document.Id);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_ShouldFilterAccessibleDocuments_ByContentType()
+    {
+        var requesterId = Guid.NewGuid();
+        var pdfDocument = new Document("report.pdf", "application/pdf", 128, "/tmp/report.pdf", requesterId);
+        var imageDocument = new Document("diagram.png", "image/png", 256, "/tmp/diagram.png", requesterId);
+
+        _documentRepositoryMock
+            .Setup(repository => repository.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { pdfDocument, imageDocument });
+
+        var result = await _sut.ExecuteAsync(
+            requesterId,
+            false,
+            new DocumentSearchQuery(ContentType: "image/png"),
+            CancellationToken.None);
+
+        var document = Assert.Single(result);
+        Assert.Equal(imageDocument.Id, document.Id);
+    }
+
+    [Fact]
+    public async Task ExecuteForAdminAsync_ShouldFilterDocuments_ByUploadedDateRange()
+    {
+        var ownerId = Guid.NewGuid();
+        var olderDocument = new Document("old.pdf", "application/pdf", 128, "/tmp/old.pdf", ownerId);
+        var newerDocument = new Document("new.pdf", "application/pdf", 256, "/tmp/new.pdf", ownerId);
+        SetUploadedAtUtc(olderDocument, new DateTime(2026, 05, 01, 10, 0, 0, DateTimeKind.Utc));
+        SetUploadedAtUtc(newerDocument, new DateTime(2026, 05, 20, 10, 0, 0, DateTimeKind.Utc));
+
+        _documentRepositoryMock
+            .Setup(repository => repository.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { olderDocument, newerDocument });
+
+        var result = await _sut.ExecuteForAdminAsync(
+            new DocumentSearchQuery(
+                UploadedFromUtc: new DateTime(2026, 05, 10, 0, 0, 0, DateTimeKind.Utc),
+                UploadedToUtc: new DateTime(2026, 05, 31, 0, 0, 0, DateTimeKind.Utc)),
+            CancellationToken.None);
+
+        var document = Assert.Single(result);
+        Assert.Equal(newerDocument.Id, document.Id);
+    }
+
+    private static void SetUploadedAtUtc(Document document, DateTime uploadedAtUtc)
+    {
+        var property = typeof(Document).GetProperty(
+            nameof(Document.UploadedAtUtc),
+            BindingFlags.Instance | BindingFlags.Public);
+
+        property!.SetValue(document, uploadedAtUtc);
     }
 }
