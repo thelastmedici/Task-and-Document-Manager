@@ -14,15 +14,12 @@ namespace TaskAndDocumentManager.Application.Tasks.Interfaces
 
         Task<IReadOnlyList<TaskItem>> GetAllAsync(CancellationToken cancellationToken = default);
 
-       
-
         Task UpdateAsync(TaskItem task, CancellationToken cancellationToken = default);
 
         Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
 
-          // for scalable querying
-         Task<IReadOnlyList<TaskItem>> SearchAsync(
-            ListTasksQuery query,
+        Task<IReadOnlyList<TaskItem>> SearchAsync(
+            TaskQuery query,
             CancellationToken cancellationToken = default);
     }
 }

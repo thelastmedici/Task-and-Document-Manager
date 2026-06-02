@@ -33,15 +33,15 @@ public class TaskRepository(TaskDbContext dbContext) : ITaskRepository
     }
 
     public async Task<IReadOnlyList<TaskItem>> SearchAsync(
-        ListTasksQuery query,
+        TaskQuery query,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(query);
 
         var pageNumber = query.PageNumber < 1 ? 1 : query.PageNumber;
         var pageSize = query.PageSize < 1
-            ? ListTasksQuery.DefaultPageSize
-            : Math.Min(query.PageSize, ListTasksQuery.MaxPageSize);
+            ? TaskQuery.DefaultPageSize
+            : Math.Min(query.PageSize, TaskQuery.MaxPageSize);
         var searchTerm = string.IsNullOrWhiteSpace(query.SearchTerm)
             ? null
             : query.SearchTerm.Trim();
@@ -63,14 +63,14 @@ public class TaskRepository(TaskDbContext dbContext) : ITaskRepository
             tasks = tasks.Where(task => task.Priority == query.Priority.Value);
         }
 
-        if (query.DueFromUtc.HasValue)
+        if (query.DueAfterUtc.HasValue)
         {
-            tasks = tasks.Where(task => task.DueAtUtc >= query.DueFromUtc.Value);
+            tasks = tasks.Where(task => task.DueAtUtc >= query.DueAfterUtc.Value);
         }
 
-        if (query.DueToUtc.HasValue)
+        if (query.DueBeforeUtc.HasValue)
         {
-            tasks = tasks.Where(task => task.DueAtUtc <= query.DueToUtc.Value);
+            tasks = tasks.Where(task => task.DueAtUtc <= query.DueBeforeUtc.Value);
         }
 
         if (query.OwnerId.HasValue)
@@ -103,7 +103,7 @@ public class TaskRepository(TaskDbContext dbContext) : ITaskRepository
             .ToListAsync(cancellationToken);
     }
 
-    private static IQueryable<TaskItem> ApplySort(IQueryable<TaskItem> tasks, ListTasksQuery query)
+    private static IQueryable<TaskItem> ApplySort(IQueryable<TaskItem> tasks, TaskQuery query)
     {
         return (query.SortBy, query.SortDirection) switch
         {
