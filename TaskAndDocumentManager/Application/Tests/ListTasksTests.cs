@@ -32,10 +32,10 @@ public class ListTasksTests
         var actorId = Guid.NewGuid();
 
         _taskRepositoryMock
-            .Setup(repo => repo.SearchAsync(It.IsAny<ListTasksQuery>(), cancellationToken))
+            .Setup(repo => repo.SearchAsync(It.IsAny<TaskQuery>(), cancellationToken))
             .ReturnsAsync(new List<TaskItem> { olderTask, newerTask });
 
-        var result = await _sut.ExecuteAsync(new ListTasksQuery(), actorId, true, false, cancellationToken);
+        var result = await _sut.ExecuteAsync(new TaskQuery(), actorId, true, false, cancellationToken);
 
         Assert.Collection(
             result,
@@ -52,10 +52,10 @@ public class ListTasksTests
         var actorId = Guid.NewGuid();
 
         _taskRepositoryMock
-            .Setup(repo => repo.SearchAsync(It.IsAny<ListTasksQuery>(), It.IsAny<CancellationToken>()))
+            .Setup(repo => repo.SearchAsync(It.IsAny<TaskQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<TaskItem> { task });
 
-        var result = await _sut.ExecuteAsync(new ListTasksQuery(), actorId, true, false);
+        var result = await _sut.ExecuteAsync(new TaskQuery(), actorId, true, false);
 
         var item = Assert.IsType<TaskListItemDto>(Assert.Single(result));
         Assert.Equal(task.Title, item.Title);
@@ -67,14 +67,14 @@ public class ListTasksTests
     [Fact]
     public async Task ExecuteAsync_ShouldNormalizePaginationAndSearchBeforeQueryingRepository()
     {
-        var query = new ListTasksQuery(PageNumber: 0, PageSize: 1000, SearchTerm: "  title  ");
+        var query = new TaskQuery(PageNumber: 0, PageSize: 1000, SearchTerm: "  title  ");
         var actorId = Guid.NewGuid();
 
         _taskRepositoryMock
             .Setup(repo => repo.SearchAsync(
-                It.Is<ListTasksQuery>(requestedQuery =>
+                It.Is<TaskQuery>(requestedQuery =>
                     requestedQuery.PageNumber == 1 &&
-                    requestedQuery.PageSize == ListTasksQuery.MaxPageSize &&
+                    requestedQuery.PageSize == TaskQuery.MaxPageSize &&
                     requestedQuery.SearchTerm == "title" &&
                     requestedQuery.OwnerId == null &&
                     requestedQuery.IncludeAssignedTasks == false),
@@ -92,30 +92,30 @@ public class ListTasksTests
         var ownerId = Guid.NewGuid();
         var assignedToUserId = Guid.NewGuid();
         var actorId = Guid.NewGuid();
-        var dueFromUtc = new DateTime(2026, 04, 01, 0, 0, 0, DateTimeKind.Utc);
-        var dueToUtc = new DateTime(2026, 04, 30, 23, 59, 59, DateTimeKind.Utc);
-        var query = new ListTasksQuery(
+        var dueAfterUtc = new DateTime(2026, 04, 01, 0, 0, 0, DateTimeKind.Utc);
+        var dueBeforeUtc = new DateTime(2026, 04, 30, 23, 59, 59, DateTimeKind.Utc);
+        var query = new TaskQuery(
             SearchTerm: "  report  ",
             AssignedToUserId: assignedToUserId,
             OwnerId: ownerId,
             Status: TaskStatusFilter.Completed,
             Priority: TaskPriority.High,
-            DueFromUtc: dueFromUtc,
-            DueToUtc: dueToUtc,
+            DueAfterUtc: dueAfterUtc,
+            DueBeforeUtc: dueBeforeUtc,
             SortBy: TaskSortBy.DueAt,
             SortDirection: SortDirection.Ascending);
 
         _taskRepositoryMock
             .Setup(repo => repo.SearchAsync(
-                It.Is<ListTasksQuery>(requestedQuery =>
+                It.Is<TaskQuery>(requestedQuery =>
                     requestedQuery.SearchTerm == "report" &&
                     requestedQuery.AssignedToUserId == assignedToUserId &&
                     requestedQuery.OwnerId == ownerId &&
                     requestedQuery.IsCompleted == true &&
                     requestedQuery.Status == TaskStatusFilter.Completed &&
                     requestedQuery.Priority == TaskPriority.High &&
-                    requestedQuery.DueFromUtc == dueFromUtc &&
-                    requestedQuery.DueToUtc == dueToUtc &&
+                    requestedQuery.DueAfterUtc == dueAfterUtc &&
+                    requestedQuery.DueBeforeUtc == dueBeforeUtc &&
                     requestedQuery.SortBy == TaskSortBy.DueAt &&
                     requestedQuery.SortDirection == SortDirection.Ascending),
                 It.IsAny<CancellationToken>()))
@@ -130,9 +130,9 @@ public class ListTasksTests
     public async Task ExecuteAsync_ShouldThrow_WhenDueFromIsAfterDueTo()
     {
         var actorId = Guid.NewGuid();
-        var query = new ListTasksQuery(
-            DueFromUtc: new DateTime(2026, 05, 02, 0, 0, 0, DateTimeKind.Utc),
-            DueToUtc: new DateTime(2026, 05, 01, 0, 0, 0, DateTimeKind.Utc));
+        var query = new TaskQuery(
+            DueAfterUtc: new DateTime(2026, 05, 02, 0, 0, 0, DateTimeKind.Utc),
+            DueBeforeUtc: new DateTime(2026, 05, 01, 0, 0, 0, DateTimeKind.Utc));
 
         var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
             _sut.ExecuteAsync(query, actorId, true, false));
@@ -147,13 +147,13 @@ public class ListTasksTests
 
         _taskRepositoryMock
             .Setup(repo => repo.SearchAsync(
-                It.Is<ListTasksQuery>(requestedQuery =>
+                It.Is<TaskQuery>(requestedQuery =>
                     requestedQuery.OwnerId == actorId &&
                     requestedQuery.IncludeAssignedTasks == false),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<TaskItem>());
 
-        await _sut.ExecuteAsync(new ListTasksQuery(), actorId, false, false);
+        await _sut.ExecuteAsync(new TaskQuery(), actorId, false, false);
 
         _taskRepositoryMock.VerifyAll();
     }
@@ -165,13 +165,13 @@ public class ListTasksTests
 
         _taskRepositoryMock
             .Setup(repo => repo.SearchAsync(
-                It.Is<ListTasksQuery>(requestedQuery =>
+                It.Is<TaskQuery>(requestedQuery =>
                     requestedQuery.OwnerId == actorId &&
                     requestedQuery.IncludeAssignedTasks),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<TaskItem>());
 
-        await _sut.ExecuteAsync(new ListTasksQuery(), actorId, false, true);
+        await _sut.ExecuteAsync(new TaskQuery(), actorId, false, true);
 
         _taskRepositoryMock.VerifyAll();
     }

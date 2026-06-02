@@ -78,7 +78,7 @@ public class TaskController : ControllerBase
         CancellationToken cancellationToken)
     {
         var actorId = User.GetActorId();
-        var query = new ListTasksQuery(
+        var query = new TaskQuery(
             request.PageNumber,
             request.PageSize,
             request.SearchTerm,
@@ -88,8 +88,8 @@ public class TaskController : ControllerBase
             false,
             request.Status,
             request.Priority,
-            request.DueFromUtc,
-            request.DueToUtc,
+            request.DueAfterUtc,
+            request.DueBeforeUtc,
             request.SortBy,
             request.SortDirection);
 
@@ -293,13 +293,13 @@ public class TaskController : ControllerBase
     public sealed class ListTasksRequest
     {
         public int PageNumber { get; init; } = 1;
-        public int PageSize { get; init; } = ListTasksQuery.DefaultPageSize;
+        public int PageSize { get; init; } = TaskQuery.DefaultPageSize;
         public string? SearchTerm { get; init; }
         public bool? IsCompleted { get; init; }
         public TaskStatusFilter? Status { get; init; }
         public TaskPriority? Priority { get; init; }
-        public DateTime? DueFromUtc { get; init; }
-        public DateTime? DueToUtc { get; init; }
+        public DateTime? DueAfterUtc { get; init; }
+        public DateTime? DueBeforeUtc { get; init; }
         public Guid? OwnerId { get; init; }
         public Guid? AssignedToUserId { get; init; }
         public TaskSortBy SortBy { get; init; } = TaskSortBy.CreatedAt;

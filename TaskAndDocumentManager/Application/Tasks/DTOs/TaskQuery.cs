@@ -3,8 +3,7 @@ using TaskAndDocumentManager.Domain.Tasks;
 
 namespace TaskAndDocumentManager.Application.Tasks.DTOs;
 
-
-public sealed record ListTasksQuery(
+public sealed record TaskQuery(
     int PageNumber = 1,
     int PageSize = 50,
     string? SearchTerm = null,
@@ -14,8 +13,8 @@ public sealed record ListTasksQuery(
     bool IncludeAssignedTasks = false,
     TaskStatusFilter? Status = null,
     TaskPriority? Priority = null,
-    DateTime? DueFromUtc = null,
-    DateTime? DueToUtc = null,
+    DateTime? DueAfterUtc = null,
+    DateTime? DueBeforeUtc = null,
     TaskSortBy SortBy = TaskSortBy.CreatedAt,
     SortDirection SortDirection = SortDirection.Descending
     )

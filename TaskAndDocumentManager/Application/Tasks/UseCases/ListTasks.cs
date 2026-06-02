@@ -18,7 +18,7 @@ public class ListTasks
     }
 
     public async Task<IReadOnlyList<TaskListItemDto>> ExecuteAsync(
-        ListTasksQuery query,
+        TaskQuery query,
         Guid actorId,
         bool isAdmin,
         bool isManager,
@@ -46,24 +46,24 @@ public class ListTasks
                 .ToList();
     }
 
-    private static ListTasksQuery NormalizeQuery(ListTasksQuery query)
+    private static TaskQuery NormalizeQuery(TaskQuery query)
     {
         ArgumentNullException.ThrowIfNull(query);
 
         var pageNumber = query.PageNumber < 1 ? 1 : query.PageNumber;
 
         var pageSize = query.PageSize < 1
-            ? ListTasksQuery.DefaultPageSize
-            : Math.Min(query.PageSize, ListTasksQuery.MaxPageSize);
+            ? TaskQuery.DefaultPageSize
+            : Math.Min(query.PageSize, TaskQuery.MaxPageSize);
 
         var searchTerm = string.IsNullOrWhiteSpace(query.SearchTerm)
             ? null
             : query.SearchTerm.Trim();
 
-        if (query.DueFromUtc.HasValue && query.DueToUtc.HasValue &&
-            query.DueFromUtc.Value > query.DueToUtc.Value)
+        if (query.DueAfterUtc.HasValue && query.DueBeforeUtc.HasValue &&
+            query.DueAfterUtc.Value > query.DueBeforeUtc.Value)
         {
-            throw new ArgumentException("Due from date cannot be later than due to date.", nameof(query));
+            throw new ArgumentException("Due after date cannot be later than due before date.", nameof(query));
         }
 
         if (query.Status.HasValue && !Enum.IsDefined(query.Status.Value))
@@ -102,8 +102,8 @@ public class ListTasks
         };
     }
 
-    private static ListTasksQuery ApplyAccessScope(
-        ListTasksQuery query,
+    private static TaskQuery ApplyAccessScope(
+        TaskQuery query,
         Guid actorId,
         bool isAdmin,
         bool isManager)
@@ -127,7 +127,7 @@ public class ListTasks
 
     private static IOrderedEnumerable<Domain.Tasks.TaskItem> ApplySort(
         IEnumerable<Domain.Tasks.TaskItem> tasks,
-        ListTasksQuery query)
+        TaskQuery query)
     {
         return (query.SortBy, query.SortDirection) switch
         {
