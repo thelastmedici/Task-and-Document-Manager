@@ -1,4 +1,112 @@
 # TaskAndDocumentManager
+TaskAndDocumentManager is an ASP.NET Core backend that implements authenticated, role-based user management, a task lifecycle with ownership and scoped queries, and a secure document upload/link/share workflow. The solution uses a feature-based clean architecture with `Application`, `Domain`, `Infrastructure`, and `src/Api` layers so responsibilities (HTTP surface, use cases, domain invariants, and persistence) are separated.
+## Current status
+This repository is functional for local development and demos. Key implemented pieces:
+- JWT bearer authentication with role claims and standard validation
+- Seeded roles: `Admin`, `Manager`, `User` (fixed GUIDs in `Infrastructure/Persistence/BuiltInRoles.cs`)
+- Admin user-management endpoints (create, change role, deactivate, delete)
+- Tasks persisted via EF Core to PostgreSQL
+- Ownership-based task authorization and query-level task scoping in the application layer
+- Protected document access (files are served only through API endpoints)
+- Local per-user filesystem storage for uploaded file bytes
+- In-memory document metadata and access-grant repositories
+- Automated unit/integration tests covering auth, tasks, and document flows
+## Implemented features
+### Production readiness (caveats)
+The API and feature surface are implemented, but persistence and storage are intentionally partial to keep the project simple for demos. Known caveats:
+- Users are stored in-memory via `UserRepository` and do not survive process restarts.
+- Document metadata and document access grants are in-memory and lost on restart.
+- Uploaded file bytes are stored on local disk under `storage/uploads/{userId}/` rather than an object store.
+- EF Core migrations are not committed in the repository.
+- `TaskDbContext` currently models tasks, users, and roles (consider renaming for clarity).
+Summary of persistence:
+- tasks: persisted to PostgreSQL via EF Core
+- roles: modeled in EF Core and seeded into the database
+- users: in-memory
+- documents: file bytes on disk, metadata and grants in-memory
+## Project structure
+### High-level responsibilities
+## Authentication and roles
+### Password rules
+Passwords are validated for a minimum length and basic complexity (uppercase and numeric requirements). Passwords are hashed before storage; plaintext passwords are never persisted.
+### JWT
+Issued tokens include the user's id, email, role, and a JTI. Token validation supports issuer, audience, signing key and lifetime checks. The following configuration keys are expected:
+- `Jwt:Key`
+- `Jwt:Issuer`
+- `Jwt:Audience`
+- `Jwt:ExpiresMinutes`
+## Auth endpoints
+## Task module
+### Task rules
+Domain invariants enforced by `TaskItem` and application use cases include required owner, title and description, length limits (title 200 / description 4000), immutable completed tasks, and idempotent assign/update operations.
+### Query-level protection
+The `ListTasks` use case scopes database queries by the caller's role before the repository query is executed. This prevents fetching all rows and filtering in memory. Scope rules:
+- `Admin`: all matching tasks
+- `Manager`: owned tasks and assigned tasks
+- `User`: owned tasks only
+## Document module
+### Document security and access
+Files are not exposed via public URLs. All file access is mediated by API endpoints (for example `GET /api/documents/{id}/download`) where the backend enforces access checks such as role, ownership, explicit sharing, and optional manager/team access.
+### Document storage
+Uploaded file bytes are stored on the local filesystem under `storage/uploads/{userId}/{guid}.ext`. The original client filename is retained in metadata for user-facing downloads while the on-disk filename is a GUID-based safe filename. Files are stored outside of `wwwroot` and are never served directly.
+### Upload security
+Uploads require an authenticated uploader (owner set from JWT), a non-empty file, a 10 MB size limit, and an extension allowlist. Dangerous types are blocked by omission. Allowed extensions:
+- `.pdf`
+- `.doc`
+- `.docx`
+- `.txt`
+- `.png`
+- `.jpg`
+- `.jpeg`
+### Upload flow
+When a user uploads a file the API validates existence, size and extension, reads the uploader id from the JWT, generates a GUID-based safe on-disk filename, saves the file under the uploader's folder, and records metadata linked to `UploadedByUserId` in the document repository (currently in-memory).
+### Document endpoints
+### Document ownership rules
+Non-admin operations are ownership-driven:
+- upload: owner set from JWT
+- link to task: owner-only
+- share document: owner-only
+- share task-linked document: owner-only and target must be a task participant
+- delete: owner-only
+## Persistence overview
+### Configuration
+Required configuration keys:
+- `ConnectionStrings:DefaultConnection` (PostgreSQL)
+- `Jwt:Key`
+- `Jwt:Issuer`
+- `Jwt:Audience`
+- `Jwt:ExpiresMinutes`
+## running locally
+### requirements
+- .NET SDK 10 preview
+- PostgreSQL
+- valid connection string and JWT settings in configuration
+### start the API
+```bash
+dotnet run
+```
+### build
+```bash
+dotnet build TaskAndDocumentManager.sln
+```
+### test
+```bash
+dotnet test Application/Tests/Tests.csproj
+```
+## test coverage
+The application test project covers authentication, task CRUD and listing, and document upload/access/share/download flows. Latest verified result: 37 passing tests.
+## current caveats
+- user accounts and document metadata/grants do not survive process restarts (in-memory repositories)
+- uploaded files may remain on disk even when metadata is lost
+- `TaskDbContext` currently models users and roles in addition to tasks
+## recommended next steps
+1. Move users to EF Core / PostgreSQL persistence and commit EF migrations.
+2. Persist document metadata and access grants to the database (avoid in-memory-only state).
+3. Rename `TaskDbContext` to a broader application-level context if you consolidate models.
+4. Add controller and integration tests that exercise auth, task authorization, and document authorization.
+5. Migrate local file storage to a production-grade object store (S3, Azure Blob, GCS) or a secure managed file store.
+If you'd like, I can open a PR with these README changes or prepare a migration plan and starter EF migrations for users and documents.
+# TaskAndDocumentManager
 
 TaskAndDocumentManager is an ASP.NET Core backend for:
 
