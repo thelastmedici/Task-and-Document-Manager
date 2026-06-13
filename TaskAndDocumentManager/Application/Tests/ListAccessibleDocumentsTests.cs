@@ -69,11 +69,12 @@ public class ListAccessibleDocumentsTests
 
         var result = await _sut.ExecuteAsync(requesterId, true);
 
-        Assert.Equal(3, result.Count);
-        Assert.Contains(result, document => document.Id == ownDocument.Id);
-        Assert.Contains(result, document => document.Id == sharedDocument.Id);
-        Assert.Contains(result, document => document.Id == taskLinkedDocument.Id);
-        Assert.DoesNotContain(result, document => document.Id == inaccessibleDocument.Id);
+        Assert.Equal(3, result.TotalCount);
+        Assert.Equal(3, result.Items.Count);
+        Assert.Contains(result.Items, document => document.Id == ownDocument.Id);
+        Assert.Contains(result.Items, document => document.Id == sharedDocument.Id);
+        Assert.Contains(result.Items, document => document.Id == taskLinkedDocument.Id);
+        Assert.DoesNotContain(result.Items, document => document.Id == inaccessibleDocument.Id);
     }
 
     [Fact]
@@ -99,9 +100,10 @@ public class ListAccessibleDocumentsTests
 
         var result = await _sut.ExecuteAsync(requesterId);
 
-        Assert.Single(result);
-        Assert.Contains(result, document => document.Id == ownDocument.Id);
-        Assert.DoesNotContain(result, document => document.Id == taskLinkedDocument.Id);
+        Assert.Equal(1, result.TotalCount);
+        Assert.Single(result.Items);
+        Assert.Contains(result.Items, document => document.Id == ownDocument.Id);
+        Assert.DoesNotContain(result.Items, document => document.Id == taskLinkedDocument.Id);
     }
 
     [Fact]
@@ -121,7 +123,7 @@ public class ListAccessibleDocumentsTests
             new DocumentSearchQuery(SearchTerm: "report"),
             CancellationToken.None);
 
-        var document = Assert.Single(result);
+        var document = Assert.Single(result.Items);
         Assert.Equal(reportDocument.Id, document.Id);
     }
 
@@ -142,7 +144,7 @@ public class ListAccessibleDocumentsTests
             new DocumentSearchQuery(ContentType: "image/png"),
             CancellationToken.None);
 
-        var document = Assert.Single(result);
+        var document = Assert.Single(result.Items);
         Assert.Equal(imageDocument.Id, document.Id);
     }
 
@@ -165,8 +167,29 @@ public class ListAccessibleDocumentsTests
                 UploadedToUtc: new DateTime(2026, 05, 31, 0, 0, 0, DateTimeKind.Utc)),
             CancellationToken.None);
 
-        var document = Assert.Single(result);
+        var document = Assert.Single(result.Items);
         Assert.Equal(newerDocument.Id, document.Id);
+    }
+
+    [Fact]
+    public async Task ExecuteForAdminAsync_ShouldReturnPaginationMetadata()
+    {
+        var ownerId = Guid.NewGuid();
+        var firstDocument = new Document("first.pdf", "application/pdf", 128, "/tmp/first.pdf", ownerId);
+        var secondDocument = new Document("second.pdf", "application/pdf", 256, "/tmp/second.pdf", ownerId);
+
+        _documentRepositoryMock
+            .Setup(repository => repository.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { firstDocument, secondDocument });
+
+        var result = await _sut.ExecuteForAdminAsync(
+            new DocumentSearchQuery(PageNumber: 2, PageSize: 1),
+            CancellationToken.None);
+
+        Assert.Single(result.Items);
+        Assert.Equal(2, result.TotalCount);
+        Assert.Equal(2, result.Page);
+        Assert.Equal(1, result.PageSize);
     }
 
     private static void SetUploadedAtUtc(Document document, DateTime uploadedAtUtc)

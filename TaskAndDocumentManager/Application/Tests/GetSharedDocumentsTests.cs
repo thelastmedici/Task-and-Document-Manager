@@ -34,10 +34,11 @@ public class GetSharedDocumentsTests
             .Setup(repository => repository.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync([sharedDocument, otherDocument]);
 
-        var result = await _sut.ExecuteAsync(userId, CancellationToken.None);
+        var result = await _sut.ExecuteAsync(userId, cancellationToken: CancellationToken.None);
 
-        Assert.Single(result);
-        Assert.Equal(sharedDocument.Id, result[0].Id);
-        Assert.Equal("shared.pdf", result[0].FileName);
+        var document = Assert.Single(result.Items);
+        Assert.Equal(1, result.TotalCount);
+        Assert.Equal(sharedDocument.Id, document.Id);
+        Assert.Equal("shared.pdf", document.FileName);
     }
 }

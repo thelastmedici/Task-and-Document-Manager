@@ -1,4 +1,6 @@
 using TaskAndDocumentManager.Application.Audit.Interfaces;
+using TaskAndDocumentManager.Application.Audit.DTOs;
+using TaskAndDocumentManager.Application.Common.DTOs;
 using TaskAndDocumentManager.Domain.Entities;
 
 namespace TaskAndDocumentManager.Infrastructure.Audit;
@@ -14,8 +16,30 @@ public class AuditLogRepository : IAuditLogRepository
         return Task.CompletedTask;
     }
 
-    public Task<IReadOnlyCollection<AuditLog>> GetAllAsync(CancellationToken cancellationToken = default)
+    public Task<PaginatedResult<AuditLog>> GetPageAsync(
+        AuditLogQuery query,
+        CancellationToken cancellationToken = default)
     {
-        return Task.FromResult((IReadOnlyCollection<AuditLog>)AuditLogs.ToList());
+        ArgumentNullException.ThrowIfNull(query);
+
+        var pageNumber = query.PageNumber < 1 ? 1 : query.PageNumber;
+        var pageSize = query.PageSize < 1
+            ? AuditLogQuery.DefaultPageSize
+            : Math.Min(query.PageSize, AuditLogQuery.MaxPageSize);
+
+        var orderedLogs = AuditLogs
+            .OrderByDescending(auditLog => auditLog.TimestampUtc)
+            .ToList();
+
+        var items = orderedLogs
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+
+        return Task.FromResult(new PaginatedResult<AuditLog>(
+            items,
+            orderedLogs.Count,
+            pageNumber,
+            pageSize));
     }
 }

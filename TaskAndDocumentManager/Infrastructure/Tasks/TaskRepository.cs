@@ -42,11 +42,31 @@ public class TaskRepository(TaskDbContext dbContext) : ITaskRepository
         var pageSize = query.PageSize < 1
             ? TaskQuery.DefaultPageSize
             : Math.Min(query.PageSize, TaskQuery.MaxPageSize);
+        var tasks = ApplyFilters(_dbContext.Tasks.AsNoTracking(), query);
+
+        tasks = ApplySort(tasks, query);
+
+        return await tasks
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<int> CountAsync(
+        TaskQuery query,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+
+        return await ApplyFilters(_dbContext.Tasks.AsNoTracking(), query)
+            .CountAsync(cancellationToken);
+    }
+
+    private static IQueryable<TaskItem> ApplyFilters(IQueryable<TaskItem> tasks, TaskQuery query)
+    {
         var searchTerm = string.IsNullOrWhiteSpace(query.SearchTerm)
             ? null
             : query.SearchTerm.Trim();
-
-        IQueryable<TaskItem> tasks = _dbContext.Tasks.AsNoTracking();
 
         if (query.IsCompleted.HasValue)
         {
@@ -95,12 +115,7 @@ public class TaskRepository(TaskDbContext dbContext) : ITaskRepository
                 EF.Functions.ILike(task.Description, pattern));
         }
 
-        tasks = ApplySort(tasks, query);
-
-        return await tasks
-            .Skip((pageNumber - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync(cancellationToken);
+        return tasks;
     }
 
     private static IQueryable<TaskItem> ApplySort(IQueryable<TaskItem> tasks, TaskQuery query)

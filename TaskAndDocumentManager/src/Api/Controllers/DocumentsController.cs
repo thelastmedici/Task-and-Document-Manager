@@ -120,7 +120,9 @@ public class DocumentsController : ControllerBase
             request.SearchTerm,
             request.ContentType,
             request.UploadedFromUtc,
-            request.UploadedToUtc);
+            request.UploadedToUtc,
+            request.PageNumber,
+            request.PageSize);
 
         try
         {
@@ -145,11 +147,28 @@ public class DocumentsController : ControllerBase
     }
 
     [HttpGet("shared-with-me")]
-    public async Task<IActionResult> SharedWithMe(CancellationToken cancellationToken)
+    public async Task<IActionResult> SharedWithMe(
+        [FromQuery] DocumentListRequest request,
+        CancellationToken cancellationToken)
     {
         var actorId = User.GetActorId();
-        var documents = await _getSharedDocuments.ExecuteAsync(actorId, cancellationToken);
-        return Ok(documents);
+        var query = new DocumentSearchQuery(
+            request.SearchTerm,
+            request.ContentType,
+            request.UploadedFromUtc,
+            request.UploadedToUtc,
+            request.PageNumber,
+            request.PageSize);
+
+        try
+        {
+            var documents = await _getSharedDocuments.ExecuteAsync(actorId, query, cancellationToken);
+            return Ok(documents);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     [HttpPost("{id:guid}/link-task")]
@@ -480,6 +499,8 @@ public async Task<IActionResult> GetMetadata(
         public string? ContentType { get; init; }
         public DateTime? UploadedFromUtc { get; init; }
         public DateTime? UploadedToUtc { get; init; }
+        public int PageNumber { get; init; } = 1;
+        public int PageSize { get; init; } = DocumentSearchQuery.DefaultPageSize;
     }
 
     public sealed class ShareDocumentBody
