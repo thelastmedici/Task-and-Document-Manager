@@ -128,6 +128,48 @@ public class ListAccessibleDocumentsTests
     }
 
     [Fact]
+    public async Task ExecuteAsync_ShouldSearchOnlyOwnedAndSharedDocuments()
+    {
+        var requesterId = Guid.NewGuid();
+        var otherOwnerId = Guid.NewGuid();
+
+        var ownedDocument = new Document("owned-report.pdf", "application/pdf", 128, "/tmp/owned-report.pdf", requesterId);
+        var sharedDocument = new Document("shared-report.pdf", "application/pdf", 256, "/tmp/shared-report.pdf", otherOwnerId);
+        var inaccessibleDocument = new Document("private-report.pdf", "application/pdf", 512, "/tmp/private-report.pdf", otherOwnerId);
+        var nonMatchingOwnedDocument = new Document("notes.pdf", "application/pdf", 1024, "/tmp/notes.pdf", requesterId);
+
+        _documentRepositoryMock
+            .Setup(repository => repository.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[]
+            {
+                ownedDocument,
+                sharedDocument,
+                inaccessibleDocument,
+                nonMatchingOwnedDocument
+            });
+
+        _documentAccessRepositoryMock
+            .Setup(repository => repository.HasAccessAsync(sharedDocument.Id, requesterId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        _documentAccessRepositoryMock
+            .Setup(repository => repository.HasAccessAsync(inaccessibleDocument.Id, requesterId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        var result = await _sut.ExecuteAsync(
+            requesterId,
+            false,
+            new DocumentSearchQuery(SearchTerm: "report"),
+            CancellationToken.None);
+
+        Assert.Equal(2, result.TotalCount);
+        Assert.Contains(result.Items, document => document.Id == ownedDocument.Id);
+        Assert.Contains(result.Items, document => document.Id == sharedDocument.Id);
+        Assert.DoesNotContain(result.Items, document => document.Id == inaccessibleDocument.Id);
+        Assert.DoesNotContain(result.Items, document => document.Id == nonMatchingOwnedDocument.Id);
+    }
+
+    [Fact]
     public async Task ExecuteAsync_ShouldFilterAccessibleDocuments_ByContentType()
     {
         var requesterId = Guid.NewGuid();
@@ -169,6 +211,30 @@ public class ListAccessibleDocumentsTests
 
         var document = Assert.Single(result.Items);
         Assert.Equal(newerDocument.Id, document.Id);
+    }
+
+    [Fact]
+    public async Task ExecuteForAdminAsync_ShouldSearchAllMatchingDocuments()
+    {
+        var firstOwnerId = Guid.NewGuid();
+        var secondOwnerId = Guid.NewGuid();
+
+        var firstDocument = new Document("first-report.pdf", "application/pdf", 128, "/tmp/first-report.pdf", firstOwnerId);
+        var secondDocument = new Document("second-report.pdf", "application/pdf", 256, "/tmp/second-report.pdf", secondOwnerId);
+        var nonMatchingDocument = new Document("notes.pdf", "application/pdf", 512, "/tmp/notes.pdf", secondOwnerId);
+
+        _documentRepositoryMock
+            .Setup(repository => repository.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { firstDocument, secondDocument, nonMatchingDocument });
+
+        var result = await _sut.ExecuteForAdminAsync(
+            new DocumentSearchQuery(SearchTerm: "report"),
+            CancellationToken.None);
+
+        Assert.Equal(2, result.TotalCount);
+        Assert.Contains(result.Items, document => document.Id == firstDocument.Id);
+        Assert.Contains(result.Items, document => document.Id == secondDocument.Id);
+        Assert.DoesNotContain(result.Items, document => document.Id == nonMatchingDocument.Id);
     }
 
     [Fact]
