@@ -21,5 +21,9 @@ namespace TaskAndDocumentManager.Application.Tasks.Interfaces
         Task<IReadOnlyList<TaskItem>> SearchAsync(
             TaskQuery query,
             CancellationToken cancellationToken = default);
+
+        Task<int> CountAsync(
+            TaskQuery query,
+            CancellationToken cancellationToken = default);
     }
 }

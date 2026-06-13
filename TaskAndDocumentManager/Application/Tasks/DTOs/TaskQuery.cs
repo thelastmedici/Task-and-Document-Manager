@@ -5,7 +5,7 @@ namespace TaskAndDocumentManager.Application.Tasks.DTOs;
 
 public sealed record TaskQuery(
     int PageNumber = 1,
-    int PageSize = 50,
+    int PageSize = 20,
     string? SearchTerm = null,
     bool? IsCompleted = null,
     Guid? AssignedToUserId = null,
@@ -19,6 +19,6 @@ public sealed record TaskQuery(
     SortDirection SortDirection = SortDirection.Descending
     )
 {
-    public const int DefaultPageSize = 50;
+    public const int DefaultPageSize = 20;
     public const int MaxPageSize = 200;
 }

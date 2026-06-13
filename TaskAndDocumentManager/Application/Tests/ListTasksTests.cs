@@ -20,6 +20,9 @@ public class ListTasksTests
     public ListTasksTests()
     {
         _taskRepositoryMock = new Mock<ITaskRepository>();
+        _taskRepositoryMock
+            .Setup(repo => repo.CountAsync(It.IsAny<TaskQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(0);
         _sut = new ListTasks(_taskRepositoryMock.Object);
     }
 
@@ -38,7 +41,7 @@ public class ListTasksTests
         var result = await _sut.ExecuteAsync(new TaskQuery(), actorId, true, false, cancellationToken);
 
         Assert.Collection(
-            result,
+            result.Items,
             task => Assert.Equal(newerTask.Id, task.Id),
             task => Assert.Equal(olderTask.Id, task.Id));
     }
@@ -57,11 +60,33 @@ public class ListTasksTests
 
         var result = await _sut.ExecuteAsync(new TaskQuery(), actorId, true, false);
 
-        var item = Assert.IsType<TaskListItemDto>(Assert.Single(result));
+        var item = Assert.IsType<TaskListItemDto>(Assert.Single(result.Items));
         Assert.Equal(task.Title, item.Title);
         Assert.Equal(task.Description, item.Description);
         Assert.Equal(task.OwnerId, item.OwnerId);
         Assert.Equal(task.Priority, item.Priority);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_ShouldReturnPaginationMetadata()
+    {
+        var actorId = Guid.NewGuid();
+        var query = new TaskQuery(PageNumber: 2, PageSize: 5);
+
+        _taskRepositoryMock
+            .Setup(repo => repo.SearchAsync(It.IsAny<TaskQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<TaskItem>());
+
+        _taskRepositoryMock
+            .Setup(repo => repo.CountAsync(It.IsAny<TaskQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(42);
+
+        var result = await _sut.ExecuteAsync(query, actorId, true, false);
+
+        Assert.Empty(result.Items);
+        Assert.Equal(42, result.TotalCount);
+        Assert.Equal(2, result.Page);
+        Assert.Equal(5, result.PageSize);
     }
 
     [Fact]

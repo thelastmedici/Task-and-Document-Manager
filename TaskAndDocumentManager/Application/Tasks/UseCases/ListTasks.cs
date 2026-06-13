@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using TaskAndDocumentManager.Application.Common.DTOs;
 using TaskAndDocumentManager.Application.Tasks.DTOs;
 using TaskAndDocumentManager.Application.Tasks.Interfaces;
 
@@ -17,7 +18,7 @@ public class ListTasks
         _taskRepository = taskRepository;
     }
 
-    public async Task<IReadOnlyList<TaskListItemDto>> ExecuteAsync(
+    public async Task<PaginatedResult<TaskListItemDto>> ExecuteAsync(
         TaskQuery query,
         Guid actorId,
         bool isAdmin,
@@ -28,8 +29,9 @@ public class ListTasks
         var scopedQuery = ApplyAccessScope(normalizedQuery, actorId, isAdmin, isManager);
 
         var tasks = await _taskRepository.SearchAsync(scopedQuery, cancellationToken);
+        var totalCount = await _taskRepository.CountAsync(scopedQuery, cancellationToken);
 
-        return ApplySort(tasks, scopedQuery)
+        var items = ApplySort(tasks, scopedQuery)
             .Select(task => new TaskListItemDto(
                 task.Id,
                 task.Title,
@@ -44,6 +46,12 @@ public class ListTasks
                 task.IsCompleted,
                 task.CompletedAt))
                 .ToList();
+
+        return new PaginatedResult<TaskListItemDto>(
+            items,
+            totalCount,
+            scopedQuery.PageNumber,
+            scopedQuery.PageSize);
     }
 
     private static TaskQuery NormalizeQuery(TaskQuery query)
