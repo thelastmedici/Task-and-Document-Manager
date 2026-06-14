@@ -1,5 +1,6 @@
 using Moq;
 using System.Reflection;
+using TaskAndDocumentManager.Application.Common.DTOs;
 using TaskAndDocumentManager.Application.Documents.DTOs;
 using TaskAndDocumentManager.Application.Documents.Interfaces;
 using TaskAndDocumentManager.Application.Documents.Services;
@@ -47,9 +48,7 @@ public class ListAccessibleDocumentsTests
         task.AssignTask(requesterId);
         taskLinkedDocument.LinkToTask(task.Id);
 
-        _documentRepositoryMock
-            .Setup(repository => repository.GetAllAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new[] { ownDocument, sharedDocument, taskLinkedDocument, inaccessibleDocument });
+        SetupDocumentSearch(ownDocument, sharedDocument, taskLinkedDocument, inaccessibleDocument);
 
         _documentAccessRepositoryMock
             .Setup(repository => repository.HasAccessAsync(sharedDocument.Id, requesterId, It.IsAny<CancellationToken>()))
@@ -90,9 +89,7 @@ public class ListAccessibleDocumentsTests
         task.AssignTask(requesterId);
         taskLinkedDocument.LinkToTask(task.Id);
 
-        _documentRepositoryMock
-            .Setup(repository => repository.GetAllAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new[] { ownDocument, taskLinkedDocument });
+        SetupDocumentSearch(ownDocument, taskLinkedDocument);
 
         _documentAccessRepositoryMock
             .Setup(repository => repository.HasAccessAsync(taskLinkedDocument.Id, requesterId, It.IsAny<CancellationToken>()))
@@ -113,9 +110,7 @@ public class ListAccessibleDocumentsTests
         var reportDocument = new Document("quarterly-report.pdf", "application/pdf", 128, "/tmp/report.pdf", requesterId);
         var imageDocument = new Document("diagram.png", "image/png", 256, "/tmp/diagram.png", requesterId);
 
-        _documentRepositoryMock
-            .Setup(repository => repository.GetAllAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new[] { reportDocument, imageDocument });
+        SetupDocumentSearch(reportDocument, imageDocument);
 
         var result = await _sut.ExecuteAsync(
             requesterId,
@@ -138,15 +133,11 @@ public class ListAccessibleDocumentsTests
         var inaccessibleDocument = new Document("private-report.pdf", "application/pdf", 512, "/tmp/private-report.pdf", otherOwnerId);
         var nonMatchingOwnedDocument = new Document("notes.pdf", "application/pdf", 1024, "/tmp/notes.pdf", requesterId);
 
-        _documentRepositoryMock
-            .Setup(repository => repository.GetAllAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new[]
-            {
-                ownedDocument,
-                sharedDocument,
-                inaccessibleDocument,
-                nonMatchingOwnedDocument
-            });
+        SetupDocumentSearch(
+            ownedDocument,
+            sharedDocument,
+            inaccessibleDocument,
+            nonMatchingOwnedDocument);
 
         _documentAccessRepositoryMock
             .Setup(repository => repository.HasAccessAsync(sharedDocument.Id, requesterId, It.IsAny<CancellationToken>()))
@@ -176,9 +167,7 @@ public class ListAccessibleDocumentsTests
         var pdfDocument = new Document("report.pdf", "application/pdf", 128, "/tmp/report.pdf", requesterId);
         var imageDocument = new Document("diagram.png", "image/png", 256, "/tmp/diagram.png", requesterId);
 
-        _documentRepositoryMock
-            .Setup(repository => repository.GetAllAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new[] { pdfDocument, imageDocument });
+        SetupDocumentSearch(pdfDocument, imageDocument);
 
         var result = await _sut.ExecuteAsync(
             requesterId,
@@ -199,9 +188,7 @@ public class ListAccessibleDocumentsTests
         SetUploadedAtUtc(olderDocument, new DateTime(2026, 05, 01, 10, 0, 0, DateTimeKind.Utc));
         SetUploadedAtUtc(newerDocument, new DateTime(2026, 05, 20, 10, 0, 0, DateTimeKind.Utc));
 
-        _documentRepositoryMock
-            .Setup(repository => repository.GetAllAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new[] { olderDocument, newerDocument });
+        SetupDocumentSearch(olderDocument, newerDocument);
 
         var result = await _sut.ExecuteForAdminAsync(
             new DocumentSearchQuery(
@@ -223,9 +210,7 @@ public class ListAccessibleDocumentsTests
         var secondDocument = new Document("second-report.pdf", "application/pdf", 256, "/tmp/second-report.pdf", secondOwnerId);
         var nonMatchingDocument = new Document("notes.pdf", "application/pdf", 512, "/tmp/notes.pdf", secondOwnerId);
 
-        _documentRepositoryMock
-            .Setup(repository => repository.GetAllAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new[] { firstDocument, secondDocument, nonMatchingDocument });
+        SetupDocumentSearch(firstDocument, secondDocument, nonMatchingDocument);
 
         var result = await _sut.ExecuteForAdminAsync(
             new DocumentSearchQuery(SearchTerm: "report"),
@@ -244,9 +229,7 @@ public class ListAccessibleDocumentsTests
         var firstDocument = new Document("first.pdf", "application/pdf", 128, "/tmp/first.pdf", ownerId);
         var secondDocument = new Document("second.pdf", "application/pdf", 256, "/tmp/second.pdf", ownerId);
 
-        _documentRepositoryMock
-            .Setup(repository => repository.GetAllAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new[] { firstDocument, secondDocument });
+        SetupDocumentSearch(firstDocument, secondDocument);
 
         var result = await _sut.ExecuteForAdminAsync(
             new DocumentSearchQuery(PageNumber: 2, PageSize: 1),
@@ -265,5 +248,90 @@ public class ListAccessibleDocumentsTests
             BindingFlags.Instance | BindingFlags.Public);
 
         property!.SetValue(document, uploadedAtUtc);
+    }
+
+    private void SetupDocumentSearch(params Document[] documents)
+    {
+        _documentRepositoryMock
+            .Setup(repository => repository.SearchAsync(
+                It.IsAny<DocumentSearchQuery>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync((DocumentSearchQuery query, CancellationToken _) =>
+                ApplySearch(documents, NormalizeQuery(query))
+                    .OrderByDescending(document => document.UploadedAtUtc)
+                    .ToList());
+
+        _documentRepositoryMock
+            .Setup(repository => repository.SearchPageAsync(
+                It.IsAny<DocumentSearchQuery>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync((DocumentSearchQuery query, CancellationToken _) =>
+            {
+                var normalizedQuery = NormalizeQuery(query);
+                var matchingDocuments = ApplySearch(documents, normalizedQuery)
+                    .OrderByDescending(document => document.UploadedAtUtc)
+                    .ToList();
+                var items = matchingDocuments
+                    .Skip((normalizedQuery.PageNumber - 1) * normalizedQuery.PageSize)
+                    .Take(normalizedQuery.PageSize)
+                    .ToList();
+
+                return new PaginatedResult<Document>(
+                    items,
+                    matchingDocuments.Count,
+                    normalizedQuery.PageNumber,
+                    normalizedQuery.PageSize);
+            });
+    }
+
+    private static DocumentSearchQuery NormalizeQuery(DocumentSearchQuery query)
+    {
+        return query with
+        {
+            PageNumber = query.PageNumber < 1 ? 1 : query.PageNumber,
+            PageSize = query.PageSize < 1
+                ? DocumentSearchQuery.DefaultPageSize
+                : Math.Min(query.PageSize, DocumentSearchQuery.MaxPageSize)
+        };
+    }
+
+    private static IEnumerable<Document> ApplySearch(
+        IEnumerable<Document> documents,
+        DocumentSearchQuery query)
+    {
+        var searchTerm = string.IsNullOrWhiteSpace(query.SearchTerm)
+            ? null
+            : query.SearchTerm.Trim();
+        var contentType = string.IsNullOrWhiteSpace(query.ContentType)
+            ? null
+            : query.ContentType.Trim();
+
+        var filteredDocuments = documents;
+
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            filteredDocuments = filteredDocuments.Where(document =>
+                document.OriginalFileName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (!string.IsNullOrWhiteSpace(contentType))
+        {
+            filteredDocuments = filteredDocuments.Where(document =>
+                string.Equals(document.ContentType, contentType, StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (query.UploadedFromUtc.HasValue)
+        {
+            filteredDocuments = filteredDocuments.Where(document =>
+                document.UploadedAtUtc >= query.UploadedFromUtc.Value);
+        }
+
+        if (query.UploadedToUtc.HasValue)
+        {
+            filteredDocuments = filteredDocuments.Where(document =>
+                document.UploadedAtUtc <= query.UploadedToUtc.Value);
+        }
+
+        return filteredDocuments;
     }
 }

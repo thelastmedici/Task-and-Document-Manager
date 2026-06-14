@@ -1,4 +1,5 @@
 using Moq;
+using TaskAndDocumentManager.Application.Documents.DTOs;
 using TaskAndDocumentManager.Application.Documents.Interfaces;
 using TaskAndDocumentManager.Application.Documents.UseCases;
 using TaskAndDocumentManager.Domain.Entities;
@@ -31,7 +32,9 @@ public class GetSharedDocumentsTests
             .ReturnsAsync([sharedDocument.Id]);
 
         _documentRepositoryMock
-            .Setup(repository => repository.GetAllAsync(It.IsAny<CancellationToken>()))
+            .Setup(repository => repository.SearchAsync(
+                It.IsAny<DocumentSearchQuery>(),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync([sharedDocument, otherDocument]);
 
         var result = await _sut.ExecuteAsync(userId, cancellationToken: CancellationToken.None);
