@@ -43,10 +43,10 @@ public class ListAccessibleDocuments
         }
 
         var normalizedQuery = NormalizeQuery(query);
-        var documents = await _documentRepository.GetAllAsync(cancellationToken);
+        var documents = await _documentRepository.SearchAsync(normalizedQuery, cancellationToken);
         var accessibleDocuments = new List<DocumentMetadataDto>();
 
-        foreach (var document in ApplySearch(documents, normalizedQuery).OrderByDescending(document => document.UploadedAtUtc))
+        foreach (var document in documents)
         {
             if (!await _documentAccessEvaluator.HasAccessAsync(
                 document,
@@ -75,14 +75,17 @@ public class ListAccessibleDocuments
         CancellationToken cancellationToken = default)
     {
         var normalizedQuery = NormalizeQuery(query);
-        var documents = await _documentRepository.GetAllAsync(cancellationToken);
+        var documents = await _documentRepository.SearchPageAsync(normalizedQuery, cancellationToken);
 
-        var items = ApplySearch(documents, normalizedQuery)
-            .OrderByDescending(document => document.UploadedAtUtc)
+        var items = documents.Items
             .Select(ToDto)
             .ToList();
 
-        return ToPaginatedResult(items, normalizedQuery);
+        return new PaginatedResult<DocumentMetadataDto>(
+            items,
+            documents.TotalCount,
+            documents.Page,
+            documents.PageSize);
     }
 
     private static DocumentSearchQuery NormalizeQuery(DocumentSearchQuery? query)
@@ -105,46 +108,6 @@ public class ListAccessibleDocuments
             PageNumber = pageNumber,
             PageSize = pageSize
         };
-    }
-
-    private static IEnumerable<Document> ApplySearch(
-        IEnumerable<Document> documents,
-        DocumentSearchQuery query)
-    {
-        var searchTerm = string.IsNullOrWhiteSpace(query.SearchTerm)
-            ? null
-            : query.SearchTerm.Trim();
-        var contentType = string.IsNullOrWhiteSpace(query.ContentType)
-            ? null
-            : query.ContentType.Trim();
-
-        var filteredDocuments = documents;
-
-        if (!string.IsNullOrWhiteSpace(searchTerm))
-        {
-            filteredDocuments = filteredDocuments.Where(document =>
-                document.OriginalFileName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase));
-        }
-
-        if (!string.IsNullOrWhiteSpace(contentType))
-        {
-            filteredDocuments = filteredDocuments.Where(document =>
-                string.Equals(document.ContentType, contentType, StringComparison.OrdinalIgnoreCase));
-        }
-
-        if (query.UploadedFromUtc.HasValue)
-        {
-            filteredDocuments = filteredDocuments.Where(document =>
-                document.UploadedAtUtc >= query.UploadedFromUtc.Value);
-        }
-
-        if (query.UploadedToUtc.HasValue)
-        {
-            filteredDocuments = filteredDocuments.Where(document =>
-                document.UploadedAtUtc <= query.UploadedToUtc.Value);
-        }
-
-        return filteredDocuments;
     }
 
     private static PaginatedResult<DocumentMetadataDto> ToPaginatedResult(

@@ -44,9 +44,10 @@ public class GetSharedDocuments
         }
 
         var sharedDocumentIdSet = sharedDocumentIds.ToHashSet();
-        var documents = await _documentRepository.GetAllAsync(cancellationToken);
+        var documents = await _documentRepository.SearchAsync(normalizedQuery, cancellationToken);
 
-        var sharedDocuments = ApplySearch(documents, sharedDocumentIdSet, normalizedQuery)
+        var sharedDocuments = documents
+            .Where(document => sharedDocumentIdSet.Contains(document.Id))
             .OrderByDescending(document => document.UploadedAtUtc)
             .Select(ToDto)
             .ToList();
@@ -83,49 +84,6 @@ public class GetSharedDocuments
             PageNumber = pageNumber,
             PageSize = pageSize
         };
-    }
-
-    private static IEnumerable<Document> ApplySearch(
-        IEnumerable<Document> documents,
-        HashSet<Guid> sharedDocumentIds,
-        DocumentSearchQuery query)
-    {
-        var searchTerm = string.IsNullOrWhiteSpace(query.SearchTerm)
-            ? null
-            : query.SearchTerm.Trim();
-        var contentType = string.IsNullOrWhiteSpace(query.ContentType)
-            ? null
-            : query.ContentType.Trim();
-
-        var filteredDocuments = documents
-            .Where(document => sharedDocumentIds.Contains(document.Id))
-            .AsEnumerable();
-
-        if (!string.IsNullOrWhiteSpace(searchTerm))
-        {
-            filteredDocuments = filteredDocuments.Where(document =>
-                document.OriginalFileName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase));
-        }
-
-        if (!string.IsNullOrWhiteSpace(contentType))
-        {
-            filteredDocuments = filteredDocuments.Where(document =>
-                string.Equals(document.ContentType, contentType, StringComparison.OrdinalIgnoreCase));
-        }
-
-        if (query.UploadedFromUtc.HasValue)
-        {
-            filteredDocuments = filteredDocuments.Where(document =>
-                document.UploadedAtUtc >= query.UploadedFromUtc.Value);
-        }
-
-        if (query.UploadedToUtc.HasValue)
-        {
-            filteredDocuments = filteredDocuments.Where(document =>
-                document.UploadedAtUtc <= query.UploadedToUtc.Value);
-        }
-
-        return filteredDocuments;
     }
 
     private static DocumentMetadataDto ToDto(Document document)
