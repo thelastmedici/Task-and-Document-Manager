@@ -23,16 +23,33 @@ public class AuditLogsController : ControllerBase
         [FromQuery] AuditLogListRequest request,
         CancellationToken cancellationToken)
     {
-        var result = await _listAuditLogs.ExecuteAsync(
-            new AuditLogQuery(request.PageNumber, request.PageSize),
-            cancellationToken);
+        try
+        {
+            var result = await _listAuditLogs.ExecuteAsync(
+                new AuditLogQuery(
+                    request.PageNumber,
+                    request.PageSize,
+                    request.UserId,
+                    request.Action,
+                    request.TimestampFromUtc,
+                    request.TimestampToUtc),
+                cancellationToken);
 
-        return Ok(result);
+            return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     public sealed class AuditLogListRequest
     {
         public int PageNumber { get; init; } = 1;
         public int PageSize { get; init; } = AuditLogQuery.DefaultPageSize;
+        public Guid? UserId { get; init; }
+        public string? Action { get; init; }
+        public DateTime? TimestampFromUtc { get; init; }
+        public DateTime? TimestampToUtc { get; init; }
     }
 }
