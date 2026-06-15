@@ -27,7 +27,32 @@ public class AuditLogRepository : IAuditLogRepository
             ? AuditLogQuery.DefaultPageSize
             : Math.Min(query.PageSize, AuditLogQuery.MaxPageSize);
 
-        var orderedLogs = AuditLogs
+        var filteredLogs = AuditLogs.AsEnumerable();
+
+        if (query.UserId.HasValue)
+        {
+            filteredLogs = filteredLogs.Where(auditLog => auditLog.UserId == query.UserId.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(query.Action))
+        {
+            filteredLogs = filteredLogs.Where(auditLog =>
+                string.Equals(auditLog.Action, query.Action, StringComparison.Ordinal));
+        }
+
+        if (query.TimestampFromUtc.HasValue)
+        {
+            filteredLogs = filteredLogs.Where(auditLog =>
+                auditLog.TimestampUtc >= query.TimestampFromUtc.Value);
+        }
+
+        if (query.TimestampToUtc.HasValue)
+        {
+            filteredLogs = filteredLogs.Where(auditLog =>
+                auditLog.TimestampUtc <= query.TimestampToUtc.Value);
+        }
+
+        var orderedLogs = filteredLogs
             .OrderByDescending(auditLog => auditLog.TimestampUtc)
             .ToList();
 

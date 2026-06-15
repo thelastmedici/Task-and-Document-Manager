@@ -36,12 +36,35 @@ public class ListAuditLogs
     {
         ArgumentNullException.ThrowIfNull(query);
 
+        if (query.UserId == Guid.Empty)
+        {
+            throw new ArgumentException("User ID filter cannot be empty.", nameof(query));
+        }
+
+        if (query.TimestampFromUtc.HasValue && query.TimestampToUtc.HasValue &&
+            query.TimestampFromUtc.Value > query.TimestampToUtc.Value)
+        {
+            throw new ArgumentException(
+                "Timestamp from date cannot be later than timestamp to date.",
+                nameof(query));
+        }
+
+        var action = string.IsNullOrWhiteSpace(query.Action)
+            ? null
+            : query.Action.Trim();
+
+        if (action is not null && !AuditActions.IsValid(action))
+        {
+            throw new ArgumentException("Action filter must be a supported audit action.", nameof(query));
+        }
+
         return query with
         {
             PageNumber = query.PageNumber < 1 ? 1 : query.PageNumber,
             PageSize = query.PageSize < 1
                 ? AuditLogQuery.DefaultPageSize
-                : Math.Min(query.PageSize, AuditLogQuery.MaxPageSize)
+                : Math.Min(query.PageSize, AuditLogQuery.MaxPageSize),
+            Action = action
         };
     }
 
