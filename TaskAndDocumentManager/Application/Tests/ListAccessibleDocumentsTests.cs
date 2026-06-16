@@ -115,7 +115,7 @@ public class ListAccessibleDocumentsTests
         var result = await _sut.ExecuteAsync(
             requesterId,
             false,
-            new DocumentSearchQuery(SearchTerm: "report"),
+            new DocumentQuery(SearchTerm: "report"),
             CancellationToken.None);
 
         var document = Assert.Single(result.Items);
@@ -150,7 +150,7 @@ public class ListAccessibleDocumentsTests
         var result = await _sut.ExecuteAsync(
             requesterId,
             false,
-            new DocumentSearchQuery(SearchTerm: "report"),
+            new DocumentQuery(SearchTerm: "report"),
             CancellationToken.None);
 
         Assert.Equal(2, result.TotalCount);
@@ -172,7 +172,7 @@ public class ListAccessibleDocumentsTests
         var result = await _sut.ExecuteAsync(
             requesterId,
             false,
-            new DocumentSearchQuery(ContentType: "image/png"),
+            new DocumentQuery(ContentType: "image/png"),
             CancellationToken.None);
 
         var document = Assert.Single(result.Items);
@@ -191,7 +191,7 @@ public class ListAccessibleDocumentsTests
         SetupDocumentSearch(olderDocument, newerDocument);
 
         var result = await _sut.ExecuteForAdminAsync(
-            new DocumentSearchQuery(
+            new DocumentQuery(
                 UploadedFromUtc: new DateTime(2026, 05, 10, 0, 0, 0, DateTimeKind.Utc),
                 UploadedToUtc: new DateTime(2026, 05, 31, 0, 0, 0, DateTimeKind.Utc)),
             CancellationToken.None);
@@ -213,7 +213,7 @@ public class ListAccessibleDocumentsTests
         SetupDocumentSearch(firstDocument, secondDocument, nonMatchingDocument);
 
         var result = await _sut.ExecuteForAdminAsync(
-            new DocumentSearchQuery(SearchTerm: "report"),
+            new DocumentQuery(SearchTerm: "report"),
             CancellationToken.None);
 
         Assert.Equal(2, result.TotalCount);
@@ -232,7 +232,7 @@ public class ListAccessibleDocumentsTests
         SetupDocumentSearch(firstDocument, secondDocument);
 
         var result = await _sut.ExecuteForAdminAsync(
-            new DocumentSearchQuery(PageNumber: 2, PageSize: 1),
+            new DocumentQuery(PageNumber: 2, PageSize: 1),
             CancellationToken.None);
 
         Assert.Single(result.Items);
@@ -253,19 +253,19 @@ public class ListAccessibleDocumentsTests
     private void SetupDocumentSearch(params Document[] documents)
     {
         _documentRepositoryMock
-            .Setup(repository => repository.SearchAsync(
-                It.IsAny<DocumentSearchQuery>(),
+            .Setup(repository => repository.SearchDocumentsAsync(
+                It.IsAny<DocumentQuery>(),
                 It.IsAny<CancellationToken>()))
-            .ReturnsAsync((DocumentSearchQuery query, CancellationToken _) =>
+            .ReturnsAsync((DocumentQuery query, CancellationToken _) =>
                 ApplySearch(documents, NormalizeQuery(query))
                     .OrderByDescending(document => document.UploadedAtUtc)
                     .ToList());
 
         _documentRepositoryMock
-            .Setup(repository => repository.SearchPageAsync(
-                It.IsAny<DocumentSearchQuery>(),
+            .Setup(repository => repository.SearchDocumentsPageAsync(
+                It.IsAny<DocumentQuery>(),
                 It.IsAny<CancellationToken>()))
-            .ReturnsAsync((DocumentSearchQuery query, CancellationToken _) =>
+            .ReturnsAsync((DocumentQuery query, CancellationToken _) =>
             {
                 var normalizedQuery = NormalizeQuery(query);
                 var matchingDocuments = ApplySearch(documents, normalizedQuery)
@@ -284,20 +284,20 @@ public class ListAccessibleDocumentsTests
             });
     }
 
-    private static DocumentSearchQuery NormalizeQuery(DocumentSearchQuery query)
+    private static DocumentQuery NormalizeQuery(DocumentQuery query)
     {
         return query with
         {
             PageNumber = query.PageNumber < 1 ? 1 : query.PageNumber,
             PageSize = query.PageSize < 1
-                ? DocumentSearchQuery.DefaultPageSize
-                : Math.Min(query.PageSize, DocumentSearchQuery.MaxPageSize)
+                ? DocumentQuery.DefaultPageSize
+                : Math.Min(query.PageSize, DocumentQuery.MaxPageSize)
         };
     }
 
     private static IEnumerable<Document> ApplySearch(
         IEnumerable<Document> documents,
-        DocumentSearchQuery query)
+        DocumentQuery query)
     {
         var searchTerm = string.IsNullOrWhiteSpace(query.SearchTerm)
             ? null

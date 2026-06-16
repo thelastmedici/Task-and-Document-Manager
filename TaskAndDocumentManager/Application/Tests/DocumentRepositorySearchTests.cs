@@ -7,7 +7,7 @@ namespace TaskAndDocumentManager.Application.Tests.Documents.Infrastructure;
 public class DocumentRepositorySearchTests
 {
     [Fact]
-    public async Task SearchAsync_ShouldFilterByOriginalFileNameUsingContains()
+    public async Task SearchDocumentsAsync_ShouldFilterByOriginalFileNameUsingContains()
     {
         var repository = new DocumentRepository();
         var ownerId = Guid.NewGuid();
@@ -30,8 +30,8 @@ public class DocumentRepositorySearchTests
 
         try
         {
-            var result = await repository.SearchAsync(
-                new DocumentSearchQuery(SearchTerm: searchToken),
+            var result = await repository.SearchDocumentsAsync(
+                new DocumentQuery(SearchTerm: searchToken),
                 CancellationToken.None);
 
             Assert.Contains(result, document => document.Id == matchingDocument.Id);
@@ -45,7 +45,7 @@ public class DocumentRepositorySearchTests
     }
 
     [Fact]
-    public async Task SearchPageAsync_ShouldReturnTotalCountBeforePaging()
+    public async Task SearchDocumentsPageAsync_ShouldReturnTotalCountBeforePaging()
     {
         var repository = new DocumentRepository();
         var ownerId = Guid.NewGuid();
@@ -68,8 +68,8 @@ public class DocumentRepositorySearchTests
 
         try
         {
-            var result = await repository.SearchPageAsync(
-                new DocumentSearchQuery(SearchTerm: searchToken, PageNumber: 1, PageSize: 1),
+            var result = await repository.SearchDocumentsPageAsync(
+                new DocumentQuery(SearchTerm: searchToken, PageNumber: 1, PageSize: 1),
                 CancellationToken.None);
 
             Assert.Single(result.Items);

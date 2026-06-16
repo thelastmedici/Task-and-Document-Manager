@@ -116,7 +116,7 @@ public class DocumentsController : ControllerBase
         [FromQuery] DocumentListRequest request,
         CancellationToken cancellationToken)
     {
-        var query = new DocumentSearchQuery(
+        var query = new DocumentQuery(
             request.SearchTerm,
             request.ContentType,
             request.UploadedFromUtc,
@@ -152,7 +152,7 @@ public class DocumentsController : ControllerBase
         CancellationToken cancellationToken)
     {
         var actorId = User.GetActorId();
-        var query = new DocumentSearchQuery(
+        var query = new DocumentQuery(
             request.SearchTerm,
             request.ContentType,
             request.UploadedFromUtc,
@@ -500,7 +500,7 @@ public async Task<IActionResult> GetMetadata(
         public DateTime? UploadedFromUtc { get; init; }
         public DateTime? UploadedToUtc { get; init; }
         public int PageNumber { get; init; } = 1;
-        public int PageSize { get; init; } = DocumentSearchQuery.DefaultPageSize;
+        public int PageSize { get; init; } = DocumentQuery.DefaultPageSize;
     }
 
     public sealed class ShareDocumentBody

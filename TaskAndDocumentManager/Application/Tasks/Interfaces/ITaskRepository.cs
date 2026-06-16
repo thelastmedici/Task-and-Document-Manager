@@ -18,11 +18,11 @@ namespace TaskAndDocumentManager.Application.Tasks.Interfaces
 
         Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
 
-        Task<IReadOnlyList<TaskItem>> SearchAsync(
+        Task<IReadOnlyList<TaskItem>> SearchTasksAsync(
             TaskQuery query,
             CancellationToken cancellationToken = default);
 
-        Task<int> CountAsync(
+        Task<int> CountTasksAsync(
             TaskQuery query,
             CancellationToken cancellationToken = default);
     }

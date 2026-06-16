@@ -26,7 +26,7 @@ public class AuditLogsController : ControllerBase
         try
         {
             var result = await _listAuditLogs.ExecuteAsync(
-                new AuditLogQuery(
+                new AuditQuery(
                     request.PageNumber,
                     request.PageSize,
                     request.UserId,
@@ -46,7 +46,7 @@ public class AuditLogsController : ControllerBase
     public sealed class AuditLogListRequest
     {
         public int PageNumber { get; init; } = 1;
-        public int PageSize { get; init; } = AuditLogQuery.DefaultPageSize;
+        public int PageSize { get; init; } = AuditQuery.DefaultPageSize;
         public Guid? UserId { get; init; }
         public string? Action { get; init; }
         public DateTime? TimestampFromUtc { get; init; }

@@ -32,8 +32,8 @@ public class GetSharedDocumentsTests
             .ReturnsAsync([sharedDocument.Id]);
 
         _documentRepositoryMock
-            .Setup(repository => repository.SearchAsync(
-                It.IsAny<DocumentSearchQuery>(),
+            .Setup(repository => repository.SearchDocumentsAsync(
+                It.IsAny<DocumentQuery>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync([sharedDocument, otherDocument]);
 

@@ -27,14 +27,14 @@ public class ListAccessibleDocuments
         return await ExecuteAsync(
             requestedByUserId,
             allowTaskParticipationAccess,
-            DocumentSearchQuery.Empty,
+            DocumentQuery.Empty,
             cancellationToken);
     }
 
     public async Task<PaginatedResult<DocumentMetadataDto>> ExecuteAsync(
         Guid requestedByUserId,
         bool allowTaskParticipationAccess,
-        DocumentSearchQuery? query,
+        DocumentQuery? query,
         CancellationToken cancellationToken = default)
     {
         if (requestedByUserId == Guid.Empty)
@@ -43,7 +43,7 @@ public class ListAccessibleDocuments
         }
 
         var normalizedQuery = NormalizeQuery(query);
-        var documents = await _documentRepository.SearchAsync(normalizedQuery, cancellationToken);
+        var documents = await _documentRepository.SearchDocumentsAsync(normalizedQuery, cancellationToken);
         var accessibleDocuments = new List<DocumentMetadataDto>();
 
         foreach (var document in documents)
@@ -71,11 +71,11 @@ public class ListAccessibleDocuments
     }
 
     public async Task<PaginatedResult<DocumentMetadataDto>> ExecuteForAdminAsync(
-        DocumentSearchQuery? query,
+        DocumentQuery? query,
         CancellationToken cancellationToken = default)
     {
         var normalizedQuery = NormalizeQuery(query);
-        var documents = await _documentRepository.SearchPageAsync(normalizedQuery, cancellationToken);
+        var documents = await _documentRepository.SearchDocumentsPageAsync(normalizedQuery, cancellationToken);
 
         var items = documents.Items
             .Select(ToDto)
@@ -88,14 +88,14 @@ public class ListAccessibleDocuments
             documents.PageSize);
     }
 
-    private static DocumentSearchQuery NormalizeQuery(DocumentSearchQuery? query)
+    private static DocumentQuery NormalizeQuery(DocumentQuery? query)
     {
-        query ??= DocumentSearchQuery.Empty;
+        query ??= DocumentQuery.Empty;
 
         var pageNumber = query.PageNumber < 1 ? 1 : query.PageNumber;
         var pageSize = query.PageSize < 1
-            ? DocumentSearchQuery.DefaultPageSize
-            : Math.Min(query.PageSize, DocumentSearchQuery.MaxPageSize);
+            ? DocumentQuery.DefaultPageSize
+            : Math.Min(query.PageSize, DocumentQuery.MaxPageSize);
 
         if (query.UploadedFromUtc.HasValue && query.UploadedToUtc.HasValue &&
             query.UploadedFromUtc.Value > query.UploadedToUtc.Value)
@@ -112,7 +112,7 @@ public class ListAccessibleDocuments
 
     private static PaginatedResult<DocumentMetadataDto> ToPaginatedResult(
         IReadOnlyList<DocumentMetadataDto> documents,
-        DocumentSearchQuery query)
+        DocumentQuery query)
     {
         var items = documents
             .Skip((query.PageNumber - 1) * query.PageSize)

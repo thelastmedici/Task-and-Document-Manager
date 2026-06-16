@@ -1,6 +1,6 @@
 namespace TaskAndDocumentManager.Application.Audit.DTOs;
 
-public sealed record AuditLogQuery(
+public sealed record AuditQuery(
     int PageNumber = 1,
     int PageSize = 20,
     Guid? UserId = null,

@@ -49,7 +49,7 @@ public class GlobalSearchTests
         var privateDocument = new Document("private-report.pdf", "application/pdf", 512, "/tmp/private.pdf", otherOwnerId);
 
         _taskRepositoryMock
-            .Setup(repository => repository.SearchAsync(
+            .Setup(repository => repository.SearchTasksAsync(
                 It.Is<TaskQuery>(query =>
                     query.SearchTerm == "report" &&
                     query.OwnerId == actorId &&
@@ -60,7 +60,7 @@ public class GlobalSearchTests
             .ReturnsAsync([task]);
 
         _taskRepositoryMock
-            .Setup(repository => repository.CountAsync(
+            .Setup(repository => repository.CountTasksAsync(
                 It.Is<TaskQuery>(query =>
                     query.SearchTerm == "report" &&
                     query.OwnerId == actorId),
@@ -68,8 +68,8 @@ public class GlobalSearchTests
             .ReturnsAsync(1);
 
         _documentRepositoryMock
-            .Setup(repository => repository.SearchAsync(
-                It.Is<DocumentSearchQuery>(query =>
+            .Setup(repository => repository.SearchDocumentsAsync(
+                It.Is<DocumentQuery>(query =>
                     query.SearchTerm == "report" &&
                     query.PageNumber == 1 &&
                     query.PageSize == GlobalSearchQuery.MaxPageSize),
@@ -115,7 +115,7 @@ public class GlobalSearchTests
         var secondDocument = new Document("second-report.pdf", "application/pdf", 256, "/tmp/second.pdf", Guid.NewGuid());
 
         _taskRepositoryMock
-            .Setup(repository => repository.SearchAsync(
+            .Setup(repository => repository.SearchTasksAsync(
                 It.Is<TaskQuery>(query =>
                     query.SearchTerm == "report" &&
                     query.OwnerId == null),
@@ -123,14 +123,14 @@ public class GlobalSearchTests
             .ReturnsAsync([task]);
 
         _taskRepositoryMock
-            .Setup(repository => repository.CountAsync(
+            .Setup(repository => repository.CountTasksAsync(
                 It.IsAny<TaskQuery>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
         _documentRepositoryMock
-            .Setup(repository => repository.SearchPageAsync(
-                It.Is<DocumentSearchQuery>(query => query.SearchTerm == "report"),
+            .Setup(repository => repository.SearchDocumentsPageAsync(
+                It.Is<DocumentQuery>(query => query.SearchTerm == "report"),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new PaginatedResult<Document>(
                 [firstDocument, secondDocument],

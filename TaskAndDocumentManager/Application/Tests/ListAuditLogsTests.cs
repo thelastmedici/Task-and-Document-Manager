@@ -31,25 +31,25 @@ public class ListAuditLogsTests
             Guid.NewGuid());
 
         _auditLogRepositoryMock
-            .Setup(repository => repository.GetPageAsync(
-                It.Is<AuditLogQuery>(query =>
+            .Setup(repository => repository.SearchAuditLogsAsync(
+                It.Is<AuditQuery>(query =>
                     query.PageNumber == 1 &&
-                    query.PageSize == AuditLogQuery.MaxPageSize),
+                    query.PageSize == AuditQuery.MaxPageSize),
                 cancellationToken))
             .ReturnsAsync(new PaginatedResult<AuditLog>(
                 new[] { auditLog },
                 10,
                 1,
-                AuditLogQuery.MaxPageSize));
+                AuditQuery.MaxPageSize));
 
         var result = await _sut.ExecuteAsync(
-            new AuditLogQuery(PageNumber: 0, PageSize: 1000),
+            new AuditQuery(PageNumber: 0, PageSize: 1000),
             cancellationToken);
 
         var item = Assert.Single(result.Items);
         Assert.Equal(10, result.TotalCount);
         Assert.Equal(1, result.Page);
-        Assert.Equal(AuditLogQuery.MaxPageSize, result.PageSize);
+        Assert.Equal(AuditQuery.MaxPageSize, result.PageSize);
         Assert.Equal(auditLog.Id, item.Id);
         Assert.Equal(auditLog.Action, item.Action);
     }
@@ -62,8 +62,8 @@ public class ListAuditLogsTests
         var timestampToUtc = new DateTime(2026, 06, 14, 23, 59, 59, DateTimeKind.Utc);
 
         _auditLogRepositoryMock
-            .Setup(repository => repository.GetPageAsync(
-                It.Is<AuditLogQuery>(query =>
+            .Setup(repository => repository.SearchAuditLogsAsync(
+                It.Is<AuditQuery>(query =>
                     query.UserId == userId &&
                     query.Action == AuditActions.DocumentDeleted &&
                     query.TimestampFromUtc == timestampFromUtc &&
@@ -73,9 +73,9 @@ public class ListAuditLogsTests
                 Array.Empty<AuditLog>(),
                 0,
                 1,
-                AuditLogQuery.DefaultPageSize));
+                AuditQuery.DefaultPageSize));
 
-        await _sut.ExecuteAsync(new AuditLogQuery(
+        await _sut.ExecuteAsync(new AuditQuery(
             UserId: userId,
             Action: $"  {AuditActions.DocumentDeleted}  ",
             TimestampFromUtc: timestampFromUtc,
@@ -88,7 +88,7 @@ public class ListAuditLogsTests
     public async Task ExecuteAsync_ShouldRejectUnsupportedAction()
     {
         var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
-            _sut.ExecuteAsync(new AuditLogQuery(Action: "SomethingRandom")));
+            _sut.ExecuteAsync(new AuditQuery(Action: "SomethingRandom")));
 
         Assert.Equal("query", exception.ParamName);
     }
@@ -97,7 +97,7 @@ public class ListAuditLogsTests
     public async Task ExecuteAsync_ShouldRejectInvalidTimestampRange()
     {
         var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
-            _sut.ExecuteAsync(new AuditLogQuery(
+            _sut.ExecuteAsync(new AuditQuery(
                 TimestampFromUtc: new DateTime(2026, 06, 15, 0, 0, 0, DateTimeKind.Utc),
                 TimestampToUtc: new DateTime(2026, 06, 14, 0, 0, 0, DateTimeKind.Utc))));
 
@@ -134,7 +134,7 @@ public class ListAuditLogsTests
         await repository.AddAsync(wrongUserLog);
         await repository.AddAsync(outsideRangeLog);
 
-        var result = await repository.GetPageAsync(new AuditLogQuery(
+        var result = await repository.SearchAuditLogsAsync(new AuditQuery(
             UserId: userId,
             Action: AuditActions.DocumentDeleted,
             TimestampFromUtc: timestampFromUtc,

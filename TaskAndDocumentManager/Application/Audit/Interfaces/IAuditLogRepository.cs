@@ -7,7 +7,7 @@ namespace TaskAndDocumentManager.Application.Audit.Interfaces;
 public interface IAuditLogRepository
 {
     Task AddAsync(AuditLog auditLog, CancellationToken cancellationToken = default);
-    Task<PaginatedResult<AuditLog>> GetPageAsync(
-        AuditLogQuery query,
+    Task<PaginatedResult<AuditLog>> SearchAuditLogsAsync(
+        AuditQuery query,
         CancellationToken cancellationToken = default);
 }

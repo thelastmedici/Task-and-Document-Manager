@@ -27,8 +27,8 @@ public class DocumentRepository : IDocumentRepository
         return Task.FromResult((IReadOnlyCollection<Document>)Documents.ToList());
     }
 
-    public Task<IReadOnlyCollection<Document>> SearchAsync(
-        DocumentSearchQuery query,
+    public Task<IReadOnlyCollection<Document>> SearchDocumentsAsync(
+        DocumentQuery query,
         CancellationToken cancellationToken = default)
     {
         var normalizedQuery = NormalizeQuery(query);
@@ -39,8 +39,8 @@ public class DocumentRepository : IDocumentRepository
         return Task.FromResult((IReadOnlyCollection<Document>)documents);
     }
 
-    public Task<PaginatedResult<Document>> SearchPageAsync(
-        DocumentSearchQuery query,
+    public Task<PaginatedResult<Document>> SearchDocumentsPageAsync(
+        DocumentQuery query,
         CancellationToken cancellationToken = default)
     {
         var normalizedQuery = NormalizeQuery(query);
@@ -87,14 +87,14 @@ public class DocumentRepository : IDocumentRepository
         return Task.CompletedTask;
     }
 
-    private static DocumentSearchQuery NormalizeQuery(DocumentSearchQuery? query)
+    private static DocumentQuery NormalizeQuery(DocumentQuery? query)
     {
-        query ??= DocumentSearchQuery.Empty;
+        query ??= DocumentQuery.Empty;
 
         var pageNumber = query.PageNumber < 1 ? 1 : query.PageNumber;
         var pageSize = query.PageSize < 1
-            ? DocumentSearchQuery.DefaultPageSize
-            : Math.Min(query.PageSize, DocumentSearchQuery.MaxPageSize);
+            ? DocumentQuery.DefaultPageSize
+            : Math.Min(query.PageSize, DocumentQuery.MaxPageSize);
 
         if (query.UploadedFromUtc.HasValue && query.UploadedToUtc.HasValue &&
             query.UploadedFromUtc.Value > query.UploadedToUtc.Value)
@@ -111,7 +111,7 @@ public class DocumentRepository : IDocumentRepository
 
     private static IEnumerable<Document> ApplySearch(
         IEnumerable<Document> documents,
-        DocumentSearchQuery query)
+        DocumentQuery query)
     {
         var searchTerm = string.IsNullOrWhiteSpace(query.SearchTerm)
             ? null
