@@ -21,7 +21,7 @@ public class ListTasksTests
     {
         _taskRepositoryMock = new Mock<ITaskRepository>();
         _taskRepositoryMock
-            .Setup(repo => repo.CountAsync(It.IsAny<TaskQuery>(), It.IsAny<CancellationToken>()))
+            .Setup(repo => repo.CountTasksAsync(It.IsAny<TaskQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(0);
         _sut = new ListTasks(_taskRepositoryMock.Object);
     }
@@ -35,7 +35,7 @@ public class ListTasksTests
         var actorId = Guid.NewGuid();
 
         _taskRepositoryMock
-            .Setup(repo => repo.SearchAsync(It.IsAny<TaskQuery>(), cancellationToken))
+            .Setup(repo => repo.SearchTasksAsync(It.IsAny<TaskQuery>(), cancellationToken))
             .ReturnsAsync(new List<TaskItem> { olderTask, newerTask });
 
         var result = await _sut.ExecuteAsync(new TaskQuery(), actorId, true, false, cancellationToken);
@@ -55,7 +55,7 @@ public class ListTasksTests
         var actorId = Guid.NewGuid();
 
         _taskRepositoryMock
-            .Setup(repo => repo.SearchAsync(It.IsAny<TaskQuery>(), It.IsAny<CancellationToken>()))
+            .Setup(repo => repo.SearchTasksAsync(It.IsAny<TaskQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<TaskItem> { task });
 
         var result = await _sut.ExecuteAsync(new TaskQuery(), actorId, true, false);
@@ -74,11 +74,11 @@ public class ListTasksTests
         var query = new TaskQuery(PageNumber: 2, PageSize: 5);
 
         _taskRepositoryMock
-            .Setup(repo => repo.SearchAsync(It.IsAny<TaskQuery>(), It.IsAny<CancellationToken>()))
+            .Setup(repo => repo.SearchTasksAsync(It.IsAny<TaskQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<TaskItem>());
 
         _taskRepositoryMock
-            .Setup(repo => repo.CountAsync(It.IsAny<TaskQuery>(), It.IsAny<CancellationToken>()))
+            .Setup(repo => repo.CountTasksAsync(It.IsAny<TaskQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(42);
 
         var result = await _sut.ExecuteAsync(query, actorId, true, false);
@@ -96,7 +96,7 @@ public class ListTasksTests
         var actorId = Guid.NewGuid();
 
         _taskRepositoryMock
-            .Setup(repo => repo.SearchAsync(
+            .Setup(repo => repo.SearchTasksAsync(
                 It.Is<TaskQuery>(requestedQuery =>
                     requestedQuery.PageNumber == 1 &&
                     requestedQuery.PageSize == TaskQuery.MaxPageSize &&
@@ -131,7 +131,7 @@ public class ListTasksTests
             SortDirection: SortDirection.Ascending);
 
         _taskRepositoryMock
-            .Setup(repo => repo.SearchAsync(
+            .Setup(repo => repo.SearchTasksAsync(
                 It.Is<TaskQuery>(requestedQuery =>
                     requestedQuery.SearchTerm == "report" &&
                     requestedQuery.AssignedToUserId == assignedToUserId &&
@@ -171,7 +171,7 @@ public class ListTasksTests
         var actorId = Guid.NewGuid();
 
         _taskRepositoryMock
-            .Setup(repo => repo.SearchAsync(
+            .Setup(repo => repo.SearchTasksAsync(
                 It.Is<TaskQuery>(requestedQuery =>
                     requestedQuery.OwnerId == actorId &&
                     requestedQuery.IncludeAssignedTasks == false),
@@ -189,7 +189,7 @@ public class ListTasksTests
         var actorId = Guid.NewGuid();
 
         _taskRepositoryMock
-            .Setup(repo => repo.SearchAsync(
+            .Setup(repo => repo.SearchTasksAsync(
                 It.Is<TaskQuery>(requestedQuery =>
                     requestedQuery.OwnerId == actorId &&
                     requestedQuery.IncludeAssignedTasks),

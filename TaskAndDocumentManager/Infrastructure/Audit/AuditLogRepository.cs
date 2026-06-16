@@ -16,16 +16,16 @@ public class AuditLogRepository : IAuditLogRepository
         return Task.CompletedTask;
     }
 
-    public Task<PaginatedResult<AuditLog>> GetPageAsync(
-        AuditLogQuery query,
+    public Task<PaginatedResult<AuditLog>> SearchAuditLogsAsync(
+        AuditQuery query,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(query);
 
         var pageNumber = query.PageNumber < 1 ? 1 : query.PageNumber;
         var pageSize = query.PageSize < 1
-            ? AuditLogQuery.DefaultPageSize
-            : Math.Min(query.PageSize, AuditLogQuery.MaxPageSize);
+            ? AuditQuery.DefaultPageSize
+            : Math.Min(query.PageSize, AuditQuery.MaxPageSize);
 
         var filteredLogs = AuditLogs.AsEnumerable();
 

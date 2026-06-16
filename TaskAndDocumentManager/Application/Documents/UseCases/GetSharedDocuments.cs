@@ -20,7 +20,7 @@ public class GetSharedDocuments
 
     public async Task<PaginatedResult<DocumentMetadataDto>> ExecuteAsync(
         Guid requestedByUserId,
-        DocumentSearchQuery? query = null,
+        DocumentQuery? query = null,
         CancellationToken cancellationToken = default)
     {
         if (requestedByUserId == Guid.Empty)
@@ -44,7 +44,7 @@ public class GetSharedDocuments
         }
 
         var sharedDocumentIdSet = sharedDocumentIds.ToHashSet();
-        var documents = await _documentRepository.SearchAsync(normalizedQuery, cancellationToken);
+        var documents = await _documentRepository.SearchDocumentsAsync(normalizedQuery, cancellationToken);
 
         var sharedDocuments = documents
             .Where(document => sharedDocumentIdSet.Contains(document.Id))
@@ -64,14 +64,14 @@ public class GetSharedDocuments
             normalizedQuery.PageSize);
     }
 
-    private static DocumentSearchQuery NormalizeQuery(DocumentSearchQuery? query)
+    private static DocumentQuery NormalizeQuery(DocumentQuery? query)
     {
-        query ??= DocumentSearchQuery.Empty;
+        query ??= DocumentQuery.Empty;
 
         var pageNumber = query.PageNumber < 1 ? 1 : query.PageNumber;
         var pageSize = query.PageSize < 1
-            ? DocumentSearchQuery.DefaultPageSize
-            : Math.Min(query.PageSize, DocumentSearchQuery.MaxPageSize);
+            ? DocumentQuery.DefaultPageSize
+            : Math.Min(query.PageSize, DocumentQuery.MaxPageSize);
 
         if (query.UploadedFromUtc.HasValue && query.UploadedToUtc.HasValue &&
             query.UploadedFromUtc.Value > query.UploadedToUtc.Value)

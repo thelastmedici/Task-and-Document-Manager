@@ -32,7 +32,7 @@ public class TaskRepository(TaskDbContext dbContext) : ITaskRepository
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<IReadOnlyList<TaskItem>> SearchAsync(
+    public async Task<IReadOnlyList<TaskItem>> SearchTasksAsync(
         TaskQuery query,
         CancellationToken cancellationToken = default)
     {
@@ -52,7 +52,7 @@ public class TaskRepository(TaskDbContext dbContext) : ITaskRepository
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<int> CountAsync(
+    public async Task<int> CountTasksAsync(
         TaskQuery query,
         CancellationToken cancellationToken = default)
     {

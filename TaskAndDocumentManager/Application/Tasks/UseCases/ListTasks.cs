@@ -28,8 +28,8 @@ public class ListTasks
         var normalizedQuery = NormalizeQuery(query);
         var scopedQuery = ApplyAccessScope(normalizedQuery, actorId, isAdmin, isManager);
 
-        var tasks = await _taskRepository.SearchAsync(scopedQuery, cancellationToken);
-        var totalCount = await _taskRepository.CountAsync(scopedQuery, cancellationToken);
+        var tasks = await _taskRepository.SearchTasksAsync(scopedQuery, cancellationToken);
+        var totalCount = await _taskRepository.CountTasksAsync(scopedQuery, cancellationToken);
 
         var items = ApplySort(tasks, scopedQuery)
             .Select(task => new TaskListItemDto(

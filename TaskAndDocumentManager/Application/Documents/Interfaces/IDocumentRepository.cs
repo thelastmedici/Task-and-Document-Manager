@@ -9,11 +9,11 @@ public interface IDocumentRepository
     Task AddAsync(Document document, CancellationToken cancellationToken = default);
     Task<Document?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<IReadOnlyCollection<Document>> GetAllAsync(CancellationToken cancellationToken = default);
-    Task<IReadOnlyCollection<Document>> SearchAsync(
-        DocumentSearchQuery query,
+    Task<IReadOnlyCollection<Document>> SearchDocumentsAsync(
+        DocumentQuery query,
         CancellationToken cancellationToken = default);
-    Task<PaginatedResult<Document>> SearchPageAsync(
-        DocumentSearchQuery query,
+    Task<PaginatedResult<Document>> SearchDocumentsPageAsync(
+        DocumentQuery query,
         CancellationToken cancellationToken = default);
     Task UpdateAsync(Document document, CancellationToken cancellationToken = default);
     Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);

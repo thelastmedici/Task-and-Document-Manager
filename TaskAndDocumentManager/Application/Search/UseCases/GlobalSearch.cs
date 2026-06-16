@@ -38,7 +38,7 @@ public class GlobalSearch
             isManager,
             cancellationToken);
 
-        var documentQuery = new DocumentSearchQuery(
+        var documentQuery = new DocumentQuery(
             SearchTerm: normalizedQuery.SearchTerm,
             PageNumber: normalizedQuery.PageNumber,
             PageSize: normalizedQuery.PageSize);

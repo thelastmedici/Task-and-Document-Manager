@@ -15,11 +15,11 @@ public class ListAuditLogs
     }
 
     public async Task<PaginatedResult<AuditLogDto>> ExecuteAsync(
-        AuditLogQuery query,
+        AuditQuery query,
         CancellationToken cancellationToken = default)
     {
         var normalizedQuery = NormalizeQuery(query);
-        var auditLogs = await _auditLogRepository.GetPageAsync(normalizedQuery, cancellationToken);
+        var auditLogs = await _auditLogRepository.SearchAuditLogsAsync(normalizedQuery, cancellationToken);
 
         var items = auditLogs.Items
             .Select(ToDto)
@@ -32,7 +32,7 @@ public class ListAuditLogs
             auditLogs.PageSize);
     }
 
-    private static AuditLogQuery NormalizeQuery(AuditLogQuery query)
+    private static AuditQuery NormalizeQuery(AuditQuery query)
     {
         ArgumentNullException.ThrowIfNull(query);
 
@@ -62,8 +62,8 @@ public class ListAuditLogs
         {
             PageNumber = query.PageNumber < 1 ? 1 : query.PageNumber,
             PageSize = query.PageSize < 1
-                ? AuditLogQuery.DefaultPageSize
-                : Math.Min(query.PageSize, AuditLogQuery.MaxPageSize),
+                ? AuditQuery.DefaultPageSize
+                : Math.Min(query.PageSize, AuditQuery.MaxPageSize),
             Action = action
         };
     }
