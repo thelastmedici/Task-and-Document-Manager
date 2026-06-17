@@ -1,395 +1,17 @@
-# TaskAndDocumentManager
+# TaskAndDocumentManager API
 
-TaskAndDocumentManager is a .NET 10 application for role-based task management, secure document handling, realtime notifications, and basic collaboration presence.
+TaskAndDocumentManager exposes a JWT-protected API for:
 
-The codebase is organized as a layered application:
-
-- `src/Api`
-  HTTP endpoints, auth wiring, SignalR hubs, hosted services, and the minimal MVC shell
-- `Application`
-  use cases, DTOs, interfaces, background jobs, and application-level authorization decisions
-- `Domain`
-  domain entities and invariants
-- `Infrastructure`
-  repositories, EF Core persistence, storage, hashing, and integration implementations
-
-This is not a greenfield skeleton. It already contains a meaningful feature set, automated tests, and a working local development story. It is also intentionally mixed in its persistence model, so some parts are production-oriented and some remain demo-grade. That trade-off is important to understand before extending the system.
-
-## What The Application Does
-
-The current implementation supports:
-
-- JWT-based authentication and role-aware authorization
 - user registration and login
-- admin-driven user management
-- ownership-based task CRUD with scoped queries
-- secure document upload, download, linking, sharing, revocation, and deletion
-- notifications persisted to PostgreSQL and delivered over SignalR
-- realtime presence updates for online users and active document editing state
-- global search across task and document datasets
-- audit logging for sensitive operations
-- scheduled background jobs for orphaned file cleanup and task deadline reminders
-- a minimal MVC/JavaScript dashboard that demonstrates API-backed realtime behavior
-
-## Current State
-
-The project is functionally useful for local development and demos. The most important caveat is that persistence is intentionally uneven:
-
-- tasks are persisted in PostgreSQL through EF Core
-- notifications are persisted in PostgreSQL through EF Core
-- roles are modeled and seeded through EF Core
-- users are currently stored in-memory
-- document metadata is currently stored in-memory
-- document access grants are currently stored in-memory
-- audit logs are currently stored in-memory
-- document file bytes are stored on local disk under `storage/uploads`
-- presence state and connection tracking are in-memory
-
-This means the behavior is solid enough to build against, but not all data survives an application restart.
-
-## Architecture
-
-### API Layer
-
-`src/Api` owns:
-
-- controller endpoints under `api/*`
-- JWT bearer configuration
-- SignalR hubs
-- authorization policies
-- the hosted background job scheduler
-- the lightweight MVC shell under `Views/` and `wwwroot/`
-
-### Application Layer
-
-`Application` owns:
-
-- use-case orchestration
-- pagination and query DTOs
-- interfaces for repositories and integrations
-- business-level authorization decisions
-- background job contracts and implementations
-
-This layer is where most cross-cutting rules live, for example:
-
-- who can see which tasks
-- who can access which documents
-- how search results are scoped
-- when task reminders are created
-
-### Domain Layer
-
-`Domain` owns entity invariants.
-
-Examples:
-
-- `TaskItem` requires an `OwnerId`
-- task title and description length limits are enforced in the entity
-- completed tasks cannot be modified
-- document ownership is explicit via `OwnerId`
-
-### Infrastructure Layer
-
-`Infrastructure` owns concrete implementations:
-
-- EF Core repositories for tasks and notifications
-- in-memory repositories for users, documents, access grants, and audit logs
-- local filesystem storage
-- password hashing
-- JWT generation
-- seeded role catalog
-
-## Security Model
-
-### Authentication
-
-The API uses JWT bearer authentication.
-
-Expected configuration keys:
-
-- `ConnectionStrings:DefaultConnection`
-- `Jwt:Key`
-- `Jwt:Issuer`
-- `Jwt:Audience`
-
-The bearer middleware also accepts hub access tokens via the `access_token` query parameter for `/hubs/*`.
-
-### Password Storage
-
-Passwords are not stored in plaintext.
-
-The current hasher uses ASP.NET Core Identity V3 format with a configured iteration count. Legacy custom PBKDF2 hashes are still accepted and transparently upgraded on successful login.
-
-### Roles
-
-The system has three built-in roles:
-
-- `Admin`
-- `Manager`
-- `User`
-
-Role IDs and names are seeded from `Infrastructure/Persistence/BuiltInRoles.cs`.
-
-### Ownership And Resource Access
-
-The project is moving toward explicit resource ownership rather than implicit role-based access.
-
-Current examples:
-
-- tasks have an `OwnerId`
-- documents have an `OwnerId`
-- document download is only available through `GET /api/documents/{id}/download`
-- task and document access is validated per request rather than assumed from role alone
-
-In practice:
-
-- `Admin` can access all tasks and documents
-- `Manager` has broader scope than `User`, including team-oriented document access
-- `User` is scoped to owned tasks and owned/shared documents
-
-## Feature Summary
-
-### Auth And User Management
-
-Implemented endpoints:
-
-- `POST /api/auth/register`
-- `POST /api/auth/login`
-- `GET /api/auth/me`
-- `GET /api/auth/users`
-- `POST /api/auth/users`
-- `PUT /api/auth/users/{id}/deactivate`
-- `PUT /api/auth/users/{id}/role`
-- `DELETE /api/auth/users/{id}`
-
-Behavior notes:
-
-- user creation through self-registration defaults to the `User` role
-- admins can create users with an explicit role
-- managers can list users, but cannot create, delete, or change roles
-- login returns a JWT plus the current user payload
-
-### Task Management
-
-Implemented endpoints:
-
-- `POST /api/tasks`
-- `GET /api/tasks`
-- `GET /api/tasks/{id}`
-- `PUT /api/tasks/{id}`
-- `DELETE /api/tasks/{id}`
-- `POST /api/tasks/{id}/assign`
-
-Current task model includes:
-
-- `OwnerId`
-- optional assignment
-- completion state
-- due date
-- priority
-- deadline reminder tracking
-
-Task querying supports:
-
-- pagination
-- free-text search
-- completion filters
-- owner filters
-- assignee filters
-- status filters
-- priority filters
-- due date range filters
-- sort field and direction
-
-Authorization behavior:
-
-- `Admin` can view all tasks
-- `Manager` sees owned tasks and assigned tasks
-- `User` sees owned tasks only
-- update and delete are ownership-driven
-- assignment is restricted to `Manager` and `Admin`
-
-### Document Management
-
-Implemented endpoints:
-
-- `POST /api/documents`
-- `GET /api/documents`
-- `GET /api/documents/shared-with-me`
-- `GET /api/documents/{id}`
-- `GET /api/documents/{id}/download`
-- `POST /api/documents/{id}/link-task`
-- `POST /api/documents/{id}/share`
-- `POST /api/documents/{id}/tasks/{taskId}/share`
-- `DELETE /api/documents/{id}/share/{userId}`
-- `DELETE /api/documents/{id}`
-
-Document security model:
-
-- files are never served from `wwwroot`
-- file bytes live on local disk outside the public web root
-- all file reads go through the API
-- access checks happen before metadata or file bytes are returned
-
-Upload protections:
-
-- request size limit: 20 MB
-- extension and content-type allowlist
-- allowed file types currently include:
-  - `.pdf`
-  - `.png`
-  - `.jpg`
-  - `.jpeg`
-  - `.docx`
-
-Document access behavior:
-
-- `Admin` can access all documents
-- `User` can access owned documents and explicitly shared documents
-- `Manager` can also access broader team/task-related documents where the application rules allow it
-- sharing and revocation are enforced through the application layer, not by direct file URL exposure
-
-### Notifications
-
-Implemented endpoints:
-
-- `GET /api/notifications`
-- `PATCH /api/notifications/{id}/read`
-
-Notifications are persisted in PostgreSQL and dispatched in realtime using SignalR.
-
-Current notification sources include:
-
-- task deadline reminder jobs
-- document-related actions where the use case dispatches notifications
-
-### Realtime And Presence
-
-SignalR hubs are mapped at:
-
-- `/hubs/notifications`
-- `/hubs/realtime`
-
-Currently implemented realtime behavior:
-
-- notification delivery
-- online/offline presence updates
-- connection tracking per user
-- task group join/leave
-- document editing presence state
-
-Presence currently tracks:
-
-- whether a user is online
-- `ConnectedAtUtc`
-- `DisconnectedAtUtc`
-- the current document being edited, if any
-
-Current presence implementation is in-memory, so it is process-local and non-durable.
-
-### Search
-
-Implemented endpoint:
-
-- `GET /api/search`
-
-This performs a scoped search across tasks and documents using the caller's authorization context.
-
-### Audit Logs
-
-Implemented endpoint:
-
-- `GET /api/audit-logs`
-
-This endpoint is admin-only.
-
-Audit logs are currently stored in-memory. They are useful for behavior verification and tests, but they are not yet durable.
-
-### Background Jobs
-
-The app includes a hosted scheduler that runs registered `IBackgroundJob` implementations.
-
-Current jobs:
-
-- `CleanupOrphanedDocumentFiles`
-  removes on-disk files that no longer have matching in-memory document metadata
-- `SendTaskDeadlineReminders`
-  creates notifications for tasks due within the reminder window and dispatches them over SignalR
-
-Background jobs are controlled through the `BackgroundJobs` configuration section.
-
-## Frontend
-
-The project now includes a minimal MVC shell instead of being API-only.
-
-The home page is a small realtime workspace that demonstrates:
-
-- login and token persistence
-- profile refresh from `/api/auth/me`
-- notifications from `/api/notifications`
-- SignalR subscription to notification and presence hubs
-- API reconciliation after reconnects and important events
-
-This frontend is intentionally light. It is a proof of integration, not a full product UI.
-
-## Persistence Model
-
-The table below is the practical persistence picture today.
-
-| Area | Implementation | Durability |
-|---|---|---|
-| Tasks | EF Core + PostgreSQL | durable |
-| Notifications | EF Core + PostgreSQL | durable |
-| Roles | EF Core seed data | durable |
-| Users | in-memory repository | lost on restart |
-| Documents metadata | in-memory repository | lost on restart |
-| Document access grants | in-memory repository | lost on restart |
-| Audit logs | in-memory repository | lost on restart |
-| Presence | in-memory service | lost on restart |
-| Uploaded file bytes | local filesystem | durable on disk, but can drift from metadata |
-
-## Project Layout
-
-```text
-Application/
-  Auth/
-  Audit/
-  BackgroundJobs/
-  Common/
-  Documents/
-  Notifications/
-  Presence/
-  Search/
-  Tasks/
-  Tests/
-
-Domain/
-  Auth/
-  Documents/
-  Entities/
-  Tasks/
-
-Infrastructure/
-  Audit/
-  Auth/
-  Documents/
-  Notifications/
-  Persistence/
-  Storage/
-  Tasks/
-
-src/Api/
-  Authorization/
-  BackgroundJobs/
-  Controllers/
-  Hubs/
-  Realtime/
-
-Views/
-wwwroot/
-```
-
-## Running Locally
+- role-based user administration
+- task ownership, assignment, and scoped querying
+- secure document upload, download, sharing, and revocation
+- notifications and realtime updates
+- global search across tasks and documents
+
+This README is written for API consumers: frontend developers, integrators, and anyone building against the HTTP and SignalR surface.
+
+## Quick Start
 
 ### Requirements
 
@@ -397,9 +19,7 @@ wwwroot/
 - PostgreSQL
 - valid JWT configuration
 
-### Configuration
-
-At minimum, configure:
+### Required Configuration
 
 ```json
 {
@@ -420,64 +40,437 @@ At minimum, configure:
 }
 ```
 
-### Start The Application
+### Run Locally
 
 ```bash
 dotnet run
 ```
 
-The application hosts:
-
-- MVC pages
-- API controllers
-- Swagger in development
-- SignalR hubs
-
-### Build
+### Verify The Build
 
 ```bash
 dotnet build TaskAndDocumentManager.sln
-```
-
-### Test
-
-```bash
 dotnet test Application/Tests/Tests.csproj
 ```
 
-Latest verified result:
+Latest verified test run: `93/93` passing.
 
-- `93` tests passed
+## Authentication
+
+The API uses JWT bearer authentication.
+
+### Login Flow
+
+1. Register with `POST /api/auth/register` or use an existing account.
+2. Authenticate with `POST /api/auth/login`.
+3. Store the returned token.
+4. Send the token on protected requests:
+
+```http
+Authorization: Bearer <jwt>
+```
+
+### Example Login Request
+
+```http
+POST /api/auth/login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "Password1"
+}
+```
+
+### Example Login Response
+
+```json
+{
+  "token": "<jwt>",
+  "expiresAtUtc": "2026-06-17T12:34:56Z",
+  "user": {
+    "id": "11111111-1111-1111-1111-111111111111",
+    "email": "user@example.com",
+    "role": "User",
+    "isActive": true
+  }
+}
+```
+
+### Password Storage
+
+Passwords are hashed, not stored in plaintext.
+
+The current implementation uses ASP.NET Core Identity V3 password hashing. Older legacy hashes are still accepted and upgraded transparently on successful login.
+
+## Roles And Access Model
+
+The system defines three roles:
+
+- `Admin`
+- `Manager`
+- `User`
+
+### Practical Access Rules
+
+- `Admin`
+  can access all tasks and all documents, and can manage users
+- `Manager`
+  has broader scope than a normal user, including manager-level task access and broader team document access where the application rules allow it
+- `User`
+  is limited to owned tasks and owned/shared documents
+
+### Ownership Rules
+
+Ownership is explicit and enforced per request:
+
+- tasks use `OwnerId`
+- documents use `OwnerId`
+- downloads are only served through `GET /api/documents/{id}/download`
+- access is validated in the backend before metadata or file bytes are returned
+
+## API Overview
+
+All API endpoints are rooted under `/api`.
+
+### Auth
+
+| Method | Route | Notes |
+|---|---|---|
+| `POST` | `/api/auth/register` | self-service registration |
+| `POST` | `/api/auth/login` | returns JWT and user payload |
+| `GET` | `/api/auth/me` | current user profile |
+| `GET` | `/api/auth/users` | manager/admin |
+| `POST` | `/api/auth/users` | admin only |
+| `PUT` | `/api/auth/users/{id}/deactivate` | admin only |
+| `PUT` | `/api/auth/users/{id}/role` | admin only |
+| `DELETE` | `/api/auth/users/{id}` | admin only |
+
+### Tasks
+
+| Method | Route | Notes |
+|---|---|---|
+| `POST` | `/api/tasks` | create task |
+| `GET` | `/api/tasks` | paginated, filtered, scoped to caller |
+| `GET` | `/api/tasks/{id}` | task detail with access check |
+| `PUT` | `/api/tasks/{id}` | owner/admin |
+| `DELETE` | `/api/tasks/{id}` | owner/admin |
+| `POST` | `/api/tasks/{id}/assign` | manager/admin |
+
+### Documents
+
+| Method | Route | Notes |
+|---|---|---|
+| `POST` | `/api/documents` | multipart upload |
+| `GET` | `/api/documents` | paginated, scoped document list |
+| `GET` | `/api/documents/shared-with-me` | explicitly shared documents |
+| `GET` | `/api/documents/{id}` | metadata with access check |
+| `GET` | `/api/documents/{id}/download` | file download with access check |
+| `POST` | `/api/documents/{id}/link-task` | link document to task |
+| `POST` | `/api/documents/{id}/share` | direct share |
+| `POST` | `/api/documents/{id}/tasks/{taskId}/share` | share task-linked document |
+| `DELETE` | `/api/documents/{id}/share/{userId}` | revoke share |
+| `DELETE` | `/api/documents/{id}` | delete document |
+
+### Notifications
+
+| Method | Route | Notes |
+|---|---|---|
+| `GET` | `/api/notifications` | list current user's notifications |
+| `PATCH` | `/api/notifications/{id}/read` | mark notification as read |
+
+### Search
+
+| Method | Route | Notes |
+|---|---|---|
+| `GET` | `/api/search` | scoped search across tasks and documents |
+
+### Audit Logs
+
+| Method | Route | Notes |
+|---|---|---|
+| `GET` | `/api/audit-logs` | admin only |
+
+## Task API
+
+### Task Shape
+
+The task model currently includes:
+
+- `id`
+- `title`
+- `description`
+- `ownerId`
+- `assignedToUserId`
+- `createdAt`
+- `updatedAt`
+- `dueAtUtc`
+- `deadlineReminderSentAtUtc`
+- `priority`
+- `isCompleted`
+- `completedAt`
+
+### Create Task
+
+```http
+POST /api/tasks
+Authorization: Bearer <jwt>
+Content-Type: application/json
+
+{
+  "title": "Prepare release notes",
+  "description": "Draft and review v1.3 release notes",
+  "dueAtUtc": "2026-06-20T17:00:00Z",
+  "priority": "High"
+}
+```
+
+### List Task Query Parameters
+
+`GET /api/tasks` supports:
+
+- `pageNumber`
+- `pageSize`
+- `searchTerm`
+- `isCompleted`
+- `status`
+- `priority`
+- `dueAfterUtc`
+- `dueBeforeUtc`
+- `ownerId`
+- `assignedToUserId`
+- `sortBy`
+- `sortDirection`
+
+### Task Access Semantics
+
+- `Admin` can list all tasks
+- `Manager` can list owned tasks and assigned tasks
+- `User` can list owned tasks only
+- `GET /api/tasks/{id}` validates access before returning the resource
+- update/delete are ownership-based unless the caller is `Admin`
+
+## Document API
+
+### Security Model
+
+The document module is intentionally backend-mediated.
+
+Do not assume files are publicly addressable. There is no supported direct file URL such as:
+
+```text
+/uploads/file.pdf
+```
+
+All document access must go through API endpoints such as:
+
+```text
+GET /api/documents/{id}/download
+```
+
+The backend enforces:
+
+- authentication
+- role rules
+- ownership
+- explicit sharing
+- manager/team access rules where applicable
+
+### Upload Constraints
+
+Current upload limits:
+
+- max file size: `20 MB`
+- allowed extensions:
+  - `.pdf`
+  - `.png`
+  - `.jpg`
+  - `.jpeg`
+  - `.docx`
+
+The server also validates content type against extension.
+
+### Upload Example
+
+Use `multipart/form-data` with a `file` field.
+
+Example response:
+
+```json
+{
+  "documentId": "22222222-2222-2222-2222-222222222222",
+  "fileName": "report.pdf"
+}
+```
+
+### Document Listing Query Parameters
+
+`GET /api/documents` and `GET /api/documents/shared-with-me` support:
+
+- `searchTerm`
+- `contentType`
+- `uploadedFromUtc`
+- `uploadedToUtc`
+- `pageNumber`
+- `pageSize`
+
+### Sharing Semantics
+
+- direct share grants one user access to one document
+- task-linked document sharing enforces task participation rules
+- revocation removes a previously granted document access entry
+
+## Notifications And Realtime
+
+### Notification API
+
+The REST API is the source of truth for notification state.
+
+Use:
+
+- `GET /api/notifications`
+- `PATCH /api/notifications/{id}/read`
+
+### SignalR Hubs
+
+Two hubs are exposed:
+
+- `/hubs/notifications`
+- `/hubs/realtime`
+
+The JWT may be sent via `access_token` query string when connecting to hubs.
+
+### Current Realtime Event Categories
+
+The codebase defines realtime events for:
+
+- notification creation
+- presence updates
+- online/offline state
+- task group membership
+- document editing presence
+
+### Recommended Client Pattern
+
+Clients should:
+
+1. subscribe to SignalR for instant updates
+2. update UI optimistically when safe
+3. re-fetch from the REST API after reconnects or important events
+
+Realtime is assistive. The API remains authoritative.
+
+## Search API
+
+`GET /api/search` performs scoped search across tasks and documents.
+
+Query parameters:
+
+- `searchTerm`
+- `pageNumber`
+- `pageSize`
+
+The results are filtered according to the caller's role and resource access.
+
+## Error Handling
+
+The API generally uses conventional status codes:
+
+- `200 OK`
+- `201 Created`
+- `204 No Content`
+- `400 Bad Request`
+- `401 Unauthorized`
+- `403 Forbidden`
+- `404 Not Found`
+- `409 Conflict`
+- `500 Internal Server Error`
+
+Most validation and authorization failures return a JSON payload in the shape:
+
+```json
+{
+  "message": "Human-readable error"
+}
+```
+
+## Persistence Caveats
+
+API consumers should know that the current implementation is mixed in durability.
+
+Durable today:
+
+- tasks
+- notifications
+- roles
+
+Not durable today:
+
+- users
+- document metadata
+- document access grants
+- audit logs
+- presence state
+
+Implication:
+
+- some data survives restarts
+- some data is process-local and reset when the application restarts
+
+This matters especially if you are building a client that expects document metadata, shares, or presence to be durable across restarts.
+
+## Development Notes
+
+### Tech Stack
+
+- .NET `net10.0`
+- ASP.NET Core
+- EF Core
+- PostgreSQL / Npgsql
+- JWT bearer auth
+- SignalR
+- xUnit + Moq
+
+### Repo Structure
+
+```text
+Application/
+Domain/
+Infrastructure/
+src/Api/
+Views/
+wwwroot/
+```
+
+### Minimal Frontend Shell
+
+The repository includes a small MVC/JavaScript dashboard used to exercise:
+
+- login
+- profile refresh
+- notifications
+- SignalR connectivity
+- API reconciliation after realtime events
+
+It is a consumer of the API, not the primary product UI.
 
 ## Known Limitations
 
-The following are the most important limitations in the current codebase:
-
-- users are not persisted to PostgreSQL yet
-- document metadata and access grants are not persisted yet
-- audit logs are not persisted yet
-- presence is process-local and in-memory
-- uploaded files are durable on disk, but their metadata is not durable
-- there are no committed EF Core migrations in the repository
-- the MVC frontend is intentionally minimal and not a complete product UI
-- local filesystem storage is suitable for development, not for multi-instance production deployment
+- users are stored in-memory
+- document metadata is stored in-memory
+- document access grants are stored in-memory
+- audit logs are stored in-memory
+- presence is in-memory and single-process
+- uploaded files are stored on the local filesystem
+- EF Core migrations are not committed in the repository
+- the included frontend is intentionally minimal
 
 ## Recommended Next Steps
 
-If this codebase is going to move beyond local development, these are the highest-value improvements:
+If you are integrating seriously with this API, the highest-value backend improvements would be:
 
-1. move users, documents, document access grants, and audit logs into durable database persistence
-2. add and commit EF Core migrations
-3. replace local filesystem storage with object storage
-4. make presence distributable if the app will ever run on multiple instances
-5. add API integration tests around authorization boundaries and realtime flows
-6. formalize configuration and environment setup for deployment
-
-## Repository Notes
-
-The project currently mixes two usage modes:
-
-- backend/API development
-- a thin MVC shell used as a realtime integration surface
-
-That is a reasonable place to be for an evolving internal application, but if the frontend grows materially, it would be worth deciding whether to keep it server-rendered or split it into a dedicated client application.
+1. persist users, document metadata, document shares, and audit logs in PostgreSQL
+2. add committed EF Core migrations
+3. move file storage to object storage
+4. make presence distributable for multi-instance deployments
+5. add broader integration tests around authorization and realtime flows
