@@ -146,6 +146,12 @@ public class DocumentRepository : IDocumentRepository
                 document.UploadedAtUtc <= query.UploadedToUtc.Value);
         }
 
+        if (query.WorkspaceId.HasValue)
+        {
+            filteredDocuments = filteredDocuments.Where(document =>
+                document.WorkspaceId == query.WorkspaceId.Value);
+        }
+
         return filteredDocuments;
     }
 }

@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using TaskAndDocumentManager.Infrastructure.Auth.Token;
 using TaskAndDocumentManager.Infrastructure.Persistence;
 
 namespace TaskAndDocumentManager.Api.Extensions;
@@ -21,6 +22,18 @@ public static class ClaimsPrincipalExtensions
     {
         return principal.FindFirst(ClaimTypes.Role)?.Value
             ?? throw new UnauthorizedAccessException("Missing role claim.");
+    }
+
+    public static Guid GetWorkspaceId(this ClaimsPrincipal principal)
+    {
+        var value = principal.FindFirst(JwtTokenService.WorkspaceIdClaimType)?.Value;
+
+        if (!Guid.TryParse(value, out var workspaceId))
+        {
+            throw new UnauthorizedAccessException("Invalid workspace identifier claim.");
+        }
+
+        return workspaceId;
     }
 
     public static bool IsAdmin(this ClaimsPrincipal principal)

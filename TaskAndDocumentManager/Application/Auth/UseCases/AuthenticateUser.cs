@@ -71,7 +71,7 @@ public class AuthenticateUser
 
         var role = user.Role?.Name ?? _roleCatalog.ResolveName(user.RoleId);
 
-        var tokenResult = _tokenService.GenerateToken(user.Id.ToString(), user.Email, role);
+        var tokenResult = _tokenService.GenerateToken(user.Id.ToString(), user.Email, role, user.WorkspaceId);
 
         await _auditLogRepository.AddAsync(
             new AuditLog(
@@ -90,6 +90,7 @@ public class AuthenticateUser
                 Id = user.Id,
                 Email = user.Email,
                 Role = role,
+                WorkspaceId = user.WorkspaceId,
                 IsActive = user.IsActive
             }
         };

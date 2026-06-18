@@ -15,6 +15,8 @@ public class TaskItem
 
     public Guid OwnerId { get; private set; }
 
+    public Guid WorkspaceId { get; private set; }
+
     public DateTime CreatedAt { get; private set; }
 
     public DateTime? UpdatedAt { get; private set; }
@@ -37,14 +39,31 @@ public class TaskItem
         Guid ownerId,
         DateTime? dueAtUtc = null,
         TaskPriority priority = TaskPriority.Medium)
+        : this(title, description, ownerId, ownerId, dueAtUtc, priority)
+    {
+    }
+
+    public TaskItem(
+        string title,
+        string description,
+        Guid ownerId,
+        Guid workspaceId,
+        DateTime? dueAtUtc = null,
+        TaskPriority priority = TaskPriority.Medium)
     {
         if (ownerId == Guid.Empty)
         {
             throw new ArgumentException("Owner ID is required.", nameof(ownerId));
         }
 
+        if (workspaceId == Guid.Empty)
+        {
+            throw new ArgumentException("Workspace ID is required.", nameof(workspaceId));
+        }
+
         Id = Guid.NewGuid();
         OwnerId = ownerId;
+        WorkspaceId = workspaceId;
         CreatedAt = DateTime.UtcNow;
         Title = NormalizeRequiredText(title, nameof(title), MaxTitleLength);
         Description = NormalizeRequiredText(description, nameof(description), MaxDescriptionLength);

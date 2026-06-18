@@ -139,7 +139,7 @@ public IActionResult CreateUser([FromBody] CreateUserByAdminRequest request)
 {
     try
     {
-        _createUserAsAdmin.Execute(request.Email, request.Password, request.RoleId);
+        _createUserAsAdmin.Execute(request.Email, request.Password, request.RoleId, User.GetWorkspaceId());
         return StatusCode(StatusCodes.Status201Created, new { message = "User created successfully." });
     }
     catch (InvalidOperationException ex)

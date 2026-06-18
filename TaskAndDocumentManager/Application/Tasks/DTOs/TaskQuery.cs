@@ -16,7 +16,8 @@ public sealed record TaskQuery(
     DateTime? DueAfterUtc = null,
     DateTime? DueBeforeUtc = null,
     TaskSortBy SortBy = TaskSortBy.CreatedAt,
-    SortDirection SortDirection = SortDirection.Descending
+    SortDirection SortDirection = SortDirection.Descending,
+    Guid? WorkspaceId = null
     )
 {
     public const int DefaultPageSize = 20;

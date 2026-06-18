@@ -8,4 +8,5 @@ public sealed class UploadDocumentRequest
     public required Stream Content {get; init;}
     public long SizeInBytes {get; init;}
     public Guid UploadedByUserId {get; init;}
+    public Guid WorkspaceId { get; init; }
 }

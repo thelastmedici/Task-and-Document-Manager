@@ -43,10 +43,11 @@ public class ShareTaskLinkedDocumentTests
     {
         var ownerId = Guid.NewGuid();
         var targetUserId = Guid.NewGuid();
-        var task = new TaskItem("Review report", "Review the linked file", ownerId);
+        var workspaceId = Guid.NewGuid();
+        var task = new TaskItem("Review report", "Review the linked file", ownerId, workspaceId);
         task.AssignTask(targetUserId);
 
-        var document = new Document("report.pdf", "application/pdf", 2048, "/tmp/report.pdf", ownerId);
+        var document = new Document("report.pdf", "application/pdf", 2048, "/tmp/report.pdf", ownerId, workspaceId);
         document.LinkToTask(task.Id);
 
         var request = new ShareTaskLinkedDocumentRequest
@@ -54,7 +55,8 @@ public class ShareTaskLinkedDocumentTests
             DocumentId = document.Id,
             TaskId = task.Id,
             TargetUserId = targetUserId,
-            GrantedByUserId = ownerId
+            GrantedByUserId = ownerId,
+            WorkspaceId = workspaceId
         };
 
         _documentRepositoryMock
@@ -115,10 +117,11 @@ public class ShareTaskLinkedDocumentTests
     {
         var ownerId = Guid.NewGuid();
         var targetUserId = Guid.NewGuid();
-        var task = new TaskItem("Review report", "Review the linked file", ownerId);
+        var workspaceId = Guid.NewGuid();
+        var task = new TaskItem("Review report", "Review the linked file", ownerId, workspaceId);
         var differentTaskId = Guid.NewGuid();
 
-        var document = new Document("report.pdf", "application/pdf", 2048, "/tmp/report.pdf", ownerId);
+        var document = new Document("report.pdf", "application/pdf", 2048, "/tmp/report.pdf", ownerId, workspaceId);
         document.LinkToTask(task.Id);
 
         var request = new ShareTaskLinkedDocumentRequest
@@ -126,7 +129,8 @@ public class ShareTaskLinkedDocumentTests
             DocumentId = document.Id,
             TaskId = differentTaskId,
             TargetUserId = targetUserId,
-            GrantedByUserId = ownerId
+            GrantedByUserId = ownerId,
+            WorkspaceId = workspaceId
         };
 
         _documentRepositoryMock
@@ -152,9 +156,10 @@ public class ShareTaskLinkedDocumentTests
     {
         var ownerId = Guid.NewGuid();
         var targetUserId = Guid.NewGuid();
-        var task = new TaskItem("Review report", "Review the linked file", ownerId);
+        var workspaceId = Guid.NewGuid();
+        var task = new TaskItem("Review report", "Review the linked file", ownerId, workspaceId);
 
-        var document = new Document("report.pdf", "application/pdf", 2048, "/tmp/report.pdf", ownerId);
+        var document = new Document("report.pdf", "application/pdf", 2048, "/tmp/report.pdf", ownerId, workspaceId);
         document.LinkToTask(task.Id);
 
         var request = new ShareTaskLinkedDocumentRequest
@@ -162,7 +167,8 @@ public class ShareTaskLinkedDocumentTests
             DocumentId = document.Id,
             TaskId = task.Id,
             TargetUserId = targetUserId,
-            GrantedByUserId = ownerId
+            GrantedByUserId = ownerId,
+            WorkspaceId = workspaceId
         };
 
         _documentRepositoryMock

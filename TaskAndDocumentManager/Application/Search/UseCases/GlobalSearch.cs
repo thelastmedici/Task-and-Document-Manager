@@ -26,6 +26,17 @@ public class GlobalSearch
         bool isManager,
         CancellationToken cancellationToken = default)
     {
+        return await ExecuteAsync(query, actorId, actorId, isAdmin, isManager, cancellationToken);
+    }
+
+    public async Task<GlobalSearchResult> ExecuteAsync(
+        GlobalSearchQuery query,
+        Guid actorId,
+        Guid workspaceId,
+        bool isAdmin,
+        bool isManager,
+        CancellationToken cancellationToken = default)
+    {
         var normalizedQuery = NormalizeQuery(query);
 
         var tasks = await _listTasks.ExecuteAsync(
@@ -34,6 +45,7 @@ public class GlobalSearch
                 PageSize: normalizedQuery.PageSize,
                 SearchTerm: normalizedQuery.SearchTerm),
             actorId,
+            workspaceId,
             isAdmin,
             isManager,
             cancellationToken);
@@ -44,9 +56,10 @@ public class GlobalSearch
             PageSize: normalizedQuery.PageSize);
 
         var documents = isAdmin
-            ? await _listAccessibleDocuments.ExecuteForAdminAsync(documentQuery, cancellationToken)
+            ? await _listAccessibleDocuments.ExecuteForAdminAsync(workspaceId, documentQuery, cancellationToken)
             : await _listAccessibleDocuments.ExecuteAsync(
                 actorId,
+                workspaceId,
                 isManager,
                 documentQuery,
                 cancellationToken);

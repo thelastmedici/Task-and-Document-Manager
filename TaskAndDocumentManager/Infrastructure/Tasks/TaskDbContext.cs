@@ -29,6 +29,9 @@ public class TaskDbContext(DbContextOptions<TaskDbContext> options) : DbContext(
             entity.Property(task => task.OwnerId)
                 .HasColumnName("CreatedByUserId")
                 .IsRequired();
+            entity.Property(task => task.WorkspaceId)
+                .IsRequired();
+            entity.HasIndex(task => task.WorkspaceId);
             entity.Property(task => task.CreatedAt)
                 .IsRequired();
             entity.Property(task => task.DueAtUtc);
@@ -62,6 +65,9 @@ public class TaskDbContext(DbContextOptions<TaskDbContext> options) : DbContext(
                 .IsRequired();
 
             entity.Property(user => user.RoleId)
+                .IsRequired();
+
+            entity.Property(user => user.WorkspaceId)
                 .IsRequired();
 
             entity.HasOne(user => user.Role)

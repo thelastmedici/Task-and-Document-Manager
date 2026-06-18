@@ -32,6 +32,7 @@ public class SearchController : ControllerBase
                     request.PageNumber,
                     request.PageSize),
                 User.GetActorId(),
+                User.GetWorkspaceId(),
                 User.IsAdmin(),
                 User.IsManager(),
                 cancellationToken);

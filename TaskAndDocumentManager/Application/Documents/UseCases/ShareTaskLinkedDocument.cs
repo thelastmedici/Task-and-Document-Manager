@@ -57,6 +57,11 @@ public class ShareTaskLinkedDocument
             throw new ArgumentException("Task ID is required.", nameof(request.TaskId));
         }
 
+        if (request.WorkspaceId == Guid.Empty)
+        {
+            throw new ArgumentException("Workspace ID is required.", nameof(request.WorkspaceId));
+        }
+
         if (request.TargetUserId == request.GrantedByUserId)
         {
             throw new InvalidOperationException("You cannot share a document with yourself.");
@@ -64,6 +69,11 @@ public class ShareTaskLinkedDocument
 
         var document = await _documentRepository.GetByIdAsync(request.DocumentId, cancellationToken)
             ?? throw new FileNotFoundException("Document not found.");
+
+        if (document.WorkspaceId != request.WorkspaceId)
+        {
+            throw new FileNotFoundException("Document not found.");
+        }
 
         if (!isAdmin && document.OwnerId != request.GrantedByUserId)
         {
@@ -82,6 +92,11 @@ public class ShareTaskLinkedDocument
 
         var task = await _taskRepository.GetByIdAsync(request.TaskId, cancellationToken)
             ?? throw new FileNotFoundException("Task not found.");
+
+        if (task.WorkspaceId != request.WorkspaceId)
+        {
+            throw new FileNotFoundException("Task not found.");
+        }
 
         if (!isAdmin && !IsTaskParticipant(task, request.GrantedByUserId))
         {

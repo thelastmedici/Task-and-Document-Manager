@@ -56,7 +56,9 @@ public class DocumentAccessEvaluator
 
         var task = await _taskRepository.GetByIdAsync(document.LinkedTaskId.Value, cancellationToken);
 
-        return task is not null && IsTaskParticipant(task, requestedByUserId);
+        return task is not null &&
+            task.WorkspaceId == document.WorkspaceId &&
+            IsTaskParticipant(task, requestedByUserId);
     }
 
     private static bool IsTaskParticipant(TaskItem task, Guid userId)

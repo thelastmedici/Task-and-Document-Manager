@@ -43,6 +43,7 @@ public class TaskController : ControllerBase
         CancellationToken cancellationToken)
     {
         var actorId = User.GetActorId();
+        var workspaceId = User.GetWorkspaceId();
 
         try
         {
@@ -50,6 +51,7 @@ public class TaskController : ControllerBase
                 request.Title,
                 request.Description,
                 actorId,
+                workspaceId,
                 request.DueAtUtc,
                 request.Priority,
                 cancellationToken);
@@ -78,6 +80,7 @@ public class TaskController : ControllerBase
         CancellationToken cancellationToken)
     {
         var actorId = User.GetActorId();
+        var workspaceId = User.GetWorkspaceId();
         var query = new TaskQuery(
             request.PageNumber,
             request.PageSize,
@@ -98,6 +101,7 @@ public class TaskController : ControllerBase
             var tasks = await _listTasks.ExecuteAsync(
                 query,
                 actorId,
+                workspaceId,
                 User.IsAdmin(),
                 User.IsManager(),
                 cancellationToken);

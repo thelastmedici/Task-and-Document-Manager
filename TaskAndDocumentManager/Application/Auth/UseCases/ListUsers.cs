@@ -26,6 +26,7 @@ public class ListUsers
             Id = user.Id,
             Email = user.Email,
             Role = user.Role?.Name ?? _roleCatalog.ResolveName(user.RoleId),
+            WorkspaceId = user.WorkspaceId,
             IsActive = user.IsActive
 
         })

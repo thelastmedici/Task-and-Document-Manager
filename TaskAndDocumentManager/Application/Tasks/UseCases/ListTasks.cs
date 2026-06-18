@@ -25,8 +25,19 @@ public class ListTasks
         bool isManager,
         CancellationToken cancellationToken = default)
     {
+        return await ExecuteAsync(query, actorId, actorId, isAdmin, isManager, cancellationToken);
+    }
+
+    public async Task<PaginatedResult<TaskListItemDto>> ExecuteAsync(
+        TaskQuery query,
+        Guid actorId,
+        Guid workspaceId,
+        bool isAdmin,
+        bool isManager,
+        CancellationToken cancellationToken = default)
+    {
         var normalizedQuery = NormalizeQuery(query);
-        var scopedQuery = ApplyAccessScope(normalizedQuery, actorId, isAdmin, isManager);
+        var scopedQuery = ApplyAccessScope(normalizedQuery, actorId, workspaceId, isAdmin, isManager);
 
         var tasks = await _taskRepository.SearchTasksAsync(scopedQuery, cancellationToken);
         var totalCount = await _taskRepository.CountTasksAsync(scopedQuery, cancellationToken);
@@ -113,6 +124,7 @@ public class ListTasks
     private static TaskQuery ApplyAccessScope(
         TaskQuery query,
         Guid actorId,
+        Guid workspaceId,
         bool isAdmin,
         bool isManager)
     {
@@ -121,13 +133,23 @@ public class ListTasks
             throw new ArgumentException("Actor ID is required.", nameof(actorId));
         }
 
+        if (workspaceId == Guid.Empty)
+        {
+            throw new ArgumentException("Workspace ID is required.", nameof(workspaceId));
+        }
+
         if (isAdmin)
         {
-            return query with { IncludeAssignedTasks = false };
+            return query with
+            {
+                WorkspaceId = workspaceId,
+                IncludeAssignedTasks = false
+            };
         }
 
         return query with
         {
+            WorkspaceId = workspaceId,
             OwnerId = actorId,
             IncludeAssignedTasks = isManager
         };

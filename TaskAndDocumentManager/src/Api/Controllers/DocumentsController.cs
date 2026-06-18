@@ -76,6 +76,7 @@ public class DocumentsController : ControllerBase
         }
 
         var actorId = User.GetActorId();
+        var workspaceId = User.GetWorkspaceId();
 
         try
         {
@@ -90,7 +91,8 @@ public class DocumentsController : ControllerBase
                         : request.File.ContentType,
                     Content = stream,
                     SizeInBytes = request.File.Length,
-                    UploadedByUserId = actorId
+                    UploadedByUserId = actorId,
+                    WorkspaceId = workspaceId
                 },
                 cancellationToken);
 
@@ -116,6 +118,7 @@ public class DocumentsController : ControllerBase
         [FromQuery] DocumentListRequest request,
         CancellationToken cancellationToken)
     {
+        var workspaceId = User.GetWorkspaceId();
         var query = new DocumentQuery(
             request.SearchTerm,
             request.ContentType,
@@ -131,13 +134,14 @@ public class DocumentsController : ControllerBase
                 var actorId = User.GetActorId();
                 var accessibleDocuments = await _listAccessibleDocuments.ExecuteAsync(
                     actorId,
+                    workspaceId,
                     User.IsManager(),
                     query,
                     cancellationToken);
                 return Ok(accessibleDocuments);
             }
 
-            var documents = await _listAccessibleDocuments.ExecuteForAdminAsync(query, cancellationToken);
+            var documents = await _listAccessibleDocuments.ExecuteForAdminAsync(workspaceId, query, cancellationToken);
             return Ok(documents);
         }
         catch (ArgumentException ex)
@@ -152,6 +156,7 @@ public class DocumentsController : ControllerBase
         CancellationToken cancellationToken)
     {
         var actorId = User.GetActorId();
+        var workspaceId = User.GetWorkspaceId();
         var query = new DocumentQuery(
             request.SearchTerm,
             request.ContentType,
@@ -162,7 +167,7 @@ public class DocumentsController : ControllerBase
 
         try
         {
-            var documents = await _getSharedDocuments.ExecuteAsync(actorId, query, cancellationToken);
+            var documents = await _getSharedDocuments.ExecuteAsync(actorId, workspaceId, query, cancellationToken);
             return Ok(documents);
         }
         catch (ArgumentException ex)
@@ -178,17 +183,18 @@ public class DocumentsController : ControllerBase
         CancellationToken cancellationToken)
     {
         var actorId = User.GetActorId();
+        var workspaceId = User.GetWorkspaceId();
 
         if (User.IsAdmin())
         {
             var adminDocument = await _documentRepository.GetByIdAsync(id, cancellationToken);
-            if (adminDocument is null)
+            if (adminDocument is null || adminDocument.WorkspaceId != workspaceId)
             {
                 return NotFound(new { message = "Document not found" });
             }
 
             var adminTask = await _taskRepository.GetByIdAsync(request.TaskId, cancellationToken);
-            if (adminTask is null)
+            if (adminTask is null || adminTask.WorkspaceId != workspaceId)
             {
                 return NotFound(new { message = "Task not found" });
             }
@@ -205,7 +211,8 @@ public class DocumentsController : ControllerBase
                 {
                     DocumentId = id,
                     TaskId = request.TaskId,
-                    RequestedByUserId = actorId
+                    RequestedByUserId = actorId,
+                    WorkspaceId = workspaceId
                 },
                 cancellationToken);
 
@@ -238,6 +245,7 @@ public class DocumentsController : ControllerBase
         CancellationToken cancellationToken)
     {
         var actorId = User.GetActorId();
+        var workspaceId = User.GetWorkspaceId();
 
         try
         {
@@ -246,7 +254,8 @@ public class DocumentsController : ControllerBase
                 {
                     DocumentId = id,
                     TargetUserId = request.TargetUserId,
-                    GrantedByUserId = actorId
+                    GrantedByUserId = actorId,
+                    WorkspaceId = workspaceId
                 },
                 User.IsAdmin(),
                 cancellationToken);
@@ -286,6 +295,7 @@ public class DocumentsController : ControllerBase
         CancellationToken cancellationToken)
     {
         var actorId = User.GetActorId();
+        var workspaceId = User.GetWorkspaceId();
 
         try
         {
@@ -295,7 +305,8 @@ public class DocumentsController : ControllerBase
                     DocumentId = id,
                     TaskId = taskId,
                     TargetUserId = request.TargetUserId,
-                    GrantedByUserId = actorId
+                    GrantedByUserId = actorId,
+                    WorkspaceId = workspaceId
                 },
                 User.IsAdmin(),
                 cancellationToken);
@@ -333,6 +344,7 @@ public class DocumentsController : ControllerBase
         CancellationToken cancellationToken)
     {
         var actorId = User.GetActorId();
+        var workspaceId = User.GetWorkspaceId();
 
         try
         {
@@ -340,6 +352,7 @@ public class DocumentsController : ControllerBase
                 id,
                 userId,
                 actorId,
+                workspaceId,
                 User.IsAdmin(),
                 cancellationToken);
 
@@ -375,11 +388,12 @@ public async Task<IActionResult> GetMetadata(
     CancellationToken cancellationToken)
 {
     var actorId = User.GetActorId();
+    var workspaceId = User.GetWorkspaceId();
 
     if (User.IsAdmin())
     {
         var adminDocument = await _documentRepository.GetByIdAsync(id, cancellationToken);
-        if (adminDocument is null)
+        if (adminDocument is null || adminDocument.WorkspaceId != workspaceId)
         {
             return NotFound(new { message = "Document not found" });
         }
@@ -401,6 +415,7 @@ public async Task<IActionResult> GetMetadata(
         var metadata = await _getDocumentMetadata.ExecuteAsync(
             id,
             actorId,
+            workspaceId,
             allowTaskParticipationAccess,
             cancellationToken);
 
@@ -421,12 +436,14 @@ public async Task<IActionResult> GetMetadata(
         CancellationToken cancellationToken)
     {
         var actorId = User.GetActorId();
+        var workspaceId = User.GetWorkspaceId();
 
         try
         {
             var result = await _downloadDocument.ExecuteAsync(
                 id,
                 actorId,
+                workspaceId,
                 User.IsAdmin(),
                 cancellationToken);
 
@@ -453,11 +470,12 @@ public async Task<IActionResult> GetMetadata(
         CancellationToken cancellationToken)
     {
         var actorId = User.GetActorId();
+        var workspaceId = User.GetWorkspaceId();
 
         if (User.IsAdmin())
         {
             var adminDocument = await _documentRepository.GetByIdAsync(id, cancellationToken);
-            if (adminDocument is null)
+            if (adminDocument is null || adminDocument.WorkspaceId != workspaceId)
             {
                 return NotFound(new { message = "Document not found" });
             }
@@ -469,7 +487,7 @@ public async Task<IActionResult> GetMetadata(
 
         try
         {
-            await _deleteDocument.ExecuteAsync(id, actorId, cancellationToken);
+            await _deleteDocument.ExecuteAsync(id, actorId, workspaceId, cancellationToken);
             return NoContent();
         }
         catch (FileNotFoundException ex)

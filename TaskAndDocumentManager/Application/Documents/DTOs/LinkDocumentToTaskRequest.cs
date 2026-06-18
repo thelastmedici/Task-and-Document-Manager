@@ -5,4 +5,5 @@ public sealed class LinkDocumentToTaskRequest
     public Guid DocumentId { get; init; }
     public Guid TaskId { get; init; }
     public Guid RequestedByUserId { get; init; }
+    public Guid WorkspaceId { get; init; }
 }

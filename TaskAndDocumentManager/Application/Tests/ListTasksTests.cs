@@ -184,6 +184,25 @@ public class ListTasksTests
     }
 
     [Fact]
+    public async Task ExecuteAsync_ShouldScopeQueryToWorkspace()
+    {
+        var actorId = Guid.NewGuid();
+        var workspaceId = Guid.NewGuid();
+
+        _taskRepositoryMock
+            .Setup(repo => repo.SearchTasksAsync(
+                It.Is<TaskQuery>(requestedQuery =>
+                    requestedQuery.WorkspaceId == workspaceId &&
+                    requestedQuery.OwnerId == actorId),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<TaskItem>());
+
+        await _sut.ExecuteAsync(new TaskQuery(), actorId, workspaceId, false, false);
+
+        _taskRepositoryMock.VerifyAll();
+    }
+
+    [Fact]
     public async Task ExecuteAsync_ShouldScopeQueryToOwnerOrAssigned_WhenUserIsManager()
     {
         var actorId = Guid.NewGuid();

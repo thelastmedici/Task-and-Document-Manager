@@ -24,10 +24,21 @@ public class DeleteDocument
     public async Task ExecuteAsync(
         Guid documentId,
         Guid requestedByUserId,
+        Guid workspaceId,
         CancellationToken cancellationToken = default)
     {
+        if (workspaceId == Guid.Empty)
+        {
+            throw new ArgumentException("Workspace ID is required.", nameof(workspaceId));
+        }
+
         var document = await _documentRepository.GetByIdAsync(documentId, cancellationToken)
             ?? throw new FileNotFoundException("Document not found.");
+
+        if (document.WorkspaceId != workspaceId)
+        {
+            throw new FileNotFoundException("Document not found.");
+        }
 
         if (document.OwnerId != requestedByUserId)
         {

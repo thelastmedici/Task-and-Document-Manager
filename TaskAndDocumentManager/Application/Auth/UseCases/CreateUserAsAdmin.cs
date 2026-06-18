@@ -25,8 +25,13 @@ public class CreateUserAsAdmin
         _roleCatalog = roleCatalog;
     }
 
-    public void Execute(string email, string password, Guid roleId)
+    public void Execute(string email, string password, Guid roleId, Guid workspaceId)
     {
+        if (workspaceId == Guid.Empty)
+        {
+            throw new ArgumentException("Workspace ID is required.", nameof(workspaceId));
+        }
+
         if (!_emailValidator.IsValidEmail(email))
         {
             throw new FormatException("Email is invalid.");
@@ -55,6 +60,7 @@ public class CreateUserAsAdmin
             Email = email,
             PasswordHash = passwordHash,
             RoleId = roleId,
+            WorkspaceId = workspaceId,
             IsActive = true
         };
 

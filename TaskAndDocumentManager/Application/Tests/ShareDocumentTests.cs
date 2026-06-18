@@ -43,7 +43,8 @@ public class ShareDocumentTests
         {
             DocumentId = document.Id,
             TargetUserId = targetUserId,
-            GrantedByUserId = ownerId
+            GrantedByUserId = ownerId,
+            WorkspaceId = document.WorkspaceId
         };
 
         _documentRepositoryMock
@@ -104,7 +105,8 @@ public class ShareDocumentTests
         {
             DocumentId = document.Id,
             TargetUserId = ownerId,
-            GrantedByUserId = ownerId
+            GrantedByUserId = ownerId,
+            WorkspaceId = document.WorkspaceId
         };
 
         _documentRepositoryMock
