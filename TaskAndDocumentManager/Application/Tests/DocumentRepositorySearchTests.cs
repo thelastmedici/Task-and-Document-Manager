@@ -83,4 +83,46 @@ public class DocumentRepositorySearchTests
             await repository.DeleteAsync(secondDocument.Id);
         }
     }
+
+    [Fact]
+    public async Task SearchDocumentsAsync_ShouldFilterByWorkspace()
+    {
+        var repository = new DocumentRepository();
+        var ownerId = Guid.NewGuid();
+        var workspaceId = Guid.NewGuid();
+        var otherWorkspaceId = Guid.NewGuid();
+        var searchToken = $"workspace-{Guid.NewGuid():N}";
+        var matchingDocument = new Document(
+            $"{searchToken}-report.pdf",
+            "application/pdf",
+            128,
+            $"/tmp/{searchToken}.pdf",
+            ownerId,
+            workspaceId);
+        var otherWorkspaceDocument = new Document(
+            $"{searchToken}-other.pdf",
+            "application/pdf",
+            256,
+            $"/tmp/{searchToken}-other.pdf",
+            ownerId,
+            otherWorkspaceId);
+
+        await repository.AddAsync(matchingDocument);
+        await repository.AddAsync(otherWorkspaceDocument);
+
+        try
+        {
+            var result = await repository.SearchDocumentsAsync(
+                new DocumentQuery(SearchTerm: searchToken, WorkspaceId: workspaceId),
+                CancellationToken.None);
+
+            Assert.Contains(result, document => document.Id == matchingDocument.Id);
+            Assert.DoesNotContain(result, document => document.Id == otherWorkspaceDocument.Id);
+        }
+        finally
+        {
+            await repository.DeleteAsync(matchingDocument.Id);
+            await repository.DeleteAsync(otherWorkspaceDocument.Id);
+        }
+    }
 }

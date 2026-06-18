@@ -42,7 +42,8 @@ public class UploadDocumentTests
             ContentType = "application/pdf",
             Content = content,
             SizeInBytes = 4,
-            UploadedByUserId = ownerId
+            UploadedByUserId = ownerId,
+            WorkspaceId = Guid.NewGuid()
         };
 
         _fileStorageServiceMock
@@ -74,7 +75,8 @@ public class UploadDocumentTests
                     document.OriginalFileName == request.FileName &&
                     document.ContentType == request.ContentType &&
                     document.SizeInBytes == request.SizeInBytes &&
-                    document.OwnerId == ownerId),
+                    document.OwnerId == ownerId &&
+                    document.WorkspaceId == request.WorkspaceId),
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }
@@ -91,7 +93,8 @@ public class UploadDocumentTests
             ContentType = "application/pdf",
             Content = content,
             SizeInBytes = 4,
-            UploadedByUserId = ownerId
+            UploadedByUserId = ownerId,
+            WorkspaceId = Guid.NewGuid()
         };
 
         _fileStorageServiceMock
@@ -125,7 +128,8 @@ public class UploadDocumentTests
             ContentType = "application/pdf",
             Content = content,
             SizeInBytes = 4,
-            UploadedByUserId = ownerId
+            UploadedByUserId = ownerId,
+            WorkspaceId = Guid.NewGuid()
         };
 
         _fileStorageServiceMock
@@ -165,7 +169,8 @@ public class UploadDocumentTests
             ContentType = "application/pdf",
             Content = content,
             SizeInBytes = 4,
-            UploadedByUserId = Guid.Empty
+            UploadedByUserId = Guid.Empty,
+            WorkspaceId = Guid.NewGuid()
         };
 
         var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
@@ -197,7 +202,8 @@ public class UploadDocumentTests
             ContentType = "application/octet-stream",
             Content = content,
             SizeInBytes = 4,
-            UploadedByUserId = Guid.NewGuid()
+            UploadedByUserId = Guid.NewGuid(),
+            WorkspaceId = Guid.NewGuid()
         };
 
         var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
@@ -221,7 +227,8 @@ public class UploadDocumentTests
             ContentType = "image/png",
             Content = content,
             SizeInBytes = 4,
-            UploadedByUserId = Guid.NewGuid()
+            UploadedByUserId = Guid.NewGuid(),
+            WorkspaceId = Guid.NewGuid()
         };
 
         var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
@@ -245,7 +252,8 @@ public class UploadDocumentTests
             ContentType = "application/pdf",
             Content = content,
             SizeInBytes = (20 * 1024 * 1024) + 1,
-            UploadedByUserId = Guid.NewGuid()
+            UploadedByUserId = Guid.NewGuid(),
+            WorkspaceId = Guid.NewGuid()
         };
 
         var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
@@ -270,7 +278,8 @@ public class UploadDocumentTests
             ContentType = "application/pdf",
             Content = content,
             SizeInBytes = 4,
-            UploadedByUserId = ownerId
+            UploadedByUserId = ownerId,
+            WorkspaceId = Guid.NewGuid()
         };
 
         _fileStorageServiceMock

@@ -46,7 +46,7 @@ public class DownloadDocumentTests
             .Setup(storage => storage.OpenReadAsync(document.StoragePath, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedStream);
 
-        var result = await _sut.ExecuteAsync(document.Id, ownerId);
+        var result = await _sut.ExecuteAsync(document.Id, ownerId, document.WorkspaceId);
 
         Assert.Same(expectedStream, result.Content);
         Assert.Equal("application/pdf", result.ContentType);
@@ -78,7 +78,7 @@ public class DownloadDocumentTests
             .Setup(storage => storage.OpenReadAsync(document.StoragePath, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedStream);
 
-        var result = await _sut.ExecuteAsync(document.Id, adminId, true);
+        var result = await _sut.ExecuteAsync(document.Id, adminId, document.WorkspaceId, true);
 
         Assert.Same(expectedStream, result.Content);
         Assert.Equal("application/pdf", result.ContentType);
@@ -114,7 +114,7 @@ public class DownloadDocumentTests
             .Setup(storage => storage.OpenReadAsync(document.StoragePath, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedStream);
 
-        var result = await _sut.ExecuteAsync(document.Id, requesterId);
+        var result = await _sut.ExecuteAsync(document.Id, requesterId, document.WorkspaceId);
 
         Assert.Same(expectedStream, result.Content);
         Assert.Equal("application/pdf", result.ContentType);
@@ -146,7 +146,7 @@ public class DownloadDocumentTests
             .ReturnsAsync(false);
 
         var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
-            _sut.ExecuteAsync(document.Id, requesterId));
+            _sut.ExecuteAsync(document.Id, requesterId, document.WorkspaceId));
 
         Assert.Equal("You do not have access to this document.", exception.Message);
 
@@ -155,6 +155,31 @@ public class DownloadDocumentTests
             Times.Never);
         _auditLogRepositoryMock.Verify(
             repository => repository.AddAsync(It.IsAny<AuditLog>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_ShouldThrowNotFound_WhenDocumentBelongsToAnotherWorkspace()
+    {
+        var ownerId = Guid.NewGuid();
+        var document = new Document(
+            "report.pdf",
+            "application/pdf",
+            1024,
+            "/tmp/report.pdf",
+            ownerId,
+            Guid.NewGuid());
+
+        _documentRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(document.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(document);
+
+        var exception = await Assert.ThrowsAsync<FileNotFoundException>(() =>
+            _sut.ExecuteAsync(document.Id, ownerId, Guid.NewGuid()));
+
+        Assert.Equal("Document not found.", exception.Message);
+        _fileStorageServiceMock.Verify(
+            storage => storage.OpenReadAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -173,7 +198,7 @@ public class DownloadDocumentTests
             .ThrowsAsync(new FileNotFoundException("Stored document was not found.", document.StoragePath));
 
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            _sut.ExecuteAsync(document.Id, ownerId));
+            _sut.ExecuteAsync(document.Id, ownerId, document.WorkspaceId));
 
         Assert.Equal("Document could not be retrieved.", exception.Message);
         _auditLogRepositoryMock.Verify(

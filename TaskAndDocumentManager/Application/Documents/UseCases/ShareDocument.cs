@@ -47,8 +47,18 @@ public class ShareDocument
             throw new ArgumentException("Granted by user ID is required.", nameof(request.GrantedByUserId));
         }
 
+        if (request.WorkspaceId == Guid.Empty)
+        {
+            throw new ArgumentException("Workspace ID is required.", nameof(request.WorkspaceId));
+        }
+
         var document = await _documentRepository.GetByIdAsync(request.DocumentId, cancellationToken)
             ?? throw new FileNotFoundException("Document not found.");
+
+        if (document.WorkspaceId != request.WorkspaceId)
+        {
+            throw new FileNotFoundException("Document not found.");
+        }
 
         if (!isAdmin && document.OwnerId != request.GrantedByUserId)
         {

@@ -44,7 +44,7 @@ public class DeleteDocumentTests
             .Setup(repository => repository.GetByIdAsync(document.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(document);
 
-        await _sut.ExecuteAsync(document.Id, ownerId, CancellationToken.None);
+        await _sut.ExecuteAsync(document.Id, ownerId, document.WorkspaceId, CancellationToken.None);
 
         _fileStorageServiceMock.Verify(
             storage => storage.DeleteAsync(document.StoragePath, It.IsAny<CancellationToken>()),
@@ -76,7 +76,7 @@ public class DeleteDocumentTests
             .ReturnsAsync((Document?)null);
 
         var exception = await Assert.ThrowsAsync<FileNotFoundException>(() =>
-            _sut.ExecuteAsync(documentId, requesterId, CancellationToken.None));
+            _sut.ExecuteAsync(documentId, requesterId, Guid.NewGuid(), CancellationToken.None));
 
         Assert.Equal("Document not found.", exception.Message);
 
@@ -111,7 +111,7 @@ public class DeleteDocumentTests
             .ReturnsAsync(document);
 
         var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
-            _sut.ExecuteAsync(document.Id, otherUserId, CancellationToken.None));
+            _sut.ExecuteAsync(document.Id, otherUserId, document.WorkspaceId, CancellationToken.None));
 
         Assert.Equal("Only the owner can delete this document.", exception.Message);
 

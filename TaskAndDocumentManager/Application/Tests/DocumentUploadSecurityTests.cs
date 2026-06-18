@@ -11,6 +11,7 @@ using TaskAndDocumentManager.Application.Documents.UseCases;
 using TaskAndDocumentManager.Application.Notifications.Interfaces;
 using TaskAndDocumentManager.Application.Tasks.Interfaces;
 using TaskAndDocumentManager.Controllers;
+using TaskAndDocumentManager.Infrastructure.Auth.Token;
 using TaskAndDocumentManager.Infrastructure.Storage;
 
 namespace TaskAndDocumentManager.Application.Tests.Documents.Controllers;
@@ -203,14 +204,16 @@ public class DocumentUploadSecurityTests
         return Assert.IsAssignableFrom<IFileStorageService>(field?.GetValue(controller));
     }
 
-    private static void SetUser(ControllerBase controller, Guid userId, string role)
+    private static void SetUser(ControllerBase controller, Guid userId, string role, Guid? workspaceId = null)
     {
+        var resolvedWorkspaceId = workspaceId ?? Guid.NewGuid();
         var user = new ClaimsPrincipal(
             new ClaimsIdentity(
                 new[]
                 {
                     new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
-                    new Claim(ClaimTypes.Role, role)
+                    new Claim(ClaimTypes.Role, role),
+                    new Claim(JwtTokenService.WorkspaceIdClaimType, resolvedWorkspaceId.ToString())
                 },
                 "TestAuth"));
 

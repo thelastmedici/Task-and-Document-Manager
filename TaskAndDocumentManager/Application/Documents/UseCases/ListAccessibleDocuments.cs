@@ -33,6 +33,25 @@ public class ListAccessibleDocuments
 
     public async Task<PaginatedResult<DocumentMetadataDto>> ExecuteAsync(
         Guid requestedByUserId,
+        Guid workspaceId,
+        bool allowTaskParticipationAccess,
+        DocumentQuery? query,
+        CancellationToken cancellationToken = default)
+    {
+        if (workspaceId == Guid.Empty)
+        {
+            throw new ArgumentException("Workspace ID is required.", nameof(workspaceId));
+        }
+
+        return await ExecuteAsync(
+            requestedByUserId,
+            allowTaskParticipationAccess,
+            (query ?? DocumentQuery.Empty) with { WorkspaceId = workspaceId },
+            cancellationToken);
+    }
+
+    public async Task<PaginatedResult<DocumentMetadataDto>> ExecuteAsync(
+        Guid requestedByUserId,
         bool allowTaskParticipationAccess,
         DocumentQuery? query,
         CancellationToken cancellationToken = default)
@@ -86,6 +105,21 @@ public class ListAccessibleDocuments
             documents.TotalCount,
             documents.Page,
             documents.PageSize);
+    }
+
+    public async Task<PaginatedResult<DocumentMetadataDto>> ExecuteForAdminAsync(
+        Guid workspaceId,
+        DocumentQuery? query,
+        CancellationToken cancellationToken = default)
+    {
+        if (workspaceId == Guid.Empty)
+        {
+            throw new ArgumentException("Workspace ID is required.", nameof(workspaceId));
+        }
+
+        return await ExecuteForAdminAsync(
+            (query ?? DocumentQuery.Empty) with { WorkspaceId = workspaceId },
+            cancellationToken);
     }
 
     private static DocumentQuery NormalizeQuery(DocumentQuery? query)

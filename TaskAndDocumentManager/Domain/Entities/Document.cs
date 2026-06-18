@@ -14,6 +14,8 @@ public class Document
 
     public Guid OwnerId { get; private set; }
 
+    public Guid WorkspaceId { get; private set; }
+
     public DateTime UploadedAtUtc { get; private set; } = DateTime.UtcNow;
 
     public Guid? LinkedTaskId { get; private set; }
@@ -28,6 +30,17 @@ public class Document
         long sizeInBytes,
         string storagePath,
         Guid ownerId)
+        : this(originalFileName, contentType, sizeInBytes, storagePath, ownerId, ownerId)
+    {
+    }
+
+    public Document(
+        string originalFileName,
+        string contentType,
+        long sizeInBytes,
+        string storagePath,
+        Guid ownerId,
+        Guid workspaceId)
     {
         if (string.IsNullOrWhiteSpace(originalFileName))
         {
@@ -49,6 +62,11 @@ public class Document
             throw new ArgumentException("Owner ID is required.", nameof(ownerId));
         }
 
+        if (workspaceId == Guid.Empty)
+        {
+            throw new ArgumentException("Workspace ID is required.", nameof(workspaceId));
+        }
+
         if (sizeInBytes < 0)
         {
             throw new ArgumentOutOfRangeException(nameof(sizeInBytes), "Size cannot be negative.");
@@ -59,6 +77,7 @@ public class Document
         SizeInBytes = sizeInBytes;
         StoragePath = storagePath.Trim();
         OwnerId = ownerId;
+        WorkspaceId = workspaceId;
     }
 
     public void LinkToTask(Guid taskId)

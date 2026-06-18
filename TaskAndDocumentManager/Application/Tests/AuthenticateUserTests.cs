@@ -43,6 +43,7 @@ public class AuthenticateUserTests
         var password = "Password1";
         var legacyHash = "legacy.hash";
         var upgradedHash = "AQAAAA...";
+        var workspaceId = Guid.NewGuid();
 
         var user = new User
         {
@@ -54,9 +55,10 @@ public class AuthenticateUserTests
             {
                 Id = roleId,
                 Name = roleName
-            },
-            IsActive = true
-        };
+                },
+                WorkspaceId = workspaceId,
+                IsActive = true
+            };
 
         _userRepositoryMock
             .Setup(repository => repository.GetByEmail(email))
@@ -75,7 +77,7 @@ public class AuthenticateUserTests
             .Returns(upgradedHash);
 
         _tokenServiceMock
-            .Setup(service => service.GenerateToken(userId.ToString(), email, roleName))
+            .Setup(service => service.GenerateToken(userId.ToString(), email, roleName, workspaceId))
             .Returns(new TokenResult
             {
                 Token = "token",
@@ -85,6 +87,7 @@ public class AuthenticateUserTests
         var result = await _sut.ExecuteAsync(email, password);
 
         Assert.Equal("token", result.Token);
+        Assert.Equal(workspaceId, result.User.WorkspaceId);
         _userRepositoryMock.Verify(repository => repository.Save(
             It.Is<User>(savedUser =>
                 savedUser.Id == userId &&

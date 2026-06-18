@@ -23,8 +23,18 @@ public class LinkDocumentToTask
     {
         ArgumentNullException.ThrowIfNull(request);
 
+        if (request.WorkspaceId == Guid.Empty)
+        {
+            throw new ArgumentException("Workspace ID is required.", nameof(request.WorkspaceId));
+        }
+
         var document = await _documentRepository.GetByIdAsync(request.DocumentId, cancellationToken)
             ?? throw new FileNotFoundException("Document not found.");
+
+        if (document.WorkspaceId != request.WorkspaceId)
+        {
+            throw new FileNotFoundException("Document not found.");
+        }
 
         if (document.OwnerId != request.RequestedByUserId)
         {
@@ -34,6 +44,11 @@ public class LinkDocumentToTask
         var task = await _taskRepository.GetByIdAsync(request.TaskId, cancellationToken);
 
         if (task is null)
+        {
+            throw new FileNotFoundException("Task not found.");
+        }
+
+        if (task.WorkspaceId != request.WorkspaceId)
         {
             throw new FileNotFoundException("Task not found.");
         }

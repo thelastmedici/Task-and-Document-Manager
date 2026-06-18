@@ -6,4 +6,5 @@ public sealed class ShareTaskLinkedDocumentRequest
     public Guid TaskId { get; init; }
     public Guid TargetUserId { get; init; }
     public Guid GrantedByUserId { get; init; }
+    public Guid WorkspaceId { get; init; }
 }

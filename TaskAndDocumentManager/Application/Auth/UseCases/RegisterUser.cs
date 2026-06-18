@@ -45,12 +45,16 @@ namespace TaskAndDocumentManager.Application.Auth.UseCases
             }
 
             var passwordHash = _passwordHasher.HashPassword(password);
+            var userId = Guid.NewGuid();
+            var workspaceId = Guid.NewGuid();
 
             var user = new User
             {
+                Id = userId,
                 Email = email,
                 PasswordHash = passwordHash,
                 RoleId = _roleCatalog.UserRoleId,
+                WorkspaceId = workspaceId,
                 IsActive = true
             };
 

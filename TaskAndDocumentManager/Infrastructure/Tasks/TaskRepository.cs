@@ -107,6 +107,11 @@ public class TaskRepository(TaskDbContext dbContext) : ITaskRepository
             }
         }
 
+        if (query.WorkspaceId.HasValue)
+        {
+            tasks = tasks.Where(task => task.WorkspaceId == query.WorkspaceId.Value);
+        }
+
         if (!string.IsNullOrWhiteSpace(searchTerm))
         {
             var pattern = $"%{searchTerm}%";

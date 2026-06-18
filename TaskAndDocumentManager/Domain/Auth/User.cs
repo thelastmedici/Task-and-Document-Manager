@@ -14,5 +14,7 @@ public class User
 
     public Role? Role { get; set; }
 
+    public Guid WorkspaceId { get; set; }
+
     public bool IsActive { get; set; } = true;
 }

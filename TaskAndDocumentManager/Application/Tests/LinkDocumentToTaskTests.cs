@@ -31,12 +31,13 @@ public class LinkDocumentToTaskTests
             1024,
             "/tmp/report.pdf",
             ownerId);
-        var task = new TaskItem("Review report", "Review uploaded document", Guid.NewGuid());
+        var task = new TaskItem("Review report", "Review uploaded document", Guid.NewGuid(), document.WorkspaceId);
         var request = new LinkDocumentToTaskRequest
         {
             DocumentId = document.Id,
             TaskId = task.Id,
-            RequestedByUserId = ownerId
+            RequestedByUserId = ownerId,
+            WorkspaceId = document.WorkspaceId
         };
 
         _documentRepositoryMock
@@ -73,7 +74,8 @@ public class LinkDocumentToTaskTests
         {
             DocumentId = document.Id,
             TaskId = Guid.NewGuid(),
-            RequestedByUserId = Guid.NewGuid()
+            RequestedByUserId = Guid.NewGuid(),
+            WorkspaceId = document.WorkspaceId
         };
 
         _documentRepositoryMock

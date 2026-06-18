@@ -35,7 +35,7 @@ public class RevokeDocumentAccessTests
             .Setup(repository => repository.GetByIdAsync(document.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(document);
 
-        await _sut.ExecuteAsync(document.Id, targetUserId, ownerId, false, CancellationToken.None);
+        await _sut.ExecuteAsync(document.Id, targetUserId, ownerId, document.WorkspaceId, false, CancellationToken.None);
 
         _documentAccessRepositoryMock.Verify(
             repository => repository.RevokeAccessAsync(document.Id, targetUserId, It.IsAny<CancellationToken>()),
@@ -65,7 +65,7 @@ public class RevokeDocumentAccessTests
             .ReturnsAsync(document);
 
         var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
-            _sut.ExecuteAsync(document.Id, targetUserId, otherUserId, false, CancellationToken.None));
+            _sut.ExecuteAsync(document.Id, targetUserId, otherUserId, document.WorkspaceId, false, CancellationToken.None));
 
         Assert.Equal("Only the owner can revoke document access.", exception.Message);
         _auditLogRepositoryMock.Verify(
@@ -84,7 +84,7 @@ public class RevokeDocumentAccessTests
             .ReturnsAsync(document);
 
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            _sut.ExecuteAsync(document.Id, ownerId, ownerId, false, CancellationToken.None));
+            _sut.ExecuteAsync(document.Id, ownerId, ownerId, document.WorkspaceId, false, CancellationToken.None));
 
         Assert.Equal("Owner access cannot be revoked.", exception.Message);
         _auditLogRepositoryMock.Verify(

@@ -41,7 +41,7 @@ public class GetDocumentMetadataTests
             .Setup(repository => repository.GetByIdAsync(document.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(document);
 
-        var result = await _sut.ExecuteAsync(document.Id, ownerId);
+        var result = await _sut.ExecuteAsync(document.Id, ownerId, document.WorkspaceId);
 
         Assert.Equal(document.Id, result.Id);
         Assert.Equal(document.OriginalFileName, result.FileName);
@@ -70,7 +70,7 @@ public class GetDocumentMetadataTests
             .ReturnsAsync(false);
 
         var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
-            _sut.ExecuteAsync(document.Id, requesterId));
+            _sut.ExecuteAsync(document.Id, requesterId, document.WorkspaceId));
 
         Assert.Equal("You do not have access to this document.", exception.Message);
     }
@@ -95,7 +95,7 @@ public class GetDocumentMetadataTests
             .Setup(repository => repository.HasAccessAsync(document.Id, requesterId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        var result = await _sut.ExecuteAsync(document.Id, requesterId);
+        var result = await _sut.ExecuteAsync(document.Id, requesterId, document.WorkspaceId);
 
         Assert.Equal(document.Id, result.Id);
         Assert.Equal(document.OriginalFileName, result.FileName);
@@ -129,7 +129,7 @@ public class GetDocumentMetadataTests
             .Setup(repository => repository.GetByIdAsync(task.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(task);
 
-        var result = await _sut.ExecuteAsync(document.Id, requesterId, true);
+        var result = await _sut.ExecuteAsync(document.Id, requesterId, document.WorkspaceId, true);
 
         Assert.Equal(document.Id, result.Id);
         Assert.Equal(document.OriginalFileName, result.FileName);
@@ -160,7 +160,7 @@ public class GetDocumentMetadataTests
             .ReturnsAsync(false);
 
         var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
-            _sut.ExecuteAsync(document.Id, requesterId));
+            _sut.ExecuteAsync(document.Id, requesterId, document.WorkspaceId));
 
         Assert.Equal("You do not have access to this document.", exception.Message);
     }

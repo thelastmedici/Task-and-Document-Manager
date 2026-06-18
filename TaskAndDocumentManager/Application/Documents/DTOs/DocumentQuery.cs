@@ -6,7 +6,8 @@ public sealed record DocumentQuery(
     DateTime? UploadedFromUtc = null,
     DateTime? UploadedToUtc = null,
     int PageNumber = 1,
-    int PageSize = 20)
+    int PageSize = 20,
+    Guid? WorkspaceId = null)
 {
     public static DocumentQuery Empty { get; } = new();
     public const int DefaultPageSize = 20;

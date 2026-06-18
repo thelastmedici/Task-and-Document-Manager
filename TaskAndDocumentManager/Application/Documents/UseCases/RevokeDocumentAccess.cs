@@ -25,6 +25,7 @@ public class RevokeDocumentAccess
         Guid documentId,
         Guid targetUserId,
         Guid revokedByUserId,
+        Guid workspaceId,
         bool isAdmin = false,
         CancellationToken cancellationToken = default)
     {
@@ -38,8 +39,18 @@ public class RevokeDocumentAccess
             throw new ArgumentException("Revoked by user ID is required.", nameof(revokedByUserId));
         }
 
+        if (workspaceId == Guid.Empty)
+        {
+            throw new ArgumentException("Workspace ID is required.", nameof(workspaceId));
+        }
+
         var document = await _documentRepository.GetByIdAsync(documentId, cancellationToken)
             ?? throw new FileNotFoundException("Document not found.");
+
+        if (document.WorkspaceId != workspaceId)
+        {
+            throw new FileNotFoundException("Document not found.");
+        }
 
         if (!isAdmin && document.OwnerId != revokedByUserId)
         {

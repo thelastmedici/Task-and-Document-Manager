@@ -64,6 +64,23 @@ public class GetSharedDocuments
             normalizedQuery.PageSize);
     }
 
+    public async Task<PaginatedResult<DocumentMetadataDto>> ExecuteAsync(
+        Guid requestedByUserId,
+        Guid workspaceId,
+        DocumentQuery? query = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (workspaceId == Guid.Empty)
+        {
+            throw new ArgumentException("Workspace ID is required.", nameof(workspaceId));
+        }
+
+        return await ExecuteAsync(
+            requestedByUserId,
+            (query ?? DocumentQuery.Empty) with { WorkspaceId = workspaceId },
+            cancellationToken);
+    }
+
     private static DocumentQuery NormalizeQuery(DocumentQuery? query)
     {
         query ??= DocumentQuery.Empty;

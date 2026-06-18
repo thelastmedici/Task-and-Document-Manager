@@ -47,6 +47,11 @@ public class UploadDocument
             throw new ArgumentException("Uploaded by user ID is required.", nameof(request.UploadedByUserId));
         }
 
+        if (request.WorkspaceId == Guid.Empty)
+        {
+            throw new ArgumentException("Workspace ID is required.", nameof(request.WorkspaceId));
+        }
+
         if (string.IsNullOrWhiteSpace(request.FileName))
         {
             throw new ArgumentException("File name is required.", nameof(request.FileName));
@@ -95,7 +100,8 @@ public class UploadDocument
             request.ContentType,
             request.SizeInBytes,
             storagePath,
-            request.UploadedByUserId);
+            request.UploadedByUserId,
+            request.WorkspaceId);
 
         try
         {

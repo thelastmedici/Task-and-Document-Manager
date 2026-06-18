@@ -11,6 +11,8 @@ namespace TaskAndDocumentManager.Infrastructure.Auth.Token;
 
 public class JwtTokenService : ITokenService
 {
+    public const string WorkspaceIdClaimType = "workspace_id";
+
     private readonly JwtSecurityTokenHandler _tokenHandler = new();
     private readonly byte[] _key;
     private readonly string _issuer;
@@ -32,8 +34,13 @@ public class JwtTokenService : ITokenService
         _expiresMinutes = int.TryParse(jwtSection["ExpiresMinutes"], out var minutes) ? minutes : 60;
     }
 
-    public TokenResult GenerateToken(string userId, string email, string role)
+    public TokenResult GenerateToken(string userId, string email, string role, Guid workspaceId)
     {
+        if (workspaceId == Guid.Empty)
+        {
+            throw new ArgumentException("Workspace ID is required.", nameof(workspaceId));
+        }
+
         var now = DateTime.UtcNow;
         var expires = now.AddMinutes(_expiresMinutes);
         var credentials = new SigningCredentials(new SymmetricSecurityKey(_key), SecurityAlgorithms.HmacSha256);
@@ -45,6 +52,7 @@ public class JwtTokenService : ITokenService
             new(JwtRegisteredClaimNames.Email, email),
             new(ClaimTypes.Email, email),
             new(ClaimTypes.Role, role),
+            new(WorkspaceIdClaimType, workspaceId.ToString()),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 

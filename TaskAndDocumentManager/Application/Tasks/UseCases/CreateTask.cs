@@ -20,13 +20,25 @@ public class CreateTask
         Guid ownerId,
         CancellationToken cancellationToken = default)
     {
-        return ExecuteAsync(title, description, ownerId, dueAtUtc: null, cancellationToken: cancellationToken);
+        return ExecuteAsync(title, description, ownerId, ownerId, dueAtUtc: null, cancellationToken: cancellationToken);
+    }
+
+    public Task<Guid> ExecuteAsync(
+        string title,
+        string description,
+        Guid ownerId,
+        DateTime? dueAtUtc = null,
+        TaskPriority priority = TaskPriority.Medium,
+        CancellationToken cancellationToken = default)
+    {
+        return ExecuteAsync(title, description, ownerId, ownerId, dueAtUtc, priority, cancellationToken);
     }
 
     public async Task<Guid> ExecuteAsync(
         string title,
         string description,
         Guid ownerId,
+        Guid workspaceId,
         DateTime? dueAtUtc = null,
         TaskPriority priority = TaskPriority.Medium,
         CancellationToken cancellationToken = default
@@ -37,7 +49,12 @@ public class CreateTask
             throw new ArgumentException("Owner ID is required.", nameof(ownerId));
         }
 
-        var task = new TaskItem(title, description, ownerId, dueAtUtc, priority);
+        if (workspaceId == Guid.Empty)
+        {
+            throw new ArgumentException("Workspace ID is required.", nameof(workspaceId));
+        }
+
+        var task = new TaskItem(title, description, ownerId, workspaceId, dueAtUtc, priority);
 
         await _taskRepository.CreateAsync(task, cancellationToken);
 

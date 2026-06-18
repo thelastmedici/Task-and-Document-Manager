@@ -5,7 +5,7 @@ namespace TaskAndDocumentManager.Application.Auth.Interfaces;
 
 public interface ITokenService
 {
-    TokenResult GenerateToken(string userId, string email, string role);
+    TokenResult GenerateToken(string userId, string email, string role, Guid workspaceId);
     bool ValidateToken(string token);
     string GetUserIdFromToken(string token);
 }
