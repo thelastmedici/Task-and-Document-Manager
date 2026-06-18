@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using TaskAndDocumentManager.Domain.Auth;
 using TaskAndDocumentManager.Domain.Entities;
 using TaskAndDocumentManager.Domain.Tasks;
+using TaskAndDocumentManager.Domain.Workspaces;
 using TaskAndDocumentManager.Infrastructure.Persistence;
 
 namespace TaskAndDocumentManager.Infrastructure.Tasks;
@@ -12,6 +13,7 @@ public class TaskDbContext(DbContextOptions<TaskDbContext> options) : DbContext(
     public DbSet<User> Users => Set<User>();
     public DbSet<Role> Roles => Set<Role>();
     public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<Workspace> Workspaces => Set<Workspace>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -88,6 +90,28 @@ public class TaskDbContext(DbContextOptions<TaskDbContext> options) : DbContext(
 
             entity.Property(notification => notification.IsRead)
                 .IsRequired();
+        });
+
+        modelBuilder.Entity<Workspace>(entity =>
+        {
+            entity.HasKey(workspace => workspace.Id);
+
+            entity.Property(workspace => workspace.Name)
+                .HasMaxLength(Workspace.MaxNameLength)
+                .IsRequired();
+
+            entity.Property(workspace => workspace.CreatedAtUtc)
+                .IsRequired();
+
+            entity.Property(workspace => workspace.CreatedByUserId)
+                .IsRequired();
+
+            entity.HasIndex(workspace => workspace.Name);
+
+            entity.HasOne<User>()
+                .WithMany()
+                .HasForeignKey(workspace => workspace.CreatedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }
