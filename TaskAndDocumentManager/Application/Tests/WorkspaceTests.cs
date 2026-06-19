@@ -86,4 +86,45 @@ public class WorkspaceTests
 
         Assert.Equal("role", exception.ParamName);
     }
+
+    [Fact]
+    public void TeamConstructor_ShouldCreateTeam()
+    {
+        var workspaceId = Guid.NewGuid();
+
+        var team = new Team(workspaceId, "  Engineering  ");
+
+        Assert.NotEqual(Guid.Empty, team.Id);
+        Assert.Equal(workspaceId, team.WorkspaceId);
+        Assert.Equal("Engineering", team.Name);
+    }
+
+    [Fact]
+    public void TeamConstructor_ShouldRejectEmptyWorkspaceId()
+    {
+        var exception = Assert.Throws<ArgumentException>(() =>
+            new Team(Guid.Empty, "Engineering"));
+
+        Assert.Equal("workspaceId", exception.ParamName);
+    }
+
+    [Fact]
+    public void TeamConstructor_ShouldRejectEmptyName()
+    {
+        var exception = Assert.Throws<ArgumentException>(() =>
+            new Team(Guid.NewGuid(), " "));
+
+        Assert.Equal("name", exception.ParamName);
+    }
+
+    [Fact]
+    public void TeamConstructor_ShouldRejectNameLongerThanMaximum()
+    {
+        var longName = new string('a', Team.MaxNameLength + 1);
+
+        var exception = Assert.Throws<ArgumentException>(() =>
+            new Team(Guid.NewGuid(), longName));
+
+        Assert.Equal("name", exception.ParamName);
+    }
 }
