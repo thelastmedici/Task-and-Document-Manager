@@ -3,8 +3,10 @@ using TaskAndDocumentManager.Application.Auth.DTOs;
 using TaskAndDocumentManager.Application.Auth.Interfaces;
 using TaskAndDocumentManager.Application.Auth.UseCases;
 using TaskAndDocumentManager.Application.Audit.Interfaces;
+using TaskAndDocumentManager.Application.Workspaces.Interfaces;
 using TaskAndDocumentManager.Domain.Auth;
 using TaskAndDocumentManager.Domain.Entities;
+using TaskAndDocumentManager.Domain.Workspaces;
 
 namespace TaskAndDocumentManager.Application.Tests.Auth.UseCases;
 
@@ -15,6 +17,7 @@ public class AuthenticateUserTests
     private readonly Mock<IPasswordHasher> _passwordHasherMock;
     private readonly Mock<ITokenService> _tokenServiceMock;
     private readonly Mock<IRoleCatalog> _roleCatalogMock;
+    private readonly Mock<IWorkspaceMemberRepository> _workspaceMemberRepositoryMock;
     private readonly AuthenticateUser _sut;
 
     public AuthenticateUserTests()
@@ -24,13 +27,15 @@ public class AuthenticateUserTests
         _passwordHasherMock = new Mock<IPasswordHasher>();
         _tokenServiceMock = new Mock<ITokenService>();
         _roleCatalogMock = new Mock<IRoleCatalog>();
+        _workspaceMemberRepositoryMock = new Mock<IWorkspaceMemberRepository>();
 
         _sut = new AuthenticateUser(
             _auditLogRepositoryMock.Object,
             _userRepositoryMock.Object,
             _passwordHasherMock.Object,
             _tokenServiceMock.Object,
-            _roleCatalogMock.Object);
+            _roleCatalogMock.Object,
+            _workspaceMemberRepositoryMock.Object);
     }
 
     [Fact]
@@ -55,10 +60,9 @@ public class AuthenticateUserTests
             {
                 Id = roleId,
                 Name = roleName
-                },
-                WorkspaceId = workspaceId,
-                IsActive = true
-            };
+            },
+            IsActive = true
+        };
 
         _userRepositoryMock
             .Setup(repository => repository.GetByEmail(email))
@@ -75,6 +79,10 @@ public class AuthenticateUserTests
         _passwordHasherMock
             .Setup(hasher => hasher.HashPassword(password))
             .Returns(upgradedHash);
+
+        _workspaceMemberRepositoryMock
+            .Setup(repository => repository.GetDefaultMembershipForUser(userId))
+            .Returns(new WorkspaceMember(workspaceId, userId, WorkspaceRoles.Owner));
 
         _tokenServiceMock
             .Setup(service => service.GenerateToken(userId.ToString(), email, roleName, workspaceId))

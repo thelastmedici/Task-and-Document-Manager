@@ -1,5 +1,7 @@
 using TaskAndDocumentManager.Application.Auth.Interfaces;
+using TaskAndDocumentManager.Application.Workspaces.Interfaces;
 using TaskAndDocumentManager.Domain.Auth;
+using TaskAndDocumentManager.Domain.Workspaces;
 
 namespace TaskAndDocumentManager.Application.Auth.UseCases;
 
@@ -10,19 +12,22 @@ public class CreateUserAsAdmin
     private readonly IEmailValidator _emailValidator;
     private readonly IPasswordValidator _passwordValidator;
     private readonly IRoleCatalog _roleCatalog;
+    private readonly IWorkspaceMemberRepository _workspaceMemberRepository;
 
     public CreateUserAsAdmin(
         IUserRepository userRepository,
         IPasswordHasher passwordHasher,
         IEmailValidator emailValidator,
         IPasswordValidator passwordValidator,
-        IRoleCatalog roleCatalog)
+        IRoleCatalog roleCatalog,
+        IWorkspaceMemberRepository workspaceMemberRepository)
     {
         _userRepository = userRepository;
         _passwordHasher = passwordHasher;
         _emailValidator = emailValidator;
         _passwordValidator = passwordValidator;
         _roleCatalog = roleCatalog;
+        _workspaceMemberRepository = workspaceMemberRepository;
     }
 
     public void Execute(string email, string password, Guid roleId, Guid workspaceId)
@@ -54,16 +59,18 @@ public class CreateUserAsAdmin
         }
 
         var passwordHash = _passwordHasher.HashPassword(password);
+        var userId = Guid.NewGuid();
 
         var user = new User
         {
+            Id = userId,
             Email = email,
             PasswordHash = passwordHash,
             RoleId = roleId,
-            WorkspaceId = workspaceId,
             IsActive = true
         };
 
-        _userRepository.Save(user);
+        var savedUser = _userRepository.Save(user);
+        _workspaceMemberRepository.Add(new WorkspaceMember(workspaceId, savedUser.Id, WorkspaceRoles.Member));
     }
 }
