@@ -1,6 +1,7 @@
 using TaskAndDocumentManager.Application.Auth.DTOs;
 using TaskAndDocumentManager.Application.Auth.Interfaces;
 using TaskAndDocumentManager.Application.Audit.Interfaces;
+using TaskAndDocumentManager.Application.Workspaces.Interfaces;
 using TaskAndDocumentManager.Domain.Auth;
 using TaskAndDocumentManager.Domain.Entities;
 
@@ -13,19 +14,22 @@ public class AuthenticateUser
     private readonly IPasswordHasher _passwordHasher;
     private readonly ITokenService _tokenService;
     private readonly IRoleCatalog _roleCatalog;
+    private readonly IWorkspaceMemberRepository _workspaceMemberRepository;
 
     public AuthenticateUser(
         IAuditLogRepository auditLogRepository,
         IUserRepository userRepository,
         IPasswordHasher passwordHasher,
         ITokenService tokenService,
-        IRoleCatalog roleCatalog)
+        IRoleCatalog roleCatalog,
+        IWorkspaceMemberRepository workspaceMemberRepository)
     {
         _auditLogRepository = auditLogRepository;
         _userRepository = userRepository;
         _passwordHasher = passwordHasher;
         _tokenService = tokenService;
         _roleCatalog = roleCatalog;
+        _workspaceMemberRepository = workspaceMemberRepository;
     }
 
     public async Task<AuthResponse> ExecuteAsync(
@@ -70,8 +74,10 @@ public class AuthenticateUser
         }
 
         var role = user.Role?.Name ?? _roleCatalog.ResolveName(user.RoleId);
+        var membership = _workspaceMemberRepository.GetDefaultMembershipForUser(user.Id)
+            ?? throw new InvalidOperationException("User does not belong to a workspace.");
 
-        var tokenResult = _tokenService.GenerateToken(user.Id.ToString(), user.Email, role, user.WorkspaceId);
+        var tokenResult = _tokenService.GenerateToken(user.Id.ToString(), user.Email, role, membership.WorkspaceId);
 
         await _auditLogRepository.AddAsync(
             new AuditLog(
@@ -90,7 +96,7 @@ public class AuthenticateUser
                 Id = user.Id,
                 Email = user.Email,
                 Role = role,
-                WorkspaceId = user.WorkspaceId,
+                WorkspaceId = membership.WorkspaceId,
                 IsActive = user.IsActive
             }
         };

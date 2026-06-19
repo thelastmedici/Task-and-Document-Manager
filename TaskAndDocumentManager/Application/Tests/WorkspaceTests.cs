@@ -45,4 +45,45 @@ public class WorkspaceTests
 
         Assert.Equal("name", exception.ParamName);
     }
+
+    [Fact]
+    public void WorkspaceMemberConstructor_ShouldCreateMembership()
+    {
+        var workspaceId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+
+        var member = new WorkspaceMember(workspaceId, userId, "  Admin  ");
+
+        Assert.Equal(workspaceId, member.WorkspaceId);
+        Assert.Equal(userId, member.UserId);
+        Assert.Equal("Admin", member.Role);
+        Assert.True(member.JoinedAtUtc <= DateTime.UtcNow);
+    }
+
+    [Fact]
+    public void WorkspaceMemberConstructor_ShouldRejectEmptyWorkspaceId()
+    {
+        var exception = Assert.Throws<ArgumentException>(() =>
+            new WorkspaceMember(Guid.Empty, Guid.NewGuid(), WorkspaceRoles.Member));
+
+        Assert.Equal("workspaceId", exception.ParamName);
+    }
+
+    [Fact]
+    public void WorkspaceMemberConstructor_ShouldRejectEmptyUserId()
+    {
+        var exception = Assert.Throws<ArgumentException>(() =>
+            new WorkspaceMember(Guid.NewGuid(), Guid.Empty, WorkspaceRoles.Member));
+
+        Assert.Equal("userId", exception.ParamName);
+    }
+
+    [Fact]
+    public void WorkspaceMemberConstructor_ShouldRejectEmptyRole()
+    {
+        var exception = Assert.Throws<ArgumentException>(() =>
+            new WorkspaceMember(Guid.NewGuid(), Guid.NewGuid(), " "));
+
+        Assert.Equal("role", exception.ParamName);
+    }
 }

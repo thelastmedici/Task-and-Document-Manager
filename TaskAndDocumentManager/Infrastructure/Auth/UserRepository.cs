@@ -92,7 +92,6 @@ namespace TaskAndDocumentManager.Infrastructure.Auth
                 Email = user.Email,
                 PasswordHash = user.PasswordHash,
                 RoleId = user.RoleId,
-                WorkspaceId = user.WorkspaceId,
                 Role = new Role
                 {
                     Id = user.Role?.Id ?? user.RoleId,

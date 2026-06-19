@@ -14,6 +14,7 @@ public class TaskDbContext(DbContextOptions<TaskDbContext> options) : DbContext(
     public DbSet<Role> Roles => Set<Role>();
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<Workspace> Workspaces => Set<Workspace>();
+    public DbSet<WorkspaceMember> WorkspaceMembers => Set<WorkspaceMember>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -67,9 +68,6 @@ public class TaskDbContext(DbContextOptions<TaskDbContext> options) : DbContext(
             entity.Property(user => user.RoleId)
                 .IsRequired();
 
-            entity.Property(user => user.WorkspaceId)
-                .IsRequired();
-
             entity.HasOne(user => user.Role)
                 .WithMany()
                 .HasForeignKey(user => user.RoleId)
@@ -118,6 +116,30 @@ public class TaskDbContext(DbContextOptions<TaskDbContext> options) : DbContext(
                 .WithMany()
                 .HasForeignKey(workspace => workspace.CreatedByUserId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<WorkspaceMember>(entity =>
+        {
+            entity.HasKey(member => new { member.WorkspaceId, member.UserId });
+
+            entity.Property(member => member.Role)
+                .HasMaxLength(WorkspaceMember.MaxRoleLength)
+                .IsRequired();
+
+            entity.Property(member => member.JoinedAtUtc)
+                .IsRequired();
+
+            entity.HasIndex(member => member.UserId);
+
+            entity.HasOne<Workspace>()
+                .WithMany()
+                .HasForeignKey(member => member.WorkspaceId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne<User>()
+                .WithMany()
+                .HasForeignKey(member => member.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }
