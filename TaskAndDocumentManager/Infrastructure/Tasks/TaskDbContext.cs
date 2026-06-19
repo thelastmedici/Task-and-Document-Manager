@@ -15,6 +15,7 @@ public class TaskDbContext(DbContextOptions<TaskDbContext> options) : DbContext(
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<Workspace> Workspaces => Set<Workspace>();
     public DbSet<WorkspaceMember> WorkspaceMembers => Set<WorkspaceMember>();
+    public DbSet<Team> Teams => Set<Team>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -139,6 +140,26 @@ public class TaskDbContext(DbContextOptions<TaskDbContext> options) : DbContext(
             entity.HasOne<User>()
                 .WithMany()
                 .HasForeignKey(member => member.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<Team>(entity =>
+        {
+            entity.HasKey(team => team.Id);
+
+            entity.Property(team => team.WorkspaceId)
+                .IsRequired();
+
+            entity.Property(team => team.Name)
+                .HasMaxLength(Team.MaxNameLength)
+                .IsRequired();
+
+            entity.HasIndex(team => new { team.WorkspaceId, team.Name })
+                .IsUnique();
+
+            entity.HasOne<Workspace>()
+                .WithMany()
+                .HasForeignKey(team => team.WorkspaceId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
     }
