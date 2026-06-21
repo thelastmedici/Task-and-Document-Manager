@@ -1,32 +1,21 @@
 using TaskAndDocumentManager.Application.Auth.Interfaces;
+using TaskAndDocumentManager.Api.Extensions;
 using TaskAndDocumentManager.Application.Auth.UseCases;
 using TaskAndDocumentManager.Application.Audit.Interfaces;
-using TaskAndDocumentManager.Application.Audit.UseCases;
-using TaskAndDocumentManager.Application.BackgroundJobs;
 using TaskAndDocumentManager.Application.Documents.Interfaces;
 using TaskAndDocumentManager.Application.Documents.UseCases;
-using TaskAndDocumentManager.Application.Notifications.Interfaces;
-using TaskAndDocumentManager.Application.Notifications.UseCases;
-using TaskAndDocumentManager.Application.Presence.Interfaces;
-using TaskAndDocumentManager.Application.Search.UseCases;
 using TaskAndDocumentManager.Application.Tasks.Interfaces;
 using TaskAndDocumentManager.Application.Tasks.UseCases;
-using TaskAndDocumentManager.Application.Workspaces.Interfaces;
 using TaskAndDocumentManager.Infrastructure.Audit;
 using TaskAndDocumentManager.Infrastructure.Auth.Services;
 using TaskAndDocumentManager.Infrastructure.Auth;
 using TaskAndDocumentManager.Infrastructure.Auth.Token;
 using TaskAndDocumentManager.Infrastructure.Documents;
-using TaskAndDocumentManager.Infrastructure.Notifications;
 using TaskAndDocumentManager.Infrastructure.Persistence;
 using TaskAndDocumentManager.Infrastructure.Storage;
 using TaskAndDocumentManager.Infrastructure.Tasks;
-using TaskAndDocumentManager.Infrastructure.Workspaces;
-using TaskAndDocumentManager.Api.BackgroundJobs;
 using TaskAndDocumentManager.Api.Authorization;
 using TaskAndDocumentManager.Application.Documents.Services;
-using TaskAndDocumentManager.Api.Hubs;
-using TaskAndDocumentManager.Api.Realtime;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -45,18 +34,14 @@ var audience = jwtSection["Audience"] ?? "TaskAndDocumentManager.Client";
 //register service here IUserRepository, IPasswordHasher, IEmailValidator
 builder.Services.AddDbContext<TaskDbContext>(options =>
     options.UseNpgsql(connectionString));
+// Use a custom model cache key factory so EF Core can build models per-workspace.
+builder.Services.AddSingleton<Microsoft.EntityFrameworkCore.Infrastructure.IModelCacheKeyFactory, TaskAndDocumentManager.Infrastructure.Tasks.WorkspaceModelCacheKeyFactory>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
-builder.Services.AddScoped<ListAuditLogs>();
 builder.Services.AddScoped<ITaskRepository, TaskRepository>();
 builder.Services.AddScoped<IDocumentRepository, DocumentRepository>();
 builder.Services.AddScoped<IDocumentAccessRepository, DocumentAccessRepository>();
-builder.Services.AddScoped<IWorkspaceRepository, InMemoryWorkspaceRepository>();
-builder.Services.AddScoped<IWorkspaceMemberRepository, InMemoryWorkspaceMemberRepository>();
-builder.Services.AddScoped<INotificationDispatcher, SignalRNotificationDispatcher>();
-builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 builder.Services.AddScoped<IFileStorageService, FileStorageService>();
-builder.Services.AddScoped<IFileStorageMaintenanceService, FileStorageService>();
 builder.Services.AddSingleton<IRoleCatalog, RoleCatalog>();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IEmailValidator, EmailValidator>();
@@ -73,8 +58,6 @@ builder.Services.AddScoped<DeleteTask>();
 builder.Services.AddScoped<UploadDocument>();
 builder.Services.AddScoped<DownloadDocument>();
 builder.Services.AddScoped<DeleteDocument>();
-builder.Services.AddScoped<IBackgroundJob, CleanupOrphanedDocumentFiles>();
-builder.Services.AddScoped<IBackgroundJob, SendTaskDeadlineReminders>();
 builder.Services.AddScoped<ShareDocument>();
 builder.Services.AddScoped<ShareTaskLinkedDocument>();
 builder.Services.AddScoped<RevokeDocumentAccess>();
@@ -83,19 +66,15 @@ builder.Services.AddScoped<LinkDocumentToTask>();
 builder.Services.AddScoped<GetDocumentMetadata>();
 builder.Services.AddScoped<DocumentAccessEvaluator>();
 builder.Services.AddScoped<ListAccessibleDocuments>();
-builder.Services.AddScoped<GlobalSearch>();
-builder.Services.AddScoped<GetNotifications>();
-builder.Services.AddScoped<MarkNotificationAsRead>();
 builder.Services.AddScoped<IPasswordValidator, PasswordValidator>();
 builder.Services.AddScoped<ITokenService, JwtTokenService>();
 builder.Services.AddScoped<ListUsers>();
 builder.Services.AddScoped<CreateUserAsAdmin>();
 builder.Services.AddScoped<ChangeUserRole>();
 builder.Services.AddScoped<DeleteUser>();
-builder.Services.AddSingleton<IUserConnectionTracker, InMemoryUserConnectionTracker>();
-builder.Services.AddSingleton<IPresenceService, InMemoryPresenceService>();
-builder.Services.Configure<BackgroundJobOptions>(builder.Configuration.GetSection("BackgroundJobs"));
-builder.Services.AddHostedService<ScheduledBackgroundJobService>();
+// Realtime presence and connection tracking
+builder.Services.AddSingleton<TaskAndDocumentManager.Api.Realtime.IUserConnectionTracker, TaskAndDocumentManager.Api.Realtime.InMemoryUserConnectionTracker>();
+builder.Services.AddSingleton<TaskAndDocumentManager.Application.Presence.Interfaces.IPresenceService, TaskAndDocumentManager.Api.Realtime.InMemoryPresenceService>();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -110,27 +89,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateLifetime = true,
             ClockSkew = TimeSpan.Zero
         };
-
-        options.Events = new JwtBearerEvents
-        {
-            OnMessageReceived = context =>
-            {
-                var accessToken = context.Request.Query["access_token"];
-                var path = context.HttpContext.Request.Path;
-
-                if (!string.IsNullOrWhiteSpace(accessToken) &&
-                    path.StartsWithSegments("/hubs"))
-                {
-                    context.Token = accessToken;
-                }
-
-                return Task.CompletedTask;
-            }
-        };
     });
 
-builder.Services.AddControllersWithViews();
-builder.Services.AddSignalR();
+builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddAuthorization(options =>
@@ -162,11 +123,28 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
+// Middleware to set the DbContext CurrentWorkspaceId from the authenticated user for tenant isolation
+app.Use(async (context, next) =>
+{
+    try
+    {
+        var db = context.RequestServices.GetService<TaskDbContext>();
+        if (db is not null)
+        {
+            var user = context.User;
+            if (user?.Identity?.IsAuthenticated == true)
+            {
+                db.CurrentWorkspaceId = user.GetWorkspaceId();
+            }
+        }
+    }
+    catch
+    {
+        // don't fail the request here; authorization will handle unauthenticated scenarios
+    }
+    await next();
+});
 app.MapControllers();
-app.MapDefaultControllerRoute();
-app.MapHub<NotificationHub>("/hubs/notifications");
-app.MapHub<RealtimeHub>("/hubs/realtime");
 app.Run();

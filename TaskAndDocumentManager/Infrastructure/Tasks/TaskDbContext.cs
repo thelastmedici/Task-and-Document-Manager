@@ -9,6 +9,9 @@ namespace TaskAndDocumentManager.Infrastructure.Tasks;
 
 public class TaskDbContext(DbContextOptions<TaskDbContext> options) : DbContext(options)
 {
+    // Set this per-request to enforce tenant isolation in query filters
+    public Guid CurrentWorkspaceId { get; set; } = Guid.Empty;
+
     public DbSet<TaskItem> Tasks => Set<TaskItem>();
     public DbSet<User> Users => Set<User>();
     public DbSet<Role> Roles => Set<Role>();
@@ -41,6 +44,8 @@ public class TaskDbContext(DbContextOptions<TaskDbContext> options) : DbContext(
             entity.Property(task => task.DeadlineReminderSentAtUtc);
             entity.Property(task => task.Priority)
                 .IsRequired();
+            // Tenant isolation: only include tasks for the current workspace
+            entity.HasQueryFilter(task => task.WorkspaceId == CurrentWorkspaceId);
         });
 
         modelBuilder.Entity<Role>(entity =>
@@ -142,6 +147,9 @@ public class TaskDbContext(DbContextOptions<TaskDbContext> options) : DbContext(
                 .WithMany()
                 .HasForeignKey(member => member.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // Tenant isolation: workspace members are scoped to their workspace
+            entity.HasQueryFilter(member => member.WorkspaceId == CurrentWorkspaceId);
         });
 
         modelBuilder.Entity<Team>(entity =>
@@ -162,6 +170,9 @@ public class TaskDbContext(DbContextOptions<TaskDbContext> options) : DbContext(
                 .WithMany()
                 .HasForeignKey(team => team.WorkspaceId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // Tenant isolation: only include teams for the current workspace
+            entity.HasQueryFilter(team => team.WorkspaceId == CurrentWorkspaceId);
         });
 
         modelBuilder.Entity<TeamMember>(entity =>
