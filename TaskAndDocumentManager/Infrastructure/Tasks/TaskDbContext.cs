@@ -16,6 +16,7 @@ public class TaskDbContext(DbContextOptions<TaskDbContext> options) : DbContext(
     public DbSet<Workspace> Workspaces => Set<Workspace>();
     public DbSet<WorkspaceMember> WorkspaceMembers => Set<WorkspaceMember>();
     public DbSet<Team> Teams => Set<Team>();
+    public DbSet<TeamMember> TeamMembers => Set<TeamMember>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -160,6 +161,26 @@ public class TaskDbContext(DbContextOptions<TaskDbContext> options) : DbContext(
             entity.HasOne<Workspace>()
                 .WithMany()
                 .HasForeignKey(team => team.WorkspaceId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<TeamMember>(entity =>
+        {
+            entity.HasKey(member => new { member.TeamId, member.UserId });
+
+            entity.Property(member => member.JoinedAtUtc)
+                .IsRequired();
+
+            entity.HasIndex(member => member.UserId);
+
+            entity.HasOne<Team>()
+                .WithMany()
+                .HasForeignKey(member => member.TeamId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne<User>()
+                .WithMany()
+                .HasForeignKey(member => member.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
     }
