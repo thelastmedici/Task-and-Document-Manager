@@ -67,13 +67,11 @@ public class ShareTaskLinkedDocument
             throw new InvalidOperationException("You cannot share a document with yourself.");
         }
 
-        var document = await _documentRepository.GetByIdAsync(request.DocumentId, cancellationToken)
+        var document = await _documentRepository.GetByIdInWorkspaceAsync(
+                request.DocumentId,
+                request.WorkspaceId,
+                cancellationToken)
             ?? throw new FileNotFoundException("Document not found.");
-
-        if (document.WorkspaceId != request.WorkspaceId)
-        {
-            throw new FileNotFoundException("Document not found.");
-        }
 
         if (!isAdmin && document.OwnerId != request.GrantedByUserId)
         {
@@ -108,10 +106,15 @@ public class ShareTaskLinkedDocument
             throw new InvalidOperationException("Target user must be a participant in the linked task.");
         }
 
-        var access = new DocumentAccess(request.DocumentId, request.TargetUserId, request.GrantedByUserId);
+        var access = new DocumentAccess(
+            request.DocumentId,
+            request.TargetUserId,
+            request.GrantedByUserId,
+            request.WorkspaceId);
         await _documentAccessRepository.GrantAccessAsync(access, cancellationToken);
         var notification = new Notification(
             request.TargetUserId,
+            request.WorkspaceId,
             "Document shared with you",
             $"{document.OriginalFileName} was shared with you for a task you participate in.");
         await _notificationRepository.AddAsync(notification, cancellationToken);
@@ -121,7 +124,8 @@ public class ShareTaskLinkedDocument
                 request.GrantedByUserId,
                 AuditActions.DocumentShared,
                 nameof(Document),
-                request.DocumentId),
+                request.DocumentId,
+                request.WorkspaceId),
             cancellationToken);
     }
 

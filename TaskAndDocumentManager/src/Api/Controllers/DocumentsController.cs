@@ -187,8 +187,8 @@ public class DocumentsController : ControllerBase
 
         if (User.IsAdmin())
         {
-            var adminDocument = await _documentRepository.GetByIdAsync(id, cancellationToken);
-            if (adminDocument is null || adminDocument.WorkspaceId != workspaceId)
+            var adminDocument = await _documentRepository.GetByIdInWorkspaceAsync(id, workspaceId, cancellationToken);
+            if (adminDocument is null)
             {
                 return NotFound(new { message = "Document not found" });
             }
@@ -392,8 +392,8 @@ public async Task<IActionResult> GetMetadata(
 
     if (User.IsAdmin())
     {
-        var adminDocument = await _documentRepository.GetByIdAsync(id, cancellationToken);
-        if (adminDocument is null || adminDocument.WorkspaceId != workspaceId)
+        var adminDocument = await _documentRepository.GetByIdInWorkspaceAsync(id, workspaceId, cancellationToken);
+        if (adminDocument is null)
         {
             return NotFound(new { message = "Document not found" });
         }
@@ -474,8 +474,8 @@ public async Task<IActionResult> GetMetadata(
 
         if (User.IsAdmin())
         {
-            var adminDocument = await _documentRepository.GetByIdAsync(id, cancellationToken);
-            if (adminDocument is null || adminDocument.WorkspaceId != workspaceId)
+            var adminDocument = await _documentRepository.GetByIdInWorkspaceAsync(id, workspaceId, cancellationToken);
+            if (adminDocument is null)
             {
                 return NotFound(new { message = "Document not found" });
             }

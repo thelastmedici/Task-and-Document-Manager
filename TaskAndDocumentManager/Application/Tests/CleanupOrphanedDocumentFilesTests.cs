@@ -32,7 +32,7 @@ public class CleanupOrphanedDocumentFilesTests
         var orphanPath = "/storage/uploads/user/orphan.pdf";
 
         _documentRepositoryMock
-            .Setup(repository => repository.GetAllAsync(It.IsAny<CancellationToken>()))
+            .Setup(repository => repository.GetAllForMaintenanceAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new[] { knownDocument });
 
         _fileStorageMaintenanceServiceMock
@@ -60,7 +60,7 @@ public class CleanupOrphanedDocumentFilesTests
             Guid.NewGuid());
 
         _documentRepositoryMock
-            .Setup(repository => repository.GetAllAsync(It.IsAny<CancellationToken>()))
+            .Setup(repository => repository.GetAllForMaintenanceAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new[] { knownDocument });
 
         _fileStorageMaintenanceServiceMock

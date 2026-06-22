@@ -24,17 +24,20 @@ public class ListAuditLogsTests
     public async Task ExecuteAsync_ShouldReturnPaginatedAuditLogDtos()
     {
         var cancellationToken = CancellationToken.None;
+        var workspaceId = Guid.NewGuid();
         var auditLog = new AuditLog(
             Guid.NewGuid(),
             AuditActions.DocumentUploaded,
             nameof(Document),
-            Guid.NewGuid());
+            Guid.NewGuid(),
+            workspaceId);
 
         _auditLogRepositoryMock
             .Setup(repository => repository.SearchAuditLogsAsync(
                 It.Is<AuditQuery>(query =>
                     query.PageNumber == 1 &&
-                    query.PageSize == AuditQuery.MaxPageSize),
+                    query.PageSize == AuditQuery.MaxPageSize &&
+                    query.WorkspaceId == workspaceId),
                 cancellationToken))
             .ReturnsAsync(new PaginatedResult<AuditLog>(
                 new[] { auditLog },
@@ -44,6 +47,7 @@ public class ListAuditLogsTests
 
         var result = await _sut.ExecuteAsync(
             new AuditQuery(PageNumber: 0, PageSize: 1000),
+            workspaceId,
             cancellationToken);
 
         var item = Assert.Single(result.Items);
@@ -58,6 +62,7 @@ public class ListAuditLogsTests
     public async Task ExecuteAsync_ShouldNormalizeAndForwardAuditFilters()
     {
         var userId = Guid.NewGuid();
+        var workspaceId = Guid.NewGuid();
         var timestampFromUtc = new DateTime(2026, 06, 14, 0, 0, 0, DateTimeKind.Utc);
         var timestampToUtc = new DateTime(2026, 06, 14, 23, 59, 59, DateTimeKind.Utc);
 
@@ -67,7 +72,8 @@ public class ListAuditLogsTests
                     query.UserId == userId &&
                     query.Action == AuditActions.DocumentDeleted &&
                     query.TimestampFromUtc == timestampFromUtc &&
-                    query.TimestampToUtc == timestampToUtc),
+                    query.TimestampToUtc == timestampToUtc &&
+                    query.WorkspaceId == workspaceId),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new PaginatedResult<AuditLog>(
                 Array.Empty<AuditLog>(),
@@ -79,7 +85,8 @@ public class ListAuditLogsTests
             UserId: userId,
             Action: $"  {AuditActions.DocumentDeleted}  ",
             TimestampFromUtc: timestampFromUtc,
-            TimestampToUtc: timestampToUtc));
+            TimestampToUtc: timestampToUtc),
+            workspaceId);
 
         _auditLogRepositoryMock.VerifyAll();
     }
@@ -88,7 +95,7 @@ public class ListAuditLogsTests
     public async Task ExecuteAsync_ShouldRejectUnsupportedAction()
     {
         var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
-            _sut.ExecuteAsync(new AuditQuery(Action: "SomethingRandom")));
+            _sut.ExecuteAsync(new AuditQuery(Action: "SomethingRandom"), Guid.NewGuid()));
 
         Assert.Equal("query", exception.ParamName);
     }
@@ -99,7 +106,8 @@ public class ListAuditLogsTests
         var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
             _sut.ExecuteAsync(new AuditQuery(
                 TimestampFromUtc: new DateTime(2026, 06, 15, 0, 0, 0, DateTimeKind.Utc),
-                TimestampToUtc: new DateTime(2026, 06, 14, 0, 0, 0, DateTimeKind.Utc))));
+                TimestampToUtc: new DateTime(2026, 06, 14, 0, 0, 0, DateTimeKind.Utc)),
+                Guid.NewGuid()));
 
         Assert.Equal("query", exception.ParamName);
     }
@@ -110,44 +118,61 @@ public class ListAuditLogsTests
         var repository = new AuditLogRepository();
         var userId = Guid.NewGuid();
         var otherUserId = Guid.NewGuid();
+        var workspaceId = Guid.NewGuid();
+        var otherWorkspaceId = Guid.NewGuid();
         var timestampFromUtc = new DateTime(2026, 06, 14, 0, 0, 0, DateTimeKind.Utc);
         var timestampToUtc = new DateTime(2026, 06, 14, 23, 59, 59, DateTimeKind.Utc);
         var matchingLog = CreateAuditLog(
             userId,
             AuditActions.DocumentDeleted,
-            new DateTime(2026, 06, 14, 12, 0, 0, DateTimeKind.Utc));
+            new DateTime(2026, 06, 14, 12, 0, 0, DateTimeKind.Utc),
+            workspaceId);
         var wrongActionLog = CreateAuditLog(
             userId,
             AuditActions.DocumentUploaded,
-            new DateTime(2026, 06, 14, 13, 0, 0, DateTimeKind.Utc));
+            new DateTime(2026, 06, 14, 13, 0, 0, DateTimeKind.Utc),
+            workspaceId);
         var wrongUserLog = CreateAuditLog(
             otherUserId,
             AuditActions.DocumentDeleted,
-            new DateTime(2026, 06, 14, 14, 0, 0, DateTimeKind.Utc));
+            new DateTime(2026, 06, 14, 14, 0, 0, DateTimeKind.Utc),
+            workspaceId);
         var outsideRangeLog = CreateAuditLog(
             userId,
             AuditActions.DocumentDeleted,
-            new DateTime(2026, 06, 13, 12, 0, 0, DateTimeKind.Utc));
+            new DateTime(2026, 06, 13, 12, 0, 0, DateTimeKind.Utc),
+            workspaceId);
+        var otherWorkspaceLog = CreateAuditLog(
+            userId,
+            AuditActions.DocumentDeleted,
+            new DateTime(2026, 06, 14, 12, 30, 0, DateTimeKind.Utc),
+            otherWorkspaceId);
 
         await repository.AddAsync(matchingLog);
         await repository.AddAsync(wrongActionLog);
         await repository.AddAsync(wrongUserLog);
         await repository.AddAsync(outsideRangeLog);
+        await repository.AddAsync(otherWorkspaceLog);
 
         var result = await repository.SearchAuditLogsAsync(new AuditQuery(
             UserId: userId,
             Action: AuditActions.DocumentDeleted,
             TimestampFromUtc: timestampFromUtc,
-            TimestampToUtc: timestampToUtc));
+            TimestampToUtc: timestampToUtc,
+            WorkspaceId: workspaceId));
 
         var item = Assert.Single(result.Items);
         Assert.Equal(1, result.TotalCount);
         Assert.Equal(matchingLog.Id, item.Id);
     }
 
-    private static AuditLog CreateAuditLog(Guid userId, string action, DateTime timestampUtc)
+    private static AuditLog CreateAuditLog(
+        Guid userId,
+        string action,
+        DateTime timestampUtc,
+        Guid workspaceId)
     {
-        var auditLog = new AuditLog(userId, action, nameof(Document), Guid.NewGuid());
+        var auditLog = new AuditLog(userId, action, nameof(Document), Guid.NewGuid(), workspaceId);
         var timestampProperty = typeof(AuditLog).GetProperty(
             nameof(AuditLog.TimestampUtc),
             BindingFlags.Instance | BindingFlags.Public);

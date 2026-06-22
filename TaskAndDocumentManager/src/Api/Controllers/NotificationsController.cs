@@ -26,7 +26,8 @@ public class NotificationsController : ControllerBase
     public async Task<IActionResult> List(CancellationToken cancellationToken)
     {
         var actorId = User.GetActorId();
-        var notifications = await _getNotifications.ExecuteAsync(actorId, cancellationToken);
+        var workspaceId = User.GetWorkspaceId();
+        var notifications = await _getNotifications.ExecuteAsync(actorId, workspaceId, cancellationToken);
         return Ok(notifications);
     }
 
@@ -36,7 +37,8 @@ public class NotificationsController : ControllerBase
         try
         {
             var actorId = User.GetActorId();
-            await _markNotificationAsRead.ExecuteAsync(id, actorId, cancellationToken);
+            var workspaceId = User.GetWorkspaceId();
+            await _markNotificationAsRead.ExecuteAsync(id, actorId, workspaceId, cancellationToken);
             return NoContent();
         }
         catch (KeyNotFoundException ex)

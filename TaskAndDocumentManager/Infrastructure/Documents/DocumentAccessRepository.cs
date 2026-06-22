@@ -13,7 +13,8 @@ public class DocumentAccessRepository : IDocumentAccessRepository
 
         var alreadyGranted = DocumentAccessEntries.Any(entry =>
             entry.DocumentId == documentAccess.DocumentId &&
-            entry.UserId == documentAccess.UserId);
+            entry.UserId == documentAccess.UserId &&
+            entry.WorkspaceId == documentAccess.WorkspaceId);
 
         if (!alreadyGranted)
         {
@@ -23,19 +24,31 @@ public class DocumentAccessRepository : IDocumentAccessRepository
         return Task.CompletedTask;
     }
 
-    public Task<bool> HasAccessAsync(Guid documentId, Guid userId, CancellationToken cancellationToken = default)
+    public Task<bool> HasAccessAsync(
+        Guid documentId,
+        Guid userId,
+        Guid workspaceId,
+        CancellationToken cancellationToken = default)
     {
         var hasAccess = DocumentAccessEntries.Any(entry =>
             entry.DocumentId == documentId &&
-            entry.UserId == userId);
+            entry.UserId == userId &&
+            entry.WorkspaceId == workspaceId);
 
         return Task.FromResult(hasAccess);
     }
 
-    public Task RevokeAccessAsync(Guid documentId, Guid userId, CancellationToken cancellationToken = default)
+    public Task RevokeAccessAsync(
+        Guid documentId,
+        Guid userId,
+        Guid workspaceId,
+        CancellationToken cancellationToken = default)
     {
         var accessEntries = DocumentAccessEntries
-            .Where(entry => entry.DocumentId == documentId && entry.UserId == userId)
+            .Where(entry =>
+                entry.DocumentId == documentId &&
+                entry.UserId == userId &&
+                entry.WorkspaceId == workspaceId)
             .ToList();
 
         foreach (var entry in accessEntries)
@@ -46,10 +59,13 @@ public class DocumentAccessRepository : IDocumentAccessRepository
         return Task.CompletedTask;
     }
 
-    public Task<IReadOnlyCollection<Guid>> GetSharedDocumentIdsForUserAsync(Guid userId, CancellationToken cancellationToken = default)
+    public Task<IReadOnlyCollection<Guid>> GetSharedDocumentIdsForUserAsync(
+        Guid userId,
+        Guid workspaceId,
+        CancellationToken cancellationToken = default)
     {
         var documentIds = DocumentAccessEntries
-            .Where(entry => entry.UserId == userId)
+            .Where(entry => entry.UserId == userId && entry.WorkspaceId == workspaceId)
             .Select(entry => entry.DocumentId)
             .Distinct()
             .ToList();

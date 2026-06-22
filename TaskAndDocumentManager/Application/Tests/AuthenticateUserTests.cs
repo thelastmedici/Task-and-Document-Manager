@@ -119,6 +119,7 @@ public class AuthenticateUserTests
         var roleId = Guid.NewGuid();
         var email = "person@example.com";
         var password = "wrong-password";
+        var workspaceId = Guid.NewGuid();
 
         var user = new User
         {
@@ -137,6 +138,10 @@ public class AuthenticateUserTests
             .Setup(hasher => hasher.VerifyPassword(password, user.PasswordHash))
             .Returns(false);
 
+        _workspaceMemberRepositoryMock
+            .Setup(repository => repository.GetDefaultMembershipForUser(userId))
+            .Returns(new WorkspaceMember(workspaceId, userId, WorkspaceRoles.Member));
+
         var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
             _sut.ExecuteAsync(email, password));
 
@@ -145,6 +150,7 @@ public class AuthenticateUserTests
             repository => repository.AddAsync(
                 It.Is<AuditLog>(auditLog =>
                     auditLog.UserId == userId &&
+                    auditLog.WorkspaceId == workspaceId &&
                     auditLog.Action == AuditActions.UserLoginFailed &&
                     auditLog.EntityType == nameof(User) &&
                     auditLog.EntityId == userId),

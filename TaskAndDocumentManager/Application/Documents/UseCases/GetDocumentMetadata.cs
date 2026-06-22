@@ -29,13 +29,8 @@ public class GetDocumentMetadata
             throw new ArgumentException("Workspace ID is required.", nameof(workspaceId));
         }
 
-        var document = await _documentRepository.GetByIdAsync(documentId, cancellationToken)
+        var document = await _documentRepository.GetByIdInWorkspaceAsync(documentId, workspaceId, cancellationToken)
             ?? throw new FileNotFoundException("Document not found.");
-
-        if (document.WorkspaceId != workspaceId)
-        {
-            throw new FileNotFoundException("Document not found.");
-        }
 
         var hasAccess = await _documentAccessEvaluator.HasAccessAsync(
             document,

@@ -22,16 +22,6 @@ public class GlobalSearch
     public async Task<GlobalSearchResult> ExecuteAsync(
         GlobalSearchQuery query,
         Guid actorId,
-        bool isAdmin,
-        bool isManager,
-        CancellationToken cancellationToken = default)
-    {
-        return await ExecuteAsync(query, actorId, actorId, isAdmin, isManager, cancellationToken);
-    }
-
-    public async Task<GlobalSearchResult> ExecuteAsync(
-        GlobalSearchQuery query,
-        Guid actorId,
         Guid workspaceId,
         bool isAdmin,
         bool isManager,

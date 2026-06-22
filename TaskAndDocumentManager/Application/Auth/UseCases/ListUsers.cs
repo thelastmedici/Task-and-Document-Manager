@@ -25,16 +25,24 @@ public class ListUsers
     }
 
 
-    public IReadOnlyCollection<UserProfile> Execute()
+    public IReadOnlyCollection<UserProfile> Execute(Guid workspaceId)
     {
-        return _userRepository.GetAll().Select(user => new UserProfile
+        if (workspaceId == Guid.Empty)
+        {
+            throw new ArgumentException("Workspace ID is required.", nameof(workspaceId));
+        }
+
+        var memberIds = _workspaceMemberRepository.GetUserIdsForWorkspace(workspaceId).ToHashSet();
+
+        return _userRepository.GetAll()
+            .Where(user => memberIds.Contains(user.Id))
+            .Select(user => new UserProfile
         {
             Id = user.Id,
             Email = user.Email,
             Role = user.Role?.Name ?? _roleCatalog.ResolveName(user.RoleId),
-            WorkspaceId = _workspaceMemberRepository.GetDefaultMembershipForUser(user.Id)?.WorkspaceId ?? Guid.Empty,
+            WorkspaceId = workspaceId,
             IsActive = user.IsActive
-
         })
         .ToList();
     }

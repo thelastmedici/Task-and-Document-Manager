@@ -6,7 +6,8 @@ public sealed record AuditQuery(
     Guid? UserId = null,
     string? Action = null,
     DateTime? TimestampFromUtc = null,
-    DateTime? TimestampToUtc = null)
+    DateTime? TimestampToUtc = null,
+    Guid? WorkspaceId = null)
 {
     public const int DefaultPageSize = 20;
     public const int MaxPageSize = 200;

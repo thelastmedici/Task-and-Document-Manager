@@ -31,7 +31,7 @@ public class DocumentRepositorySearchTests
         try
         {
             var result = await repository.SearchDocumentsAsync(
-                new DocumentQuery(SearchTerm: searchToken),
+                new DocumentQuery(SearchTerm: searchToken, WorkspaceId: ownerId),
                 CancellationToken.None);
 
             Assert.Contains(result, document => document.Id == matchingDocument.Id);
@@ -69,7 +69,7 @@ public class DocumentRepositorySearchTests
         try
         {
             var result = await repository.SearchDocumentsPageAsync(
-                new DocumentQuery(SearchTerm: searchToken, PageNumber: 1, PageSize: 1),
+                new DocumentQuery(SearchTerm: searchToken, PageNumber: 1, PageSize: 1, WorkspaceId: ownerId),
                 CancellationToken.None);
 
             Assert.Single(result.Items);

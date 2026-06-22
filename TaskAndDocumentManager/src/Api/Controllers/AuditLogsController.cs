@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TaskAndDocumentManager.Api.Authorization;
+using TaskAndDocumentManager.Api.Extensions;
 using TaskAndDocumentManager.Application.Audit.DTOs;
 using TaskAndDocumentManager.Application.Audit.UseCases;
 
@@ -33,6 +34,7 @@ public class AuditLogsController : ControllerBase
                     request.Action,
                     request.TimestampFromUtc,
                     request.TimestampToUtc),
+                User.GetWorkspaceId(),
                 cancellationToken);
 
             return Ok(result);

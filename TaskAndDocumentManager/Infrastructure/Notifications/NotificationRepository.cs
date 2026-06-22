@@ -16,18 +16,26 @@ public class NotificationRepository(TaskDbContext dbContext) : INotificationRepo
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<Notification?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<Notification?> GetByIdAsync(
+        Guid id,
+        Guid workspaceId,
+        CancellationToken cancellationToken = default)
     {
         return await _dbContext.Notifications.FirstOrDefaultAsync(
-            notification => notification.Id == id,
+            notification => notification.Id == id && notification.WorkspaceId == workspaceId,
             cancellationToken);
     }
 
-    public async Task<IReadOnlyCollection<Notification>> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyCollection<Notification>> GetByUserIdAsync(
+        Guid userId,
+        Guid workspaceId,
+        CancellationToken cancellationToken = default)
     {
         var notifications = await _dbContext.Notifications
             .AsNoTracking()
-            .Where(notification => notification.UserId == userId)
+            .Where(notification =>
+                notification.UserId == userId &&
+                notification.WorkspaceId == workspaceId)
             .OrderByDescending(notification => notification.CreatedAtUtc)
             .ToListAsync(cancellationToken);
 

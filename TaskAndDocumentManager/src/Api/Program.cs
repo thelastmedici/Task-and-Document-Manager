@@ -34,8 +34,6 @@ var audience = jwtSection["Audience"] ?? "TaskAndDocumentManager.Client";
 //register service here IUserRepository, IPasswordHasher, IEmailValidator
 builder.Services.AddDbContext<TaskDbContext>(options =>
     options.UseNpgsql(connectionString));
-// Use a custom model cache key factory so EF Core can build models per-workspace.
-builder.Services.AddSingleton<Microsoft.EntityFrameworkCore.Infrastructure.IModelCacheKeyFactory, TaskAndDocumentManager.Infrastructure.Tasks.WorkspaceModelCacheKeyFactory>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 builder.Services.AddScoped<ITaskRepository, TaskRepository>();
@@ -124,27 +122,25 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseAuthentication();
-app.UseAuthorization();
-// Middleware to set the DbContext CurrentWorkspaceId from the authenticated user for tenant isolation
+// Set the tenant before authorization and endpoint code can query the DbContext.
 app.Use(async (context, next) =>
 {
-    try
+    if (context.User.Identity?.IsAuthenticated == true)
     {
-        var db = context.RequestServices.GetService<TaskDbContext>();
-        if (db is not null)
+        try
         {
-            var user = context.User;
-            if (user?.Identity?.IsAuthenticated == true)
-            {
-                db.CurrentWorkspaceId = user.GetWorkspaceId();
-            }
+            var db = context.RequestServices.GetRequiredService<TaskDbContext>();
+            db.CurrentWorkspaceId = context.User.GetWorkspaceId();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            return;
         }
     }
-    catch
-    {
-        // don't fail the request here; authorization will handle unauthenticated scenarios
-    }
+
     await next();
 });
+app.UseAuthorization();
 app.MapControllers();
 app.Run();

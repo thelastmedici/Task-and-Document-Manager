@@ -44,7 +44,11 @@ public class DocumentAccessEvaluator
             return true;
         }
 
-        if (await _documentAccessRepository.HasAccessAsync(document.Id, requestedByUserId, cancellationToken))
+        if (await _documentAccessRepository.HasAccessAsync(
+            document.Id,
+            requestedByUserId,
+            document.WorkspaceId,
+            cancellationToken))
         {
             return true;
         }

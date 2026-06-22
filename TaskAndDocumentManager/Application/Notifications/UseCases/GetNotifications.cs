@@ -14,6 +14,7 @@ public class GetNotifications
 
     public async Task<IReadOnlyCollection<NotificationDto>> ExecuteAsync(
         Guid userId,
+        Guid workspaceId,
         CancellationToken cancellationToken = default)
     {
         if (userId == Guid.Empty)
@@ -21,7 +22,15 @@ public class GetNotifications
             throw new ArgumentException("User ID is required.", nameof(userId));
         }
 
-        var notifications = await _notificationRepository.GetByUserIdAsync(userId, cancellationToken);
+        if (workspaceId == Guid.Empty)
+        {
+            throw new ArgumentException("Workspace ID is required.", nameof(workspaceId));
+        }
+
+        var notifications = await _notificationRepository.GetByUserIdAsync(
+            userId,
+            workspaceId,
+            cancellationToken);
 
         return notifications
             .Select(notification => new NotificationDto(

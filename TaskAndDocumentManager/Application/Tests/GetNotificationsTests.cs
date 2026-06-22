@@ -20,13 +20,21 @@ public class GetNotificationsTests
     public async Task ExecuteAsync_ShouldReturnMappedNotifications_ForCurrentUser()
     {
         var userId = Guid.NewGuid();
-        var notification = new Notification(userId, "Document shared with you", "report.pdf was shared with you.");
+        var workspaceId = Guid.NewGuid();
+        var notification = new Notification(
+            userId,
+            workspaceId,
+            "Document shared with you",
+            "report.pdf was shared with you.");
 
         _notificationRepositoryMock
-            .Setup(repository => repository.GetByUserIdAsync(userId, It.IsAny<CancellationToken>()))
+            .Setup(repository => repository.GetByUserIdAsync(
+                userId,
+                workspaceId,
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(new[] { notification });
 
-        var result = await _sut.ExecuteAsync(userId, CancellationToken.None);
+        var result = await _sut.ExecuteAsync(userId, workspaceId, CancellationToken.None);
 
         var item = Assert.Single(result);
         Assert.Equal(notification.Id, item.Id);

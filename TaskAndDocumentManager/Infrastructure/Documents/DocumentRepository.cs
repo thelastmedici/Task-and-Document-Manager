@@ -22,7 +22,7 @@ public class DocumentRepository : IDocumentRepository
         return Task.FromResult(document);
     }
 
-    public Task<IReadOnlyCollection<Document>> GetAllAsync(CancellationToken cancellationToken = default)
+    public Task<IReadOnlyCollection<Document>> GetAllForMaintenanceAsync(CancellationToken cancellationToken = default)
     {
         return Task.FromResult((IReadOnlyCollection<Document>)Documents.ToList());
     }
@@ -90,6 +90,11 @@ public class DocumentRepository : IDocumentRepository
     private static DocumentQuery NormalizeQuery(DocumentQuery? query)
     {
         query ??= DocumentQuery.Empty;
+
+        if (!query.WorkspaceId.HasValue || query.WorkspaceId.Value == Guid.Empty)
+        {
+            throw new ArgumentException("Workspace ID is required.", nameof(query));
+        }
 
         var pageNumber = query.PageNumber < 1 ? 1 : query.PageNumber;
         var pageSize = query.PageSize < 1

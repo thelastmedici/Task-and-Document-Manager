@@ -28,13 +28,11 @@ public class LinkDocumentToTask
             throw new ArgumentException("Workspace ID is required.", nameof(request.WorkspaceId));
         }
 
-        var document = await _documentRepository.GetByIdAsync(request.DocumentId, cancellationToken)
+        var document = await _documentRepository.GetByIdInWorkspaceAsync(
+                request.DocumentId,
+                request.WorkspaceId,
+                cancellationToken)
             ?? throw new FileNotFoundException("Document not found.");
-
-        if (document.WorkspaceId != request.WorkspaceId)
-        {
-            throw new FileNotFoundException("Document not found.");
-        }
 
         if (document.OwnerId != request.RequestedByUserId)
         {

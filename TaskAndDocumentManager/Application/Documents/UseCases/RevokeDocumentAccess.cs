@@ -44,13 +44,8 @@ public class RevokeDocumentAccess
             throw new ArgumentException("Workspace ID is required.", nameof(workspaceId));
         }
 
-        var document = await _documentRepository.GetByIdAsync(documentId, cancellationToken)
+        var document = await _documentRepository.GetByIdInWorkspaceAsync(documentId, workspaceId, cancellationToken)
             ?? throw new FileNotFoundException("Document not found.");
-
-        if (document.WorkspaceId != workspaceId)
-        {
-            throw new FileNotFoundException("Document not found.");
-        }
 
         if (!isAdmin && document.OwnerId != revokedByUserId)
         {
@@ -62,13 +57,18 @@ public class RevokeDocumentAccess
             throw new InvalidOperationException("Owner access cannot be revoked.");
         }
 
-        await _documentAccessRepository.RevokeAccessAsync(documentId, targetUserId, cancellationToken);
+        await _documentAccessRepository.RevokeAccessAsync(
+            documentId,
+            targetUserId,
+            workspaceId,
+            cancellationToken);
         await _auditLogRepository.AddAsync(
             new AuditLog(
                 revokedByUserId,
                 AuditActions.DocumentAccessRevoked,
                 nameof(Document),
-                documentId),
+                documentId,
+                workspaceId),
             cancellationToken);
     }
 }

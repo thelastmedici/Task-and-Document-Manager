@@ -11,6 +11,7 @@ public class NotificationTests
 
         var notification = new Notification(
             userId,
+            Guid.NewGuid(),
             "Document shared with you",
             "Opeyemi shared resume.pdf with you.");
 
@@ -24,6 +25,7 @@ public class NotificationTests
     public void MarkAsRead_ShouldSetIsReadToTrue()
     {
         var notification = new Notification(
+            Guid.NewGuid(),
             Guid.NewGuid(),
             "Task assigned",
             "A task was assigned to you.");

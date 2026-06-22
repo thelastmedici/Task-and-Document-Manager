@@ -6,6 +6,8 @@ public class TeamMember
 
     public Guid UserId { get; private set; }
 
+    public Team? Team { get; private set; }
+
     public DateTime JoinedAtUtc { get; private set; } = DateTime.UtcNow;
 
     protected TeamMember()
