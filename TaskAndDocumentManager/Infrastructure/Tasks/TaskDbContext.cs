@@ -96,11 +96,18 @@ public class TaskDbContext(DbContextOptions<TaskDbContext> options) : DbContext(
             entity.Property(notification => notification.UserId)
                 .IsRequired();
 
+            entity.Property(notification => notification.WorkspaceId)
+                .IsRequired();
+
+            entity.HasIndex(notification => new { notification.WorkspaceId, notification.UserId });
+
             entity.Property(notification => notification.CreatedAtUtc)
                 .IsRequired();
 
             entity.Property(notification => notification.IsRead)
                 .IsRequired();
+
+            entity.HasQueryFilter(notification => notification.WorkspaceId == CurrentWorkspaceId);
         });
 
         modelBuilder.Entity<Workspace>(entity =>
@@ -184,7 +191,7 @@ public class TaskDbContext(DbContextOptions<TaskDbContext> options) : DbContext(
 
             entity.HasIndex(member => member.UserId);
 
-            entity.HasOne<Team>()
+            entity.HasOne(member => member.Team)
                 .WithMany()
                 .HasForeignKey(member => member.TeamId)
                 .OnDelete(DeleteBehavior.Cascade);
@@ -193,6 +200,9 @@ public class TaskDbContext(DbContextOptions<TaskDbContext> options) : DbContext(
                 .WithMany()
                 .HasForeignKey(member => member.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // Team members inherit their tenant boundary from the team.
+            entity.HasQueryFilter(member => member.Team!.WorkspaceId == CurrentWorkspaceId);
         });
     }
 }

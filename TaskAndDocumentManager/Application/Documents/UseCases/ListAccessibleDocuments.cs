@@ -21,18 +21,6 @@ public class ListAccessibleDocuments
 
     public async Task<PaginatedResult<DocumentMetadataDto>> ExecuteAsync(
         Guid requestedByUserId,
-        bool allowTaskParticipationAccess = false,
-        CancellationToken cancellationToken = default)
-    {
-        return await ExecuteAsync(
-            requestedByUserId,
-            allowTaskParticipationAccess,
-            DocumentQuery.Empty,
-            cancellationToken);
-    }
-
-    public async Task<PaginatedResult<DocumentMetadataDto>> ExecuteAsync(
-        Guid requestedByUserId,
         Guid workspaceId,
         bool allowTaskParticipationAccess,
         DocumentQuery? query,
@@ -43,18 +31,18 @@ public class ListAccessibleDocuments
             throw new ArgumentException("Workspace ID is required.", nameof(workspaceId));
         }
 
-        return await ExecuteAsync(
+        return await ExecuteScopedAsync(
             requestedByUserId,
             allowTaskParticipationAccess,
             (query ?? DocumentQuery.Empty) with { WorkspaceId = workspaceId },
             cancellationToken);
     }
 
-    public async Task<PaginatedResult<DocumentMetadataDto>> ExecuteAsync(
+    private async Task<PaginatedResult<DocumentMetadataDto>> ExecuteScopedAsync(
         Guid requestedByUserId,
         bool allowTaskParticipationAccess,
         DocumentQuery? query,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken)
     {
         if (requestedByUserId == Guid.Empty)
         {
@@ -90,10 +78,17 @@ public class ListAccessibleDocuments
     }
 
     public async Task<PaginatedResult<DocumentMetadataDto>> ExecuteForAdminAsync(
+        Guid workspaceId,
         DocumentQuery? query,
         CancellationToken cancellationToken = default)
     {
-        var normalizedQuery = NormalizeQuery(query);
+        if (workspaceId == Guid.Empty)
+        {
+            throw new ArgumentException("Workspace ID is required.", nameof(workspaceId));
+        }
+
+        var normalizedQuery = NormalizeQuery(
+            (query ?? DocumentQuery.Empty) with { WorkspaceId = workspaceId });
         var documents = await _documentRepository.SearchDocumentsPageAsync(normalizedQuery, cancellationToken);
 
         var items = documents.Items
@@ -105,21 +100,6 @@ public class ListAccessibleDocuments
             documents.TotalCount,
             documents.Page,
             documents.PageSize);
-    }
-
-    public async Task<PaginatedResult<DocumentMetadataDto>> ExecuteForAdminAsync(
-        Guid workspaceId,
-        DocumentQuery? query,
-        CancellationToken cancellationToken = default)
-    {
-        if (workspaceId == Guid.Empty)
-        {
-            throw new ArgumentException("Workspace ID is required.", nameof(workspaceId));
-        }
-
-        return await ExecuteForAdminAsync(
-            (query ?? DocumentQuery.Empty) with { WorkspaceId = workspaceId },
-            cancellationToken);
     }
 
     private static DocumentQuery NormalizeQuery(DocumentQuery? query)

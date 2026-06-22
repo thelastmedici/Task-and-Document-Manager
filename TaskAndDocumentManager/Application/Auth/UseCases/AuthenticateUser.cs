@@ -84,7 +84,8 @@ public class AuthenticateUser
                 user.Id,
                 AuditActions.UserLoginSucceeded,
                 nameof(User),
-                user.Id),
+                user.Id,
+                membership.WorkspaceId),
             cancellationToken);
 
         return new AuthResponse
@@ -104,12 +105,19 @@ public class AuthenticateUser
 
     private Task LogFailedLoginAsync(Guid userId, CancellationToken cancellationToken)
     {
+        var membership = _workspaceMemberRepository.GetDefaultMembershipForUser(userId);
+        if (membership is null)
+        {
+            return Task.CompletedTask;
+        }
+
         return _auditLogRepository.AddAsync(
             new AuditLog(
                 userId,
                 AuditActions.UserLoginFailed,
                 nameof(User),
-                userId),
+                userId,
+                membership.WorkspaceId),
             cancellationToken);
     }
 }

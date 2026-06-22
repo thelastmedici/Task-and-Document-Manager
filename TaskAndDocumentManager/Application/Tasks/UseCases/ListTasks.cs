@@ -21,16 +21,6 @@ public class ListTasks
     public async Task<PaginatedResult<TaskListItemDto>> ExecuteAsync(
         TaskQuery query,
         Guid actorId,
-        bool isAdmin,
-        bool isManager,
-        CancellationToken cancellationToken = default)
-    {
-        return await ExecuteAsync(query, actorId, actorId, isAdmin, isManager, cancellationToken);
-    }
-
-    public async Task<PaginatedResult<TaskListItemDto>> ExecuteAsync(
-        TaskQuery query,
-        Guid actorId,
         Guid workspaceId,
         bool isAdmin,
         bool isManager,

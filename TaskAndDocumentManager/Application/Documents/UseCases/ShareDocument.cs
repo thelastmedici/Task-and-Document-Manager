@@ -52,13 +52,11 @@ public class ShareDocument
             throw new ArgumentException("Workspace ID is required.", nameof(request.WorkspaceId));
         }
 
-        var document = await _documentRepository.GetByIdAsync(request.DocumentId, cancellationToken)
+        var document = await _documentRepository.GetByIdInWorkspaceAsync(
+                request.DocumentId,
+                request.WorkspaceId,
+                cancellationToken)
             ?? throw new FileNotFoundException("Document not found.");
-
-        if (document.WorkspaceId != request.WorkspaceId)
-        {
-            throw new FileNotFoundException("Document not found.");
-        }
 
         if (!isAdmin && document.OwnerId != request.GrantedByUserId)
         {
@@ -70,10 +68,15 @@ public class ShareDocument
             throw new InvalidOperationException("You cannot share a document with yourself.");
         }
 
-        var access = new DocumentAccess(request.DocumentId, request.TargetUserId, request.GrantedByUserId);
+        var access = new DocumentAccess(
+            request.DocumentId,
+            request.TargetUserId,
+            request.GrantedByUserId,
+            request.WorkspaceId);
         await _documentAccessRepository.GrantAccessAsync(access, cancellationToken);
         var notification = new Notification(
             request.TargetUserId,
+            request.WorkspaceId,
             "Document shared with you",
             $"{document.OriginalFileName} was shared with you.");
         await _notificationRepository.AddAsync(notification, cancellationToken);
@@ -83,7 +86,8 @@ public class ShareDocument
                 request.GrantedByUserId,
                 AuditActions.DocumentShared,
                 nameof(Document),
-                request.DocumentId),
+                request.DocumentId,
+                request.WorkspaceId),
             cancellationToken);
     }
 }

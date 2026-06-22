@@ -16,9 +16,15 @@ public class ListAuditLogs
 
     public async Task<PaginatedResult<AuditLogDto>> ExecuteAsync(
         AuditQuery query,
+        Guid workspaceId,
         CancellationToken cancellationToken = default)
     {
-        var normalizedQuery = NormalizeQuery(query);
+        if (workspaceId == Guid.Empty)
+        {
+            throw new ArgumentException("Workspace ID is required.", nameof(workspaceId));
+        }
+
+        var normalizedQuery = NormalizeQuery(query) with { WorkspaceId = workspaceId };
         var auditLogs = await _auditLogRepository.SearchAuditLogsAsync(normalizedQuery, cancellationToken);
 
         var items = auditLogs.Items

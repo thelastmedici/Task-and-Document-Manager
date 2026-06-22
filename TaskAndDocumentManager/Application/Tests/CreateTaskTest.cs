@@ -38,7 +38,8 @@ public class CreateTaskTests
             title,
             description,
             ownerId,
-            cancellationToken);
+            Guid.NewGuid(),
+            cancellationToken: cancellationToken);
 
         // Assert
         Assert.NotEqual(Guid.Empty, result);
@@ -59,7 +60,12 @@ public class CreateTaskTests
     public async Task ExecuteAsync_ShouldThrow_WhenOwnerIdIsEmpty()
     {
         var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
-            _sut.ExecuteAsync("Test Task", "This is a test description.", Guid.Empty, CancellationToken.None));
+            _sut.ExecuteAsync(
+                "Test Task",
+                "This is a test description.",
+                Guid.Empty,
+                Guid.NewGuid(),
+                cancellationToken: CancellationToken.None));
 
         Assert.Equal("ownerId", exception.ParamName);
 

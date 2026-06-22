@@ -51,22 +51,34 @@ public class ListAccessibleDocumentsTests
         SetupDocumentSearch(ownDocument, sharedDocument, taskLinkedDocument, inaccessibleDocument);
 
         _documentAccessRepositoryMock
-            .Setup(repository => repository.HasAccessAsync(sharedDocument.Id, requesterId, It.IsAny<CancellationToken>()))
+            .Setup(repository => repository.HasAccessAsync(
+                sharedDocument.Id,
+                requesterId,
+                sharedDocument.WorkspaceId,
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         _documentAccessRepositoryMock
-            .Setup(repository => repository.HasAccessAsync(taskLinkedDocument.Id, requesterId, It.IsAny<CancellationToken>()))
+            .Setup(repository => repository.HasAccessAsync(
+                taskLinkedDocument.Id,
+                requesterId,
+                taskLinkedDocument.WorkspaceId,
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _documentAccessRepositoryMock
-            .Setup(repository => repository.HasAccessAsync(inaccessibleDocument.Id, requesterId, It.IsAny<CancellationToken>()))
+            .Setup(repository => repository.HasAccessAsync(
+                inaccessibleDocument.Id,
+                requesterId,
+                inaccessibleDocument.WorkspaceId,
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _taskRepositoryMock
             .Setup(repository => repository.GetByIdAsync(task.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(task);
 
-        var result = await _sut.ExecuteAsync(requesterId, true);
+        var result = await _sut.ExecuteAsync(requesterId, Guid.NewGuid(), true, DocumentQuery.Empty);
 
         Assert.Equal(3, result.TotalCount);
         Assert.Equal(3, result.Items.Count);
@@ -92,10 +104,14 @@ public class ListAccessibleDocumentsTests
         SetupDocumentSearch(ownDocument, taskLinkedDocument);
 
         _documentAccessRepositoryMock
-            .Setup(repository => repository.HasAccessAsync(taskLinkedDocument.Id, requesterId, It.IsAny<CancellationToken>()))
+            .Setup(repository => repository.HasAccessAsync(
+                taskLinkedDocument.Id,
+                requesterId,
+                taskLinkedDocument.WorkspaceId,
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
-        var result = await _sut.ExecuteAsync(requesterId);
+        var result = await _sut.ExecuteAsync(requesterId, Guid.NewGuid(), false, DocumentQuery.Empty);
 
         Assert.Equal(1, result.TotalCount);
         Assert.Single(result.Items);
@@ -114,12 +130,34 @@ public class ListAccessibleDocumentsTests
 
         var result = await _sut.ExecuteAsync(
             requesterId,
+            Guid.NewGuid(),
             false,
             new DocumentQuery(SearchTerm: "report"),
             CancellationToken.None);
 
         var document = Assert.Single(result.Items);
         Assert.Equal(reportDocument.Id, document.Id);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_ShouldPassWorkspaceScopeToRepository()
+    {
+        var requesterId = Guid.NewGuid();
+        var workspaceId = Guid.NewGuid();
+
+        _documentRepositoryMock
+            .Setup(repository => repository.SearchDocumentsAsync(
+                It.Is<DocumentQuery>(query => query.WorkspaceId == workspaceId),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<Document>());
+
+        await _sut.ExecuteAsync(
+            requesterId,
+            workspaceId,
+            false,
+            DocumentQuery.Empty);
+
+        _documentRepositoryMock.VerifyAll();
     }
 
     [Fact]
@@ -140,15 +178,24 @@ public class ListAccessibleDocumentsTests
             nonMatchingOwnedDocument);
 
         _documentAccessRepositoryMock
-            .Setup(repository => repository.HasAccessAsync(sharedDocument.Id, requesterId, It.IsAny<CancellationToken>()))
+            .Setup(repository => repository.HasAccessAsync(
+                sharedDocument.Id,
+                requesterId,
+                sharedDocument.WorkspaceId,
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         _documentAccessRepositoryMock
-            .Setup(repository => repository.HasAccessAsync(inaccessibleDocument.Id, requesterId, It.IsAny<CancellationToken>()))
+            .Setup(repository => repository.HasAccessAsync(
+                inaccessibleDocument.Id,
+                requesterId,
+                inaccessibleDocument.WorkspaceId,
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         var result = await _sut.ExecuteAsync(
             requesterId,
+            Guid.NewGuid(),
             false,
             new DocumentQuery(SearchTerm: "report"),
             CancellationToken.None);
@@ -171,6 +218,7 @@ public class ListAccessibleDocumentsTests
 
         var result = await _sut.ExecuteAsync(
             requesterId,
+            Guid.NewGuid(),
             false,
             new DocumentQuery(ContentType: "image/png"),
             CancellationToken.None);
@@ -191,6 +239,7 @@ public class ListAccessibleDocumentsTests
         SetupDocumentSearch(olderDocument, newerDocument);
 
         var result = await _sut.ExecuteForAdminAsync(
+            Guid.NewGuid(),
             new DocumentQuery(
                 UploadedFromUtc: new DateTime(2026, 05, 10, 0, 0, 0, DateTimeKind.Utc),
                 UploadedToUtc: new DateTime(2026, 05, 31, 0, 0, 0, DateTimeKind.Utc)),
@@ -213,6 +262,7 @@ public class ListAccessibleDocumentsTests
         SetupDocumentSearch(firstDocument, secondDocument, nonMatchingDocument);
 
         var result = await _sut.ExecuteForAdminAsync(
+            Guid.NewGuid(),
             new DocumentQuery(SearchTerm: "report"),
             CancellationToken.None);
 
@@ -232,6 +282,7 @@ public class ListAccessibleDocumentsTests
         SetupDocumentSearch(firstDocument, secondDocument);
 
         var result = await _sut.ExecuteForAdminAsync(
+            Guid.NewGuid(),
             new DocumentQuery(PageNumber: 2, PageSize: 1),
             CancellationToken.None);
 

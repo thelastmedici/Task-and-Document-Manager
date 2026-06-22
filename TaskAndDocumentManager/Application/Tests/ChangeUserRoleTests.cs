@@ -2,6 +2,7 @@ using Moq;
 using TaskAndDocumentManager.Application.Audit.Interfaces;
 using TaskAndDocumentManager.Application.Auth.Interfaces;
 using TaskAndDocumentManager.Application.Auth.UseCases;
+using TaskAndDocumentManager.Application.Workspaces.Interfaces;
 using TaskAndDocumentManager.Domain.Auth;
 using TaskAndDocumentManager.Domain.Entities;
 
@@ -12,6 +13,7 @@ public class ChangeUserRoleTests
     private readonly Mock<IAuditLogRepository> _auditLogRepositoryMock;
     private readonly Mock<IUserRepository> _userRepositoryMock;
     private readonly Mock<IRoleCatalog> _roleCatalogMock;
+    private readonly Mock<IWorkspaceMemberRepository> _workspaceMemberRepositoryMock;
     private readonly ChangeUserRole _sut;
 
     public ChangeUserRoleTests()
@@ -19,10 +21,12 @@ public class ChangeUserRoleTests
         _auditLogRepositoryMock = new Mock<IAuditLogRepository>();
         _userRepositoryMock = new Mock<IUserRepository>();
         _roleCatalogMock = new Mock<IRoleCatalog>();
+        _workspaceMemberRepositoryMock = new Mock<IWorkspaceMemberRepository>();
         _sut = new ChangeUserRole(
             _auditLogRepositoryMock.Object,
             _userRepositoryMock.Object,
-            _roleCatalogMock.Object);
+            _roleCatalogMock.Object,
+            _workspaceMemberRepositoryMock.Object);
     }
 
     [Fact]
@@ -31,6 +35,7 @@ public class ChangeUserRoleTests
         var userId = Guid.NewGuid();
         var changedByUserId = Guid.NewGuid();
         var roleId = Guid.NewGuid();
+        var workspaceId = Guid.NewGuid();
         var user = new User
         {
             Id = userId,
@@ -42,8 +47,14 @@ public class ChangeUserRoleTests
 
         _roleCatalogMock.Setup(catalog => catalog.IsSupportedRole(roleId)).Returns(true);
         _userRepositoryMock.Setup(repository => repository.GetById(userId)).Returns(user);
+        _workspaceMemberRepositoryMock
+            .Setup(repository => repository.IsMember(workspaceId, changedByUserId))
+            .Returns(true);
+        _workspaceMemberRepositoryMock
+            .Setup(repository => repository.IsMember(workspaceId, userId))
+            .Returns(true);
 
-        await _sut.ExecuteAsync(userId, roleId, changedByUserId, CancellationToken.None);
+        await _sut.ExecuteAsync(userId, roleId, changedByUserId, workspaceId, CancellationToken.None);
 
         _userRepositoryMock.Verify(repository => repository.Save(It.Is<User>(savedUser => savedUser.RoleId == roleId)), Times.Once);
         _auditLogRepositoryMock.Verify(
@@ -61,7 +72,12 @@ public class ChangeUserRoleTests
     public async Task ExecuteAsync_ShouldNotWriteAuditLog_WhenRoleIsInvalid()
     {
         var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
-            _sut.ExecuteAsync(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), CancellationToken.None));
+            _sut.ExecuteAsync(
+                Guid.NewGuid(),
+                Guid.NewGuid(),
+                Guid.NewGuid(),
+                Guid.NewGuid(),
+                CancellationToken.None));
 
         Assert.Equal("Role is invalid.", exception.Message);
         _auditLogRepositoryMock.Verify(

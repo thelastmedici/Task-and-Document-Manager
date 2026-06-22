@@ -8,7 +8,7 @@ public interface IDocumentRepository
 {
     Task AddAsync(Document document, CancellationToken cancellationToken = default);
     Task<Document?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
-    Task<IReadOnlyCollection<Document>> GetAllAsync(CancellationToken cancellationToken = default);
+    Task<IReadOnlyCollection<Document>> GetAllForMaintenanceAsync(CancellationToken cancellationToken = default);
     Task<IReadOnlyCollection<Document>> SearchDocumentsAsync(
         DocumentQuery query,
         CancellationToken cancellationToken = default);

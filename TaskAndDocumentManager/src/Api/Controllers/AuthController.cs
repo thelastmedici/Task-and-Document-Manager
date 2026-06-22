@@ -110,7 +110,7 @@ public class AuthController : ControllerBase
     {
         try
         {
-            _deactivateUser.Execute(id);
+            _deactivateUser.Execute(id, User.GetWorkspaceId());
             return NoContent();
         }
         catch (KeyNotFoundException ex)
@@ -129,7 +129,7 @@ public class AuthController : ControllerBase
 [HttpGet("users")]
 public IActionResult GetUsers()
 {
-    var users = _listUsers.Execute();
+    var users = _listUsers.Execute(User.GetWorkspaceId());
     return Ok(users);
 }
 
@@ -160,11 +160,11 @@ public IActionResult CreateUser([FromBody] CreateUserByAdminRequest request)
 [HttpPut("users/{id:guid}/role")]
 public async Task<IActionResult> ChangeRole(Guid id, [FromBody] ChangeRoleRequest request)
 {
-    try
-    {
-        var actorId = User.GetActorId();
-        await _changeUserRole.ExecuteAsync(id, request.RoleId, actorId);
-        return NoContent();
+        try
+        {
+            var actorId = User.GetActorId();
+            await _changeUserRole.ExecuteAsync(id, request.RoleId, actorId, User.GetWorkspaceId());
+            return NoContent();
     }
     catch (KeyNotFoundException ex)
     {
@@ -182,7 +182,7 @@ public IActionResult Delete(Guid id)
 {
     try
     {
-        _deleteUser.Execute(id);
+        _deleteUser.Execute(id, User.GetWorkspaceId());
         return NoContent();
     }
     catch (KeyNotFoundException ex)

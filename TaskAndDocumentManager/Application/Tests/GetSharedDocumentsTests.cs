@@ -24,11 +24,27 @@ public class GetSharedDocumentsTests
     {
         var userId = Guid.NewGuid();
         var ownerId = Guid.NewGuid();
-        var sharedDocument = new Document("shared.pdf", "application/pdf", 100, "/tmp/shared.pdf", ownerId);
-        var otherDocument = new Document("other.pdf", "application/pdf", 100, "/tmp/other.pdf", ownerId);
+        var workspaceId = Guid.NewGuid();
+        var sharedDocument = new Document(
+            "shared.pdf",
+            "application/pdf",
+            100,
+            "/tmp/shared.pdf",
+            ownerId,
+            workspaceId);
+        var otherDocument = new Document(
+            "other.pdf",
+            "application/pdf",
+            100,
+            "/tmp/other.pdf",
+            ownerId,
+            workspaceId);
 
         _documentAccessRepositoryMock
-            .Setup(repository => repository.GetSharedDocumentIdsForUserAsync(userId, It.IsAny<CancellationToken>()))
+            .Setup(repository => repository.GetSharedDocumentIdsForUserAsync(
+                userId,
+                workspaceId,
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync([sharedDocument.Id]);
 
         _documentRepositoryMock
@@ -37,7 +53,7 @@ public class GetSharedDocumentsTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync([sharedDocument, otherDocument]);
 
-        var result = await _sut.ExecuteAsync(userId, cancellationToken: CancellationToken.None);
+        var result = await _sut.ExecuteAsync(userId, workspaceId, cancellationToken: CancellationToken.None);
 
         var document = Assert.Single(result.Items);
         Assert.Equal(1, result.TotalCount);

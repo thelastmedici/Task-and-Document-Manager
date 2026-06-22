@@ -38,7 +38,7 @@ public class ListTasksTests
             .Setup(repo => repo.SearchTasksAsync(It.IsAny<TaskQuery>(), cancellationToken))
             .ReturnsAsync(new List<TaskItem> { olderTask, newerTask });
 
-        var result = await _sut.ExecuteAsync(new TaskQuery(), actorId, true, false, cancellationToken);
+        var result = await _sut.ExecuteAsync(new TaskQuery(), actorId, Guid.NewGuid(), true, false, cancellationToken);
 
         Assert.Collection(
             result.Items,
@@ -58,7 +58,7 @@ public class ListTasksTests
             .Setup(repo => repo.SearchTasksAsync(It.IsAny<TaskQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<TaskItem> { task });
 
-        var result = await _sut.ExecuteAsync(new TaskQuery(), actorId, true, false);
+        var result = await _sut.ExecuteAsync(new TaskQuery(), actorId, Guid.NewGuid(), true, false);
 
         var item = Assert.IsType<TaskListItemDto>(Assert.Single(result.Items));
         Assert.Equal(task.Title, item.Title);
@@ -81,7 +81,7 @@ public class ListTasksTests
             .Setup(repo => repo.CountTasksAsync(It.IsAny<TaskQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(42);
 
-        var result = await _sut.ExecuteAsync(query, actorId, true, false);
+        var result = await _sut.ExecuteAsync(query, actorId, Guid.NewGuid(), true, false);
 
         Assert.Empty(result.Items);
         Assert.Equal(42, result.TotalCount);
@@ -106,7 +106,7 @@ public class ListTasksTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<TaskItem>());
 
-        await _sut.ExecuteAsync(query, actorId, true, false);
+        await _sut.ExecuteAsync(query, actorId, Guid.NewGuid(), true, false);
 
         _taskRepositoryMock.VerifyAll();
     }
@@ -146,7 +146,7 @@ public class ListTasksTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<TaskItem>());
 
-        await _sut.ExecuteAsync(query, actorId, true, false);
+        await _sut.ExecuteAsync(query, actorId, Guid.NewGuid(), true, false);
 
         _taskRepositoryMock.VerifyAll();
     }
@@ -160,7 +160,7 @@ public class ListTasksTests
             DueBeforeUtc: new DateTime(2026, 05, 01, 0, 0, 0, DateTimeKind.Utc));
 
         var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
-            _sut.ExecuteAsync(query, actorId, true, false));
+            _sut.ExecuteAsync(query, actorId, Guid.NewGuid(), true, false));
 
         Assert.Equal("query", exception.ParamName);
     }
@@ -178,7 +178,7 @@ public class ListTasksTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<TaskItem>());
 
-        await _sut.ExecuteAsync(new TaskQuery(), actorId, false, false);
+        await _sut.ExecuteAsync(new TaskQuery(), actorId, Guid.NewGuid(), false, false);
 
         _taskRepositoryMock.VerifyAll();
     }
@@ -215,7 +215,7 @@ public class ListTasksTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<TaskItem>());
 
-        await _sut.ExecuteAsync(new TaskQuery(), actorId, false, true);
+        await _sut.ExecuteAsync(new TaskQuery(), actorId, Guid.NewGuid(), false, true);
 
         _taskRepositoryMock.VerifyAll();
     }

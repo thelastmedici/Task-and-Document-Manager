@@ -7,4 +7,5 @@ public interface IWorkspaceMemberRepository
     WorkspaceMember Add(WorkspaceMember member);
     WorkspaceMember? GetDefaultMembershipForUser(Guid userId);
     bool IsMember(Guid workspaceId, Guid userId);
+    IReadOnlyCollection<Guid> GetUserIdsForWorkspace(Guid workspaceId);
 }

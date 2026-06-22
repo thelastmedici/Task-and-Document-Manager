@@ -20,13 +20,17 @@ public class MarkNotificationAsReadTests
     public async Task ExecuteAsync_ShouldMarkNotificationAsRead_WhenOwnedByUser()
     {
         var userId = Guid.NewGuid();
-        var notification = new Notification(userId, "Task assigned to you", "Review the report.");
+        var workspaceId = Guid.NewGuid();
+        var notification = new Notification(userId, workspaceId, "Task assigned to you", "Review the report.");
 
         _notificationRepositoryMock
-            .Setup(repository => repository.GetByIdAsync(notification.Id, It.IsAny<CancellationToken>()))
+            .Setup(repository => repository.GetByIdAsync(
+                notification.Id,
+                workspaceId,
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(notification);
 
-        await _sut.ExecuteAsync(notification.Id, userId, CancellationToken.None);
+        await _sut.ExecuteAsync(notification.Id, userId, workspaceId, CancellationToken.None);
 
         Assert.True(notification.IsRead);
         _notificationRepositoryMock.Verify(
@@ -39,14 +43,18 @@ public class MarkNotificationAsReadTests
     {
         var ownerId = Guid.NewGuid();
         var requesterId = Guid.NewGuid();
-        var notification = new Notification(ownerId, "Task assigned to you", "Review the report.");
+        var workspaceId = Guid.NewGuid();
+        var notification = new Notification(ownerId, workspaceId, "Task assigned to you", "Review the report.");
 
         _notificationRepositoryMock
-            .Setup(repository => repository.GetByIdAsync(notification.Id, It.IsAny<CancellationToken>()))
+            .Setup(repository => repository.GetByIdAsync(
+                notification.Id,
+                workspaceId,
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(notification);
 
         var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
-            _sut.ExecuteAsync(notification.Id, requesterId, CancellationToken.None));
+            _sut.ExecuteAsync(notification.Id, requesterId, workspaceId, CancellationToken.None));
 
         Assert.Equal("You can only update your own notifications.", exception.Message);
         _notificationRepositoryMock.Verify(

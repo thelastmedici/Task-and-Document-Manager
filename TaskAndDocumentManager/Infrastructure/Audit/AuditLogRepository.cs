@@ -34,6 +34,11 @@ public class AuditLogRepository : IAuditLogRepository
             filteredLogs = filteredLogs.Where(auditLog => auditLog.UserId == query.UserId.Value);
         }
 
+        if (query.WorkspaceId.HasValue)
+        {
+            filteredLogs = filteredLogs.Where(auditLog => auditLog.WorkspaceId == query.WorkspaceId.Value);
+        }
+
         if (!string.IsNullOrWhiteSpace(query.Action))
         {
             filteredLogs = filteredLogs.Where(auditLog =>

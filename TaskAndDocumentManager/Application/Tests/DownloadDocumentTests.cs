@@ -107,7 +107,11 @@ public class DownloadDocumentTests
             .ReturnsAsync(document);
 
         _documentAccessRepositoryMock
-            .Setup(repository => repository.HasAccessAsync(document.Id, requesterId, It.IsAny<CancellationToken>()))
+            .Setup(repository => repository.HasAccessAsync(
+                document.Id,
+                requesterId,
+                document.WorkspaceId,
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         _fileStorageServiceMock
@@ -142,7 +146,11 @@ public class DownloadDocumentTests
             .ReturnsAsync(document);
 
         _documentAccessRepositoryMock
-            .Setup(repository => repository.HasAccessAsync(document.Id, requesterId, It.IsAny<CancellationToken>()))
+            .Setup(repository => repository.HasAccessAsync(
+                document.Id,
+                requesterId,
+                document.WorkspaceId,
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>

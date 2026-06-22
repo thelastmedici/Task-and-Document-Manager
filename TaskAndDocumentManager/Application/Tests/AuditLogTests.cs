@@ -14,7 +14,8 @@ public class AuditLogTests
             userId,
             AuditActions.DocumentUploaded,
             "Document",
-            entityId);
+            entityId,
+            Guid.NewGuid());
 
         Assert.Equal(userId, auditLog.UserId);
         Assert.Equal(AuditActions.DocumentUploaded, auditLog.Action);
@@ -30,6 +31,7 @@ public class AuditLogTests
                 Guid.NewGuid(),
                 "user did something",
                 "Document",
+                Guid.NewGuid(),
                 Guid.NewGuid()));
 
         Assert.Equal("action", exception.ParamName);

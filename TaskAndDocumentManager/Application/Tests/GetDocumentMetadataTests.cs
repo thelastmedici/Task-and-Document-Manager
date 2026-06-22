@@ -66,7 +66,11 @@ public class GetDocumentMetadataTests
             .ReturnsAsync(document);
 
         _documentAccessRepositoryMock
-            .Setup(repository => repository.HasAccessAsync(document.Id, requesterId, It.IsAny<CancellationToken>()))
+            .Setup(repository => repository.HasAccessAsync(
+                document.Id,
+                requesterId,
+                document.WorkspaceId,
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
@@ -92,7 +96,11 @@ public class GetDocumentMetadataTests
             .ReturnsAsync(document);
 
         _documentAccessRepositoryMock
-            .Setup(repository => repository.HasAccessAsync(document.Id, requesterId, It.IsAny<CancellationToken>()))
+            .Setup(repository => repository.HasAccessAsync(
+                document.Id,
+                requesterId,
+                document.WorkspaceId,
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         var result = await _sut.ExecuteAsync(document.Id, requesterId, document.WorkspaceId);
@@ -122,7 +130,11 @@ public class GetDocumentMetadataTests
             .ReturnsAsync(document);
 
         _documentAccessRepositoryMock
-            .Setup(repository => repository.HasAccessAsync(document.Id, requesterId, It.IsAny<CancellationToken>()))
+            .Setup(repository => repository.HasAccessAsync(
+                document.Id,
+                requesterId,
+                document.WorkspaceId,
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _taskRepositoryMock
@@ -156,7 +168,11 @@ public class GetDocumentMetadataTests
             .ReturnsAsync(document);
 
         _documentAccessRepositoryMock
-            .Setup(repository => repository.HasAccessAsync(document.Id, requesterId, It.IsAny<CancellationToken>()))
+            .Setup(repository => repository.HasAccessAsync(
+                document.Id,
+                requesterId,
+                document.WorkspaceId,
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>

@@ -14,6 +14,7 @@ public class MarkNotificationAsRead
     public async Task ExecuteAsync(
         Guid notificationId,
         Guid requestedByUserId,
+        Guid workspaceId,
         CancellationToken cancellationToken = default)
     {
         if (notificationId == Guid.Empty)
@@ -26,7 +27,12 @@ public class MarkNotificationAsRead
             throw new ArgumentException("User ID is required.", nameof(requestedByUserId));
         }
 
-        var notification = await _notificationRepository.GetByIdAsync(notificationId, cancellationToken)
+        if (workspaceId == Guid.Empty)
+        {
+            throw new ArgumentException("Workspace ID is required.", nameof(workspaceId));
+        }
+
+        var notification = await _notificationRepository.GetByIdAsync(notificationId, workspaceId, cancellationToken)
             ?? throw new KeyNotFoundException("Notification not found.");
 
         if (notification.UserId != requestedByUserId)

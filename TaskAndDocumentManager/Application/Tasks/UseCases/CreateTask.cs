@@ -14,26 +14,6 @@ public class CreateTask
         _taskRepository = taskRepository;
     }
 
-    public Task<Guid> ExecuteAsync(
-        string title,
-        string description,
-        Guid ownerId,
-        CancellationToken cancellationToken = default)
-    {
-        return ExecuteAsync(title, description, ownerId, ownerId, dueAtUtc: null, cancellationToken: cancellationToken);
-    }
-
-    public Task<Guid> ExecuteAsync(
-        string title,
-        string description,
-        Guid ownerId,
-        DateTime? dueAtUtc = null,
-        TaskPriority priority = TaskPriority.Medium,
-        CancellationToken cancellationToken = default)
-    {
-        return ExecuteAsync(title, description, ownerId, ownerId, dueAtUtc, priority, cancellationToken);
-    }
-
     public async Task<Guid> ExecuteAsync(
         string title,
         string description,

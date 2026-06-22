@@ -42,11 +42,12 @@ public class GlobalSearchTests
     public async Task ExecuteAsync_ShouldReturnPermissionScopedWorkspaceResults_ForUser()
     {
         var actorId = Guid.NewGuid();
+        var workspaceId = Guid.NewGuid();
         var otherOwnerId = Guid.NewGuid();
-        var task = new TaskItem("Quarterly report", "Prepare the report", actorId);
-        var ownedDocument = new Document("owned-report.pdf", "application/pdf", 128, "/tmp/owned.pdf", actorId);
-        var sharedDocument = new Document("shared-report.pdf", "application/pdf", 256, "/tmp/shared.pdf", otherOwnerId);
-        var privateDocument = new Document("private-report.pdf", "application/pdf", 512, "/tmp/private.pdf", otherOwnerId);
+        var task = new TaskItem("Quarterly report", "Prepare the report", actorId, workspaceId);
+        var ownedDocument = new Document("owned-report.pdf", "application/pdf", 128, "/tmp/owned.pdf", actorId, workspaceId);
+        var sharedDocument = new Document("shared-report.pdf", "application/pdf", 256, "/tmp/shared.pdf", otherOwnerId, workspaceId);
+        var privateDocument = new Document("private-report.pdf", "application/pdf", 512, "/tmp/private.pdf", otherOwnerId, workspaceId);
 
         _taskRepositoryMock
             .Setup(repository => repository.SearchTasksAsync(
@@ -54,6 +55,7 @@ public class GlobalSearchTests
                     query.SearchTerm == "report" &&
                     query.OwnerId == actorId &&
                     query.IncludeAssignedTasks == false &&
+                    query.WorkspaceId == workspaceId &&
                     query.PageNumber == 1 &&
                     query.PageSize == GlobalSearchQuery.MaxPageSize),
                 It.IsAny<CancellationToken>()))
@@ -63,7 +65,8 @@ public class GlobalSearchTests
             .Setup(repository => repository.CountTasksAsync(
                 It.Is<TaskQuery>(query =>
                     query.SearchTerm == "report" &&
-                    query.OwnerId == actorId),
+                    query.OwnerId == actorId &&
+                    query.WorkspaceId == workspaceId),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
@@ -71,6 +74,7 @@ public class GlobalSearchTests
             .Setup(repository => repository.SearchDocumentsAsync(
                 It.Is<DocumentQuery>(query =>
                     query.SearchTerm == "report" &&
+                    query.WorkspaceId == workspaceId &&
                     query.PageNumber == 1 &&
                     query.PageSize == GlobalSearchQuery.MaxPageSize),
                 It.IsAny<CancellationToken>()))
@@ -80,6 +84,7 @@ public class GlobalSearchTests
             .Setup(repository => repository.HasAccessAsync(
                 sharedDocument.Id,
                 actorId,
+                sharedDocument.WorkspaceId,
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
@@ -87,12 +92,14 @@ public class GlobalSearchTests
             .Setup(repository => repository.HasAccessAsync(
                 privateDocument.Id,
                 actorId,
+                privateDocument.WorkspaceId,
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         var result = await _sut.ExecuteAsync(
             new GlobalSearchQuery("  report  ", PageNumber: 0, PageSize: 1000),
             actorId,
+            workspaceId,
             isAdmin: false,
             isManager: false);
 
@@ -109,16 +116,18 @@ public class GlobalSearchTests
     public async Task ExecuteAsync_ShouldSearchAllMatchingDocuments_ForAdmin()
     {
         var adminId = Guid.NewGuid();
+        var workspaceId = Guid.NewGuid();
         var ownerId = Guid.NewGuid();
-        var task = new TaskItem("Report review", "Review report", ownerId);
-        var firstDocument = new Document("first-report.pdf", "application/pdf", 128, "/tmp/first.pdf", ownerId);
-        var secondDocument = new Document("second-report.pdf", "application/pdf", 256, "/tmp/second.pdf", Guid.NewGuid());
+        var task = new TaskItem("Report review", "Review report", ownerId, workspaceId);
+        var firstDocument = new Document("first-report.pdf", "application/pdf", 128, "/tmp/first.pdf", ownerId, workspaceId);
+        var secondDocument = new Document("second-report.pdf", "application/pdf", 256, "/tmp/second.pdf", Guid.NewGuid(), workspaceId);
 
         _taskRepositoryMock
             .Setup(repository => repository.SearchTasksAsync(
                 It.Is<TaskQuery>(query =>
                     query.SearchTerm == "report" &&
-                    query.OwnerId == null),
+                    query.OwnerId == null &&
+                    query.WorkspaceId == workspaceId),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync([task]);
 
@@ -130,7 +139,9 @@ public class GlobalSearchTests
 
         _documentRepositoryMock
             .Setup(repository => repository.SearchDocumentsPageAsync(
-                It.Is<DocumentQuery>(query => query.SearchTerm == "report"),
+                It.Is<DocumentQuery>(query =>
+                    query.SearchTerm == "report" &&
+                    query.WorkspaceId == workspaceId),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new PaginatedResult<Document>(
                 [firstDocument, secondDocument],
@@ -141,6 +152,7 @@ public class GlobalSearchTests
         var result = await _sut.ExecuteAsync(
             new GlobalSearchQuery("report"),
             adminId,
+            workspaceId,
             isAdmin: true,
             isManager: false);
 
@@ -150,6 +162,7 @@ public class GlobalSearchTests
         Assert.Contains(result.Documents.Items, document => document.Id == secondDocument.Id);
         _documentAccessRepositoryMock.Verify(
             repository => repository.HasAccessAsync(
+                It.IsAny<Guid>(),
                 It.IsAny<Guid>(),
                 It.IsAny<Guid>(),
                 It.IsAny<CancellationToken>()),
@@ -162,6 +175,7 @@ public class GlobalSearchTests
         var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
             _sut.ExecuteAsync(
                 new GlobalSearchQuery("   "),
+                Guid.NewGuid(),
                 Guid.NewGuid(),
                 isAdmin: false,
                 isManager: false));

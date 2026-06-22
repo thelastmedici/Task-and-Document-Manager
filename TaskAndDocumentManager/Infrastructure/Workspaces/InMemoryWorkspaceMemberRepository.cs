@@ -38,4 +38,12 @@ public class InMemoryWorkspaceMemberRepository : IWorkspaceMemberRepository
             member.WorkspaceId == workspaceId &&
             member.UserId == userId);
     }
+
+    public IReadOnlyCollection<Guid> GetUserIdsForWorkspace(Guid workspaceId)
+    {
+        return Members
+            .Where(member => member.WorkspaceId == workspaceId)
+            .Select(member => member.UserId)
+            .ToList();
+    }
 }

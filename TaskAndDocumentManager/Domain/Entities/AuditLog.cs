@@ -4,6 +4,7 @@ public class AuditLog
 {
     public Guid Id { get; private set; } = Guid.NewGuid();
     public Guid UserId { get; private set; }
+    public Guid WorkspaceId { get; private set; }
     public string Action { get; private set; } = string.Empty;
     public string EntityType { get; private set; } = string.Empty;
     public Guid EntityId { get; private set; }
@@ -17,11 +18,17 @@ public class AuditLog
         Guid userId,
         string action,
         string entityType,
-        Guid entityId)
+        Guid entityId,
+        Guid workspaceId)
     {
         if (userId == Guid.Empty)
         {
             throw new ArgumentException("User ID is required.", nameof(userId));
+        }
+
+        if (workspaceId == Guid.Empty)
+        {
+            throw new ArgumentException("Workspace ID is required.", nameof(workspaceId));
         }
 
         if (string.IsNullOrWhiteSpace(action))
@@ -45,6 +52,7 @@ public class AuditLog
         }
 
         UserId = userId;
+        WorkspaceId = workspaceId;
         Action = action.Trim();
         EntityType = entityType.Trim();
         EntityId = entityId;

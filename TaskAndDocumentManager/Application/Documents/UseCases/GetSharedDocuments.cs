@@ -28,11 +28,16 @@ public class GetSharedDocuments
             throw new ArgumentException("Requested by user ID is required.", nameof(requestedByUserId));
         }
 
+        var normalizedQuery = NormalizeQuery(query);
+        if (!normalizedQuery.WorkspaceId.HasValue || normalizedQuery.WorkspaceId.Value == Guid.Empty)
+        {
+            throw new ArgumentException("Workspace ID is required.", nameof(query));
+        }
+
         var sharedDocumentIds = await _documentAccessRepository.GetSharedDocumentIdsForUserAsync(
             requestedByUserId,
+            normalizedQuery.WorkspaceId.Value,
             cancellationToken);
-
-        var normalizedQuery = NormalizeQuery(query);
 
         if (sharedDocumentIds.Count == 0)
         {

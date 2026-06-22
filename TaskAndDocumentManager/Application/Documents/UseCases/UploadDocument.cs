@@ -126,7 +126,8 @@ public class UploadDocument
                 request.UploadedByUserId,
                 AuditActions.DocumentUploaded,
                 nameof(Document),
-                document.Id),
+                document.Id,
+                request.WorkspaceId),
             cancellationToken);
 
         return new UploadDocumentResult(

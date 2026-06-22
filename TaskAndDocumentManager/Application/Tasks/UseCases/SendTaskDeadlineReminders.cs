@@ -39,6 +39,7 @@ public class SendTaskDeadlineReminders : IBackgroundJob
             var recipientUserId = task.AssignedToUserId ?? task.OwnerId;
             var notification = new Notification(
                 recipientUserId,
+                task.WorkspaceId,
                 "Task deadline approaching",
                 $"Task \"{task.Title}\" is due on {task.DueAtUtc:yyyy-MM-dd HH:mm} UTC.");
 

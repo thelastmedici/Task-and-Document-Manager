@@ -46,19 +46,15 @@ public class DownloadDocument
             throw new ArgumentException("Workspace ID is required.", nameof(workspaceId));
         }
 
-        var document = await _documentRepository.GetByIdAsync(documentId, cancellationToken)
+        var document = await _documentRepository.GetByIdInWorkspaceAsync(documentId, workspaceId, cancellationToken)
             ?? throw new FileNotFoundException("Document not found.");
-
-        if (document.WorkspaceId != workspaceId)
-        {
-            throw new FileNotFoundException("Document not found.");
-        }
 
         if (!isAdmin && document.OwnerId != requestedByUserId)
         {
             var hasSharedAccess = await _documentAccessRepository.HasAccessAsync(
                 document.Id,
                 requestedByUserId,
+                workspaceId,
                 cancellationToken);
 
             if (!hasSharedAccess)
@@ -76,7 +72,8 @@ public class DownloadDocument
                     requestedByUserId,
                     AuditActions.DocumentDownloaded,
                     nameof(Document),
-                    document.Id),
+                    document.Id,
+                    workspaceId),
                 cancellationToken);
 
             return new DownloadDocumentResult(

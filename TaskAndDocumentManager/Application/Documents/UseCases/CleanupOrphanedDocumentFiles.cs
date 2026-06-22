@@ -20,7 +20,7 @@ public class CleanupOrphanedDocumentFiles : IBackgroundJob
 
     public async Task ExecuteAsync(CancellationToken cancellationToken = default)
     {
-        var documents = await _documentRepository.GetAllAsync(cancellationToken);
+        var documents = await _documentRepository.GetAllForMaintenanceAsync(cancellationToken);
         var knownStoragePaths = documents
             .Select(document => document.StoragePath)
             .Where(path => !string.IsNullOrWhiteSpace(path))

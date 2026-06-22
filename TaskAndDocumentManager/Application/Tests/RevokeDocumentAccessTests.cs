@@ -38,7 +38,11 @@ public class RevokeDocumentAccessTests
         await _sut.ExecuteAsync(document.Id, targetUserId, ownerId, document.WorkspaceId, false, CancellationToken.None);
 
         _documentAccessRepositoryMock.Verify(
-            repository => repository.RevokeAccessAsync(document.Id, targetUserId, It.IsAny<CancellationToken>()),
+            repository => repository.RevokeAccessAsync(
+                document.Id,
+                targetUserId,
+                document.WorkspaceId,
+                It.IsAny<CancellationToken>()),
             Times.Once);
 
         _auditLogRepositoryMock.Verify(
