@@ -5,6 +5,7 @@ using TaskAndDocumentManager.Application.Documents.Interfaces;
 using TaskAndDocumentManager.Application.Documents.UseCases;
 using TaskAndDocumentManager.Application.Notifications.Interfaces;
 using TaskAndDocumentManager.Application.Tasks.Interfaces;
+using TaskAndDocumentManager.Application.Workspaces.Interfaces;
 using TaskAndDocumentManager.Domain.Documents;
 using TaskAndDocumentManager.Domain.Entities;
 using TaskAndDocumentManager.Domain.Tasks;
@@ -19,6 +20,7 @@ public class ShareTaskLinkedDocumentTests
     private readonly Mock<INotificationDispatcher> _notificationDispatcherMock;
     private readonly Mock<INotificationRepository> _notificationRepositoryMock;
     private readonly Mock<ITaskRepository> _taskRepositoryMock;
+    private readonly Mock<IWorkspaceMemberRepository> _workspaceMemberRepositoryMock;
     private readonly ShareTaskLinkedDocument _sut;
 
     public ShareTaskLinkedDocumentTests()
@@ -29,13 +31,15 @@ public class ShareTaskLinkedDocumentTests
         _notificationDispatcherMock = new Mock<INotificationDispatcher>();
         _notificationRepositoryMock = new Mock<INotificationRepository>();
         _taskRepositoryMock = new Mock<ITaskRepository>();
+        _workspaceMemberRepositoryMock = new Mock<IWorkspaceMemberRepository>();
         _sut = new ShareTaskLinkedDocument(
             _auditLogRepositoryMock.Object,
             _documentRepositoryMock.Object,
             _documentAccessRepositoryMock.Object,
             _notificationDispatcherMock.Object,
             _notificationRepositoryMock.Object,
-            _taskRepositoryMock.Object);
+            _taskRepositoryMock.Object,
+            _workspaceMemberRepositoryMock.Object);
     }
 
     [Fact]
@@ -70,6 +74,13 @@ public class ShareTaskLinkedDocumentTests
         _documentAccessRepositoryMock
             .Setup(repository => repository.GrantAccessAsync(It.IsAny<DocumentAccess>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
+
+        _workspaceMemberRepositoryMock
+            .Setup(repository => repository.IsMember(workspaceId, ownerId))
+            .Returns(true);
+        _workspaceMemberRepositoryMock
+            .Setup(repository => repository.IsMember(workspaceId, targetUserId))
+            .Returns(true);
 
         await _sut.ExecuteAsync(request);
 
@@ -179,6 +190,13 @@ public class ShareTaskLinkedDocumentTests
             .Setup(repository => repository.GetByIdAsync(task.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(task);
 
+        _workspaceMemberRepositoryMock
+            .Setup(repository => repository.IsMember(workspaceId, ownerId))
+            .Returns(true);
+        _workspaceMemberRepositoryMock
+            .Setup(repository => repository.IsMember(workspaceId, targetUserId))
+            .Returns(true);
+
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.ExecuteAsync(request));
 
         Assert.Equal("Target user must be a participant in the linked task.", exception.Message);
@@ -190,6 +208,46 @@ public class ShareTaskLinkedDocumentTests
             Times.Never);
         _auditLogRepositoryMock.Verify(
             repository => repository.AddAsync(It.IsAny<AuditLog>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_ShouldRejectTargetUserOutsideWorkspace()
+    {
+        var ownerId = Guid.NewGuid();
+        var targetUserId = Guid.NewGuid();
+        var workspaceId = Guid.NewGuid();
+        var task = new TaskItem("Review report", "Review the linked file", ownerId, workspaceId);
+        task.AssignTask(targetUserId);
+        var document = new Document("report.pdf", "application/pdf", 2048, "/tmp/report.pdf", ownerId, workspaceId);
+        document.LinkToTask(task.Id);
+        var request = new ShareTaskLinkedDocumentRequest
+        {
+            DocumentId = document.Id,
+            TaskId = task.Id,
+            TargetUserId = targetUserId,
+            GrantedByUserId = ownerId,
+            WorkspaceId = workspaceId
+        };
+
+        _documentRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(document.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(document);
+        _taskRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(task.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(task);
+        _workspaceMemberRepositoryMock
+            .Setup(repository => repository.IsMember(workspaceId, ownerId))
+            .Returns(true);
+        _workspaceMemberRepositoryMock
+            .Setup(repository => repository.IsMember(workspaceId, targetUserId))
+            .Returns(false);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.ExecuteAsync(request));
+
+        Assert.Equal("The target user must be a member of this workspace.", exception.Message);
+        _documentAccessRepositoryMock.Verify(
+            repository => repository.GrantAccessAsync(It.IsAny<DocumentAccess>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 }

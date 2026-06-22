@@ -3,6 +3,7 @@ using TaskAndDocumentManager.Application.Audit.Interfaces;
 using TaskAndDocumentManager.Application.Documents.DTOs;
 using TaskAndDocumentManager.Application.Documents.Interfaces;
 using TaskAndDocumentManager.Application.Notifications.Interfaces;
+using TaskAndDocumentManager.Application.Workspaces.Interfaces;
 using TaskAndDocumentManager.Domain.Documents;
 using TaskAndDocumentManager.Domain.Entities;
 
@@ -15,19 +16,22 @@ public class ShareDocument
     private readonly IDocumentAccessRepository _documentAccessRepository;
     private readonly INotificationDispatcher _notificationDispatcher;
     private readonly INotificationRepository _notificationRepository;
+    private readonly IWorkspaceMemberRepository _workspaceMemberRepository;
 
     public ShareDocument(
         IAuditLogRepository auditLogRepository,
         IDocumentRepository documentRepository,
         IDocumentAccessRepository documentAccessRepository,
         INotificationDispatcher notificationDispatcher,
-        INotificationRepository notificationRepository)
+        INotificationRepository notificationRepository,
+        IWorkspaceMemberRepository workspaceMemberRepository)
     {
         _auditLogRepository = auditLogRepository;
         _documentRepository = documentRepository;
         _documentAccessRepository = documentAccessRepository;
         _notificationDispatcher = notificationDispatcher;
         _notificationRepository = notificationRepository;
+        _workspaceMemberRepository = workspaceMemberRepository;
     }
 
     public async Task ExecuteAsync(
@@ -68,6 +72,9 @@ public class ShareDocument
             throw new InvalidOperationException("You cannot share a document with yourself.");
         }
 
+        EnsureSharingUserIsWorkspaceMember(request.WorkspaceId, request.GrantedByUserId);
+        EnsureTargetUserIsWorkspaceMember(request.WorkspaceId, request.TargetUserId);
+
         var access = new DocumentAccess(
             request.DocumentId,
             request.TargetUserId,
@@ -89,5 +96,21 @@ public class ShareDocument
                 request.DocumentId,
                 request.WorkspaceId),
             cancellationToken);
+    }
+
+    private void EnsureSharingUserIsWorkspaceMember(Guid workspaceId, Guid userId)
+    {
+        if (!_workspaceMemberRepository.IsMember(workspaceId, userId))
+        {
+            throw new UnauthorizedAccessException("You do not have access to this workspace.");
+        }
+    }
+
+    private void EnsureTargetUserIsWorkspaceMember(Guid workspaceId, Guid userId)
+    {
+        if (!_workspaceMemberRepository.IsMember(workspaceId, userId))
+        {
+            throw new InvalidOperationException("The target user must be a member of this workspace.");
+        }
     }
 }

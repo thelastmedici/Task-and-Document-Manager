@@ -4,6 +4,7 @@ using TaskAndDocumentManager.Application.Documents.DTOs;
 using TaskAndDocumentManager.Application.Documents.Interfaces;
 using TaskAndDocumentManager.Application.Notifications.Interfaces;
 using TaskAndDocumentManager.Application.Tasks.Interfaces;
+using TaskAndDocumentManager.Application.Workspaces.Interfaces;
 using TaskAndDocumentManager.Domain.Documents;
 using TaskAndDocumentManager.Domain.Entities;
 using TaskAndDocumentManager.Domain.Tasks;
@@ -18,6 +19,7 @@ public class ShareTaskLinkedDocument
     private readonly INotificationDispatcher _notificationDispatcher;
     private readonly INotificationRepository _notificationRepository;
     private readonly ITaskRepository _taskRepository;
+    private readonly IWorkspaceMemberRepository _workspaceMemberRepository;
 
     public ShareTaskLinkedDocument(
         IAuditLogRepository auditLogRepository,
@@ -25,7 +27,8 @@ public class ShareTaskLinkedDocument
         IDocumentAccessRepository documentAccessRepository,
         INotificationDispatcher notificationDispatcher,
         INotificationRepository notificationRepository,
-        ITaskRepository taskRepository)
+        ITaskRepository taskRepository,
+        IWorkspaceMemberRepository workspaceMemberRepository)
     {
         _auditLogRepository = auditLogRepository;
         _documentRepository = documentRepository;
@@ -33,6 +36,7 @@ public class ShareTaskLinkedDocument
         _notificationDispatcher = notificationDispatcher;
         _notificationRepository = notificationRepository;
         _taskRepository = taskRepository;
+        _workspaceMemberRepository = workspaceMemberRepository;
     }
 
     public async Task ExecuteAsync(
@@ -106,6 +110,9 @@ public class ShareTaskLinkedDocument
             throw new InvalidOperationException("Target user must be a participant in the linked task.");
         }
 
+        EnsureSharingUserIsWorkspaceMember(request.WorkspaceId, request.GrantedByUserId);
+        EnsureTargetUserIsWorkspaceMember(request.WorkspaceId, request.TargetUserId);
+
         var access = new DocumentAccess(
             request.DocumentId,
             request.TargetUserId,
@@ -132,5 +139,21 @@ public class ShareTaskLinkedDocument
     private static bool IsTaskParticipant(TaskItem task, Guid userId)
     {
         return task.OwnerId == userId || task.AssignedToUserId == userId;
+    }
+
+    private void EnsureSharingUserIsWorkspaceMember(Guid workspaceId, Guid userId)
+    {
+        if (!_workspaceMemberRepository.IsMember(workspaceId, userId))
+        {
+            throw new UnauthorizedAccessException("You do not have access to this workspace.");
+        }
+    }
+
+    private void EnsureTargetUserIsWorkspaceMember(Guid workspaceId, Guid userId)
+    {
+        if (!_workspaceMemberRepository.IsMember(workspaceId, userId))
+        {
+            throw new InvalidOperationException("The target user must be a member of this workspace.");
+        }
     }
 }
