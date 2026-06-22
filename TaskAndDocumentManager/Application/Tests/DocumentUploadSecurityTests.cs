@@ -10,6 +10,7 @@ using TaskAndDocumentManager.Application.Documents.Interfaces;
 using TaskAndDocumentManager.Application.Documents.UseCases;
 using TaskAndDocumentManager.Application.Notifications.Interfaces;
 using TaskAndDocumentManager.Application.Tasks.Interfaces;
+using TaskAndDocumentManager.Application.Workspaces.Interfaces;
 using TaskAndDocumentManager.Controllers;
 using TaskAndDocumentManager.Infrastructure.Auth.Token;
 using TaskAndDocumentManager.Infrastructure.Storage;
@@ -137,6 +138,7 @@ public class DocumentUploadSecurityTests
         var auditLogRepositoryMock = new Mock<IAuditLogRepository>();
         var notificationDispatcherMock = new Mock<INotificationDispatcher>();
         var notificationRepositoryMock = new Mock<INotificationRepository>();
+        var workspaceMemberRepositoryMock = new Mock<IWorkspaceMemberRepository>();
 
         var uploadDocument = new UploadDocument(
             auditLogRepositoryMock.Object,
@@ -148,14 +150,16 @@ public class DocumentUploadSecurityTests
             documentRepositoryMock.Object,
             documentAccessRepositoryMock.Object,
             notificationDispatcherMock.Object,
-            notificationRepositoryMock.Object);
+            notificationRepositoryMock.Object,
+            workspaceMemberRepositoryMock.Object);
         var shareTaskLinkedDocument = new ShareTaskLinkedDocument(
             auditLogRepositoryMock.Object,
             documentRepositoryMock.Object,
             documentAccessRepositoryMock.Object,
             notificationDispatcherMock.Object,
             notificationRepositoryMock.Object,
-            taskRepositoryMock.Object);
+            taskRepositoryMock.Object,
+            workspaceMemberRepositoryMock.Object);
         var revokeDocumentAccess = new RevokeDocumentAccess(
             auditLogRepositoryMock.Object,
             documentRepositoryMock.Object,
