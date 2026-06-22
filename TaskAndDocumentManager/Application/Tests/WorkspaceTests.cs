@@ -127,4 +127,35 @@ public class WorkspaceTests
 
         Assert.Equal("name", exception.ParamName);
     }
+
+    [Fact]
+    public void TeamMemberConstructor_ShouldCreateMembership()
+    {
+        var teamId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+
+        var member = new TeamMember(teamId, userId);
+
+        Assert.Equal(teamId, member.TeamId);
+        Assert.Equal(userId, member.UserId);
+        Assert.True(member.JoinedAtUtc <= DateTime.UtcNow);
+    }
+
+    [Fact]
+    public void TeamMemberConstructor_ShouldRejectEmptyTeamId()
+    {
+        var exception = Assert.Throws<ArgumentException>(() =>
+            new TeamMember(Guid.Empty, Guid.NewGuid()));
+
+        Assert.Equal("teamId", exception.ParamName);
+    }
+
+    [Fact]
+    public void TeamMemberConstructor_ShouldRejectEmptyUserId()
+    {
+        var exception = Assert.Throws<ArgumentException>(() =>
+            new TeamMember(Guid.NewGuid(), Guid.Empty));
+
+        Assert.Equal("userId", exception.ParamName);
+    }
 }
