@@ -8,17 +8,31 @@ public class NotificationTests
     public void Constructor_ShouldCreateUnreadNotification_WhenInputIsValid()
     {
         var userId = Guid.NewGuid();
+        var workspaceId = Guid.NewGuid();
 
         var notification = new Notification(
             userId,
-            Guid.NewGuid(),
+            workspaceId,
             "Document shared with you",
             "Opeyemi shared resume.pdf with you.");
 
         Assert.Equal(userId, notification.UserId);
+        Assert.Equal(workspaceId, notification.WorkspaceId);
         Assert.Equal("Document shared with you", notification.Title);
         Assert.Equal("Opeyemi shared resume.pdf with you.", notification.Message);
         Assert.False(notification.IsRead);
+    }
+
+    [Fact]
+    public void Constructor_ShouldRejectEmptyWorkspaceId()
+    {
+        var exception = Assert.Throws<ArgumentException>(() => new Notification(
+            Guid.NewGuid(),
+            Guid.Empty,
+            "Document shared with you",
+            "Opeyemi shared resume.pdf with you."));
+
+        Assert.Equal("workspaceId", exception.ParamName);
     }
 
     [Fact]

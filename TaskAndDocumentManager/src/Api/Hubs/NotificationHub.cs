@@ -28,8 +28,9 @@ public class NotificationHub : Hub
     {
         var actorId = Context.User?.GetActorId()
             ?? throw new UnauthorizedAccessException("Authenticated user context is required.");
+        var workspaceId = Context.User.GetWorkspaceId();
 
-        await Groups.AddToGroupAsync(Context.ConnectionId, GetUserGroupName(actorId));
+        await Groups.AddToGroupAsync(Context.ConnectionId, GetWorkspaceUserGroupName(workspaceId, actorId));
         var change = _connectionTracker.AddConnection(actorId, Context.ConnectionId);
 
         if (change.IsFirstConnection)
@@ -44,10 +45,13 @@ public class NotificationHub : Hub
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
         var actorId = Context.User?.GetActorId();
+        var workspaceId = Context.User?.GetWorkspaceId();
 
-        if (actorId.HasValue)
+        if (actorId.HasValue && workspaceId.HasValue)
         {
-            await Groups.RemoveFromGroupAsync(Context.ConnectionId, GetUserGroupName(actorId.Value));
+            await Groups.RemoveFromGroupAsync(
+                Context.ConnectionId,
+                GetWorkspaceUserGroupName(workspaceId.Value, actorId.Value));
             var change = _connectionTracker.RemoveConnection(actorId.Value, Context.ConnectionId);
 
             if (change.IsLastConnection)
@@ -60,8 +64,8 @@ public class NotificationHub : Hub
         await base.OnDisconnectedAsync(exception);
     }
 
-    public static string GetUserGroupName(Guid userId)
+    public static string GetWorkspaceUserGroupName(Guid workspaceId, Guid userId)
     {
-        return $"user:{userId}";
+        return $"workspace:{workspaceId}:user:{userId}";
     }
 }
