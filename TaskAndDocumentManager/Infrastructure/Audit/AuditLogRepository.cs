@@ -22,6 +22,11 @@ public class AuditLogRepository : IAuditLogRepository
     {
         ArgumentNullException.ThrowIfNull(query);
 
+        if (!query.WorkspaceId.HasValue || query.WorkspaceId.Value == Guid.Empty)
+        {
+            throw new ArgumentException("Workspace ID is required.", nameof(query));
+        }
+
         var pageNumber = query.PageNumber < 1 ? 1 : query.PageNumber;
         var pageSize = query.PageSize < 1
             ? AuditQuery.DefaultPageSize
@@ -34,10 +39,7 @@ public class AuditLogRepository : IAuditLogRepository
             filteredLogs = filteredLogs.Where(auditLog => auditLog.UserId == query.UserId.Value);
         }
 
-        if (query.WorkspaceId.HasValue)
-        {
-            filteredLogs = filteredLogs.Where(auditLog => auditLog.WorkspaceId == query.WorkspaceId.Value);
-        }
+        filteredLogs = filteredLogs.Where(auditLog => auditLog.WorkspaceId == query.WorkspaceId.Value);
 
         if (!string.IsNullOrWhiteSpace(query.Action))
         {
