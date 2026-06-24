@@ -166,6 +166,17 @@ public class ListAuditLogsTests
         Assert.Equal(matchingLog.Id, item.Id);
     }
 
+    [Fact]
+    public async Task Repository_ShouldRejectSearchWithoutWorkspaceScope()
+    {
+        var repository = new AuditLogRepository();
+
+        var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
+            repository.SearchAuditLogsAsync(new AuditQuery()));
+
+        Assert.Equal("query", exception.ParamName);
+    }
+
     private static AuditLog CreateAuditLog(
         Guid userId,
         string action,

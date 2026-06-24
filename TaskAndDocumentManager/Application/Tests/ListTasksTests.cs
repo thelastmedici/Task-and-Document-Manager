@@ -203,6 +203,15 @@ public class ListTasksTests
     }
 
     [Fact]
+    public async Task ExecuteAsync_ShouldRejectEmptyWorkspaceId()
+    {
+        var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
+            _sut.ExecuteAsync(new TaskQuery(), Guid.NewGuid(), Guid.Empty, false, false));
+
+        Assert.Equal("workspaceId", exception.ParamName);
+    }
+
+    [Fact]
     public async Task ExecuteAsync_ShouldScopeQueryToOwnerOrAssigned_WhenUserIsManager()
     {
         var actorId = Guid.NewGuid();

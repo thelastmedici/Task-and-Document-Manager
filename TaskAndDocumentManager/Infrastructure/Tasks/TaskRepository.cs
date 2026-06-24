@@ -37,6 +37,7 @@ public class TaskRepository(TaskDbContext dbContext) : ITaskRepository
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(query);
+        EnsureWorkspaceScope(query);
 
         var pageNumber = query.PageNumber < 1 ? 1 : query.PageNumber;
         var pageSize = query.PageSize < 1
@@ -57,6 +58,7 @@ public class TaskRepository(TaskDbContext dbContext) : ITaskRepository
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(query);
+        EnsureWorkspaceScope(query);
 
         return await ApplyFilters(_dbContext.Tasks.AsNoTracking(), query)
             .CountAsync(cancellationToken);
@@ -121,6 +123,14 @@ public class TaskRepository(TaskDbContext dbContext) : ITaskRepository
         }
 
         return tasks;
+    }
+
+    private static void EnsureWorkspaceScope(TaskQuery query)
+    {
+        if (!query.WorkspaceId.HasValue || query.WorkspaceId.Value == Guid.Empty)
+        {
+            throw new ArgumentException("Workspace ID is required.", nameof(query));
+        }
     }
 
     private static IQueryable<TaskItem> ApplySort(IQueryable<TaskItem> tasks, TaskQuery query)
