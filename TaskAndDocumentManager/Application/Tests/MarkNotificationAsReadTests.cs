@@ -61,4 +61,13 @@ public class MarkNotificationAsReadTests
             repository => repository.UpdateAsync(It.IsAny<Notification>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
+
+    [Fact]
+    public async Task ExecuteAsync_ShouldRejectEmptyWorkspaceId()
+    {
+        var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
+            _sut.ExecuteAsync(Guid.NewGuid(), Guid.NewGuid(), Guid.Empty, CancellationToken.None));
+
+        Assert.Equal("workspaceId", exception.ParamName);
+    }
 }

@@ -33,15 +33,16 @@ public class SignalRNotificationDispatcher : INotificationDispatcher
         try
         {
             await _notificationHubContext.Clients
-                .Group(NotificationHub.GetUserGroupName(notification.UserId))
+                .Group(NotificationHub.GetWorkspaceUserGroupName(notification.WorkspaceId, notification.UserId))
                 .SendAsync(RealtimeEventNames.NotificationCreated, payload, cancellationToken);
         }
         catch (Exception ex)
         {
             _logger.LogWarning(
                 ex,
-                "Realtime notification delivery failed for notification {NotificationId} and user {UserId}.",
+                "Realtime notification delivery failed for notification {NotificationId}, workspace {WorkspaceId}, and user {UserId}.",
                 notification.Id,
+                notification.WorkspaceId,
                 notification.UserId);
         }
     }

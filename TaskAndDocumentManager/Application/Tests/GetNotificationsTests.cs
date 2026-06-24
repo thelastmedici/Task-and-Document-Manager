@@ -42,4 +42,13 @@ public class GetNotificationsTests
         Assert.Equal(notification.Message, item.Message);
         Assert.False(item.IsRead);
     }
+
+    [Fact]
+    public async Task ExecuteAsync_ShouldRejectEmptyWorkspaceId()
+    {
+        var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
+            _sut.ExecuteAsync(Guid.NewGuid(), Guid.Empty, CancellationToken.None));
+
+        Assert.Equal("workspaceId", exception.ParamName);
+    }
 }
