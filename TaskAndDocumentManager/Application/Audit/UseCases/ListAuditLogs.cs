@@ -79,6 +79,7 @@ public class ListAuditLogs
         return new AuditLogDto(
             auditLog.Id,
             auditLog.UserId,
+            auditLog.WorkspaceId,
             auditLog.Action,
             auditLog.EntityType,
             auditLog.EntityId,

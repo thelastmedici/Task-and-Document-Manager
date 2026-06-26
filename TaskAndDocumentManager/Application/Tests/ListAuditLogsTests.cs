@@ -55,6 +55,7 @@ public class ListAuditLogsTests
         Assert.Equal(1, result.Page);
         Assert.Equal(AuditQuery.MaxPageSize, result.PageSize);
         Assert.Equal(auditLog.Id, item.Id);
+        Assert.Equal(workspaceId, item.WorkspaceId);
         Assert.Equal(auditLog.Action, item.Action);
     }
 
