@@ -33,7 +33,7 @@ public class WorkspaceMember
             throw new ArgumentException("Workspace role is required.", nameof(role));
         }
 
-        var normalizedRole = role.Trim();
+        var normalizedRole = WorkspaceRoles.Normalize(role);
         if (normalizedRole.Length > MaxRoleLength)
         {
             throw new ArgumentException($"Workspace role cannot exceed {MaxRoleLength} characters.", nameof(role));
