@@ -5,6 +5,7 @@ namespace TaskAndDocumentManager.Application.Workspaces.Interfaces;
 public interface IWorkspaceMemberRepository
 {
     WorkspaceMember Add(WorkspaceMember member);
+    WorkspaceMember? GetMembership(Guid workspaceId, Guid userId);
     WorkspaceMember? GetDefaultMembershipForUser(Guid userId);
     bool IsMember(Guid workspaceId, Guid userId);
     IReadOnlyCollection<Guid> GetUserIdsForWorkspace(Guid workspaceId);

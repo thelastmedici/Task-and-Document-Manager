@@ -1,17 +1,27 @@
 using TaskAndDocumentManager.Application.Auth.Interfaces;
 using TaskAndDocumentManager.Api.Extensions;
+using TaskAndDocumentManager.Api.BackgroundJobs;
+using TaskAndDocumentManager.Api.Hubs;
+using TaskAndDocumentManager.Api.Realtime;
+using TaskAndDocumentManager.Application.BackgroundJobs;
+using TaskAndDocumentManager.Application.Audit.UseCases;
 using TaskAndDocumentManager.Application.Auth.UseCases;
 using TaskAndDocumentManager.Application.Audit.Interfaces;
 using TaskAndDocumentManager.Application.Documents.Interfaces;
 using TaskAndDocumentManager.Application.Documents.UseCases;
+using TaskAndDocumentManager.Application.Notifications.Interfaces;
+using TaskAndDocumentManager.Application.Notifications.UseCases;
+using TaskAndDocumentManager.Application.Search.UseCases;
 using TaskAndDocumentManager.Application.Tasks.Interfaces;
 using TaskAndDocumentManager.Application.Tasks.UseCases;
 using TaskAndDocumentManager.Application.Workspaces.Interfaces;
+using TaskAndDocumentManager.Application.Workspaces.UseCases;
 using TaskAndDocumentManager.Infrastructure.Audit;
 using TaskAndDocumentManager.Infrastructure.Auth.Services;
 using TaskAndDocumentManager.Infrastructure.Auth;
 using TaskAndDocumentManager.Infrastructure.Auth.Token;
 using TaskAndDocumentManager.Infrastructure.Documents;
+using TaskAndDocumentManager.Infrastructure.Notifications;
 using TaskAndDocumentManager.Infrastructure.Persistence;
 using TaskAndDocumentManager.Infrastructure.Storage;
 using TaskAndDocumentManager.Infrastructure.Tasks;
@@ -41,9 +51,16 @@ builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 builder.Services.AddScoped<ITaskRepository, TaskRepository>();
 builder.Services.AddScoped<IDocumentRepository, DocumentRepository>();
 builder.Services.AddScoped<IDocumentAccessRepository, DocumentAccessRepository>();
-builder.Services.AddScoped<IFileStorageService, FileStorageService>();
+builder.Services.AddScoped<FileStorageService>();
+builder.Services.AddScoped<IFileStorageService>(serviceProvider =>
+    serviceProvider.GetRequiredService<FileStorageService>());
+builder.Services.AddScoped<IFileStorageMaintenanceService>(serviceProvider =>
+    serviceProvider.GetRequiredService<FileStorageService>());
+builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
+builder.Services.AddScoped<INotificationDispatcher, SignalRNotificationDispatcher>();
 builder.Services.AddSingleton<IWorkspaceRepository, InMemoryWorkspaceRepository>();
 builder.Services.AddSingleton<IWorkspaceMemberRepository, InMemoryWorkspaceMemberRepository>();
+builder.Services.AddSingleton<ITeamRepository, InMemoryTeamRepository>();
 builder.Services.AddSingleton<IRoleCatalog, RoleCatalog>();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IEmailValidator, EmailValidator>();
@@ -68,15 +85,27 @@ builder.Services.AddScoped<LinkDocumentToTask>();
 builder.Services.AddScoped<GetDocumentMetadata>();
 builder.Services.AddScoped<DocumentAccessEvaluator>();
 builder.Services.AddScoped<ListAccessibleDocuments>();
+builder.Services.AddScoped<ListAuditLogs>();
+builder.Services.AddScoped<GetNotifications>();
+builder.Services.AddScoped<MarkNotificationAsRead>();
+builder.Services.AddScoped<GlobalSearch>();
+builder.Services.AddScoped<CreateTeam>();
+builder.Services.AddScoped<ListTeams>();
+builder.Services.AddScoped<AddTeamMember>();
+builder.Services.AddScoped<RemoveTeamMember>();
 builder.Services.AddScoped<IPasswordValidator, PasswordValidator>();
 builder.Services.AddScoped<ITokenService, JwtTokenService>();
 builder.Services.AddScoped<ListUsers>();
 builder.Services.AddScoped<CreateUserAsAdmin>();
 builder.Services.AddScoped<ChangeUserRole>();
 builder.Services.AddScoped<DeleteUser>();
+builder.Services.AddScoped<IBackgroundJob, SendTaskDeadlineReminders>();
+builder.Services.AddScoped<IBackgroundJob, CleanupOrphanedDocumentFiles>();
+builder.Services.Configure<BackgroundJobOptions>(builder.Configuration.GetSection("BackgroundJobs"));
+builder.Services.AddHostedService<ScheduledBackgroundJobService>();
 // Realtime presence and connection tracking
-builder.Services.AddSingleton<TaskAndDocumentManager.Api.Realtime.IUserConnectionTracker, TaskAndDocumentManager.Api.Realtime.InMemoryUserConnectionTracker>();
-builder.Services.AddSingleton<TaskAndDocumentManager.Application.Presence.Interfaces.IPresenceService, TaskAndDocumentManager.Api.Realtime.InMemoryPresenceService>();
+builder.Services.AddSingleton<IUserConnectionTracker, InMemoryUserConnectionTracker>();
+builder.Services.AddSingleton<TaskAndDocumentManager.Application.Presence.Interfaces.IPresenceService, InMemoryPresenceService>();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -91,9 +120,28 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateLifetime = true,
             ClockSkew = TimeSpan.Zero
         };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                var path = context.HttpContext.Request.Path;
+
+                if (!string.IsNullOrWhiteSpace(accessToken) &&
+                    (path.StartsWithSegments("/hubs/notifications") ||
+                    path.StartsWithSegments("/hubs/realtime")))
+                {
+                    context.Token = accessToken;
+                }
+
+                return Task.CompletedTask;
+            }
+        };
     });
 
 builder.Services.AddControllers();
+builder.Services.AddSignalR();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddAuthorization(options =>
@@ -147,4 +195,6 @@ app.Use(async (context, next) =>
 });
 app.UseAuthorization();
 app.MapControllers();
+app.MapHub<NotificationHub>("/hubs/notifications");
+app.MapHub<RealtimeHub>("/hubs/realtime");
 app.Run();

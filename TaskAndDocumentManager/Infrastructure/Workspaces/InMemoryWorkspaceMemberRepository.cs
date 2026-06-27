@@ -24,6 +24,13 @@ public class InMemoryWorkspaceMemberRepository : IWorkspaceMemberRepository
         return member;
     }
 
+    public WorkspaceMember? GetMembership(Guid workspaceId, Guid userId)
+    {
+        return Members.FirstOrDefault(member =>
+            member.WorkspaceId == workspaceId &&
+            member.UserId == userId);
+    }
+
     public WorkspaceMember? GetDefaultMembershipForUser(Guid userId)
     {
         return Members

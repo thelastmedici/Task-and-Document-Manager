@@ -32,6 +32,15 @@ public class TaskRepository(TaskDbContext dbContext) : ITaskRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyList<TaskItem>> GetAllForMaintenanceAsync(CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.Tasks
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .OrderByDescending(task => task.CreatedAt)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<IReadOnlyList<TaskItem>> SearchTasksAsync(
         TaskQuery query,
         CancellationToken cancellationToken = default)
