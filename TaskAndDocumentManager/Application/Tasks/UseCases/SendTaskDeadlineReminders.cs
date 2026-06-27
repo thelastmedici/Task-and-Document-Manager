@@ -30,7 +30,7 @@ public class SendTaskDeadlineReminders : IBackgroundJob
     {
         var now = DateTime.UtcNow;
         var reminderCutoff = now.Add(ReminderWindow);
-        var tasks = await _taskRepository.GetAllAsync(cancellationToken);
+        var tasks = await _taskRepository.GetAllForMaintenanceAsync(cancellationToken);
 
         foreach (var task in tasks.Where(task => ShouldSendReminder(task, now, reminderCutoff)))
         {

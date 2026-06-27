@@ -38,7 +38,7 @@ public class SendTaskDeadlineRemindersTests
         task.AssignTask(assignedUserId);
 
         _taskRepositoryMock
-            .Setup(repository => repository.GetAllAsync(It.IsAny<CancellationToken>()))
+            .Setup(repository => repository.GetAllForMaintenanceAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new[] { task });
 
         await _sut.ExecuteAsync(CancellationToken.None);
@@ -74,7 +74,7 @@ public class SendTaskDeadlineRemindersTests
         task.MarkDeadlineReminderSent();
 
         _taskRepositoryMock
-            .Setup(repository => repository.GetAllAsync(It.IsAny<CancellationToken>()))
+            .Setup(repository => repository.GetAllForMaintenanceAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new[] { task });
 
         await _sut.ExecuteAsync(CancellationToken.None);
@@ -98,7 +98,7 @@ public class SendTaskDeadlineRemindersTests
         task.MarkCompleted();
 
         _taskRepositoryMock
-            .Setup(repository => repository.GetAllAsync(It.IsAny<CancellationToken>()))
+            .Setup(repository => repository.GetAllForMaintenanceAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new[] { task });
 
         await _sut.ExecuteAsync(CancellationToken.None);

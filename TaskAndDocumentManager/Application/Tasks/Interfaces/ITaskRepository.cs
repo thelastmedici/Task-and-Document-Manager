@@ -14,6 +14,8 @@ namespace TaskAndDocumentManager.Application.Tasks.Interfaces
 
         Task<IReadOnlyList<TaskItem>> GetAllAsync(CancellationToken cancellationToken = default);
 
+        Task<IReadOnlyList<TaskItem>> GetAllForMaintenanceAsync(CancellationToken cancellationToken = default);
+
         Task UpdateAsync(TaskItem task, CancellationToken cancellationToken = default);
 
         Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
