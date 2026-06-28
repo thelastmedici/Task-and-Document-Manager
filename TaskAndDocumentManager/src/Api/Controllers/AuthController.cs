@@ -4,11 +4,12 @@ using TaskAndDocumentManager.Application.Auth.DTOs;
 using TaskAndDocumentManager.Application.Auth.UseCases;
 using TaskAndDocumentManager.Api.Authorization;
 using TaskAndDocumentManager.Api.Extensions;
+using TaskAndDocumentManager.Api.Routing;
 
 namespace TaskAndDocumentManager.Controllers;
 
 [ApiController]
-[Route("api/auth")]
+[Route(ApiRoutes.Auth)]
 public class AuthController : ControllerBase
 {
     private readonly RegisterUser _registerUser;
