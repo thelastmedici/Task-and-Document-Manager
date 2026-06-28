@@ -6,7 +6,7 @@
     }
 
     const storageKey = "task-doc-manager.jwt";
-    const apiBase = "/api";
+    const apiBase = "/api/v1";
     const reconnectRefreshDelayMs = 500;
     const eventRefreshDelayMs = 900;
     const periodicRefreshMs = 60_000;

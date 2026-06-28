@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TaskAndDocumentManager.Api.Authorization;
 using TaskAndDocumentManager.Api.Extensions;
+using TaskAndDocumentManager.Api.Routing;
 using TaskAndDocumentManager.Application.Tasks.DTOs;
 using TaskAndDocumentManager.Application.Tasks.Interfaces;
 using TaskAndDocumentManager.Application.Tasks.UseCases;
@@ -11,7 +12,7 @@ namespace TaskAndDocumentManager.Controllers;
 
 [Authorize(Policy = AppPolicies.Authenticated)]
 [ApiController]
-[Route("api/tasks")]
+[Route(ApiRoutes.Tasks)]
 public class TaskController : ControllerBase
 {
     private readonly CreateTask _createTask;

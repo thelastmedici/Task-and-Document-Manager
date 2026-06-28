@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TaskAndDocumentManager.Api.Authorization;
 using TaskAndDocumentManager.Api.Extensions;
+using TaskAndDocumentManager.Api.Routing;
 using TaskAndDocumentManager.Application.Documents.DTOs;
 using TaskAndDocumentManager.Application.Documents.Interfaces;
 using TaskAndDocumentManager.Application.Documents.UseCases;
@@ -12,7 +13,7 @@ namespace TaskAndDocumentManager.Controllers;
 
 [Authorize(Policy = AppPolicies.Authenticated)]
 [ApiController]
-[Route("api/documents")]
+[Route(ApiRoutes.Documents)]
 public class DocumentsController : ControllerBase
 {
     private const long MaxFileSizeBytes = 20 * 1024 * 1024;

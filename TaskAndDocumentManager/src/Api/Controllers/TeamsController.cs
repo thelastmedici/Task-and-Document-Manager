@@ -2,13 +2,14 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TaskAndDocumentManager.Api.Authorization;
 using TaskAndDocumentManager.Api.Extensions;
+using TaskAndDocumentManager.Api.Routing;
 using TaskAndDocumentManager.Application.Workspaces.UseCases;
 
 namespace TaskAndDocumentManager.Controllers;
 
 [Authorize(Policy = AppPolicies.Authenticated)]
 [ApiController]
-[Route("api/teams")]
+[Route(ApiRoutes.Teams)]
 public class TeamsController : ControllerBase
 {
     private readonly AddTeamMember _addTeamMember;

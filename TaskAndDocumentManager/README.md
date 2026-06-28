@@ -53,7 +53,7 @@ dotnet build TaskAndDocumentManager.sln
 dotnet test Application/Tests/Tests.csproj
 ```
 
-Latest verified test run: `93/93` passing.
+Latest verified test run: `132/132` passing.
 
 ## Authentication
 
@@ -61,8 +61,8 @@ The API uses JWT bearer authentication.
 
 ### Login Flow
 
-1. Register with `POST /api/auth/register` or use an existing account.
-2. Authenticate with `POST /api/auth/login`.
+1. Register with `POST /api/v1/auth/register` or use an existing account.
+2. Authenticate with `POST /api/v1/auth/login`.
 3. Store the returned token.
 4. Send the token on protected requests:
 
@@ -73,7 +73,7 @@ Authorization: Bearer <jwt>
 ### Example Login Request
 
 ```http
-POST /api/auth/login
+POST /api/v1/auth/login
 Content-Type: application/json
 
 {
@@ -126,70 +126,79 @@ Ownership is explicit and enforced per request:
 
 - tasks use `OwnerId`
 - documents use `OwnerId`
-- downloads are only served through `GET /api/documents/{id}/download`
+- downloads are only served through `GET /api/v1/documents/{id}/download`
 - access is validated in the backend before metadata or file bytes are returned
 
 ## API Overview
 
-All API endpoints are rooted under `/api`.
+All versioned REST API endpoints are rooted under `/api/v1`.
 
 ### Auth
 
 | Method | Route | Notes |
 |---|---|---|
-| `POST` | `/api/auth/register` | self-service registration |
-| `POST` | `/api/auth/login` | returns JWT and user payload |
-| `GET` | `/api/auth/me` | current user profile |
-| `GET` | `/api/auth/users` | manager/admin |
-| `POST` | `/api/auth/users` | admin only |
-| `PUT` | `/api/auth/users/{id}/deactivate` | admin only |
-| `PUT` | `/api/auth/users/{id}/role` | admin only |
-| `DELETE` | `/api/auth/users/{id}` | admin only |
+| `POST` | `/api/v1/auth/register` | self-service registration |
+| `POST` | `/api/v1/auth/login` | returns JWT and user payload |
+| `GET` | `/api/v1/auth/me` | current user profile |
+| `GET` | `/api/v1/auth/users` | manager/admin |
+| `POST` | `/api/v1/auth/users` | admin only |
+| `PUT` | `/api/v1/auth/users/{id}/deactivate` | admin only |
+| `PUT` | `/api/v1/auth/users/{id}/role` | admin only |
+| `DELETE` | `/api/v1/auth/users/{id}` | admin only |
 
 ### Tasks
 
 | Method | Route | Notes |
 |---|---|---|
-| `POST` | `/api/tasks` | create task |
-| `GET` | `/api/tasks` | paginated, filtered, scoped to caller |
-| `GET` | `/api/tasks/{id}` | task detail with access check |
-| `PUT` | `/api/tasks/{id}` | owner/admin |
-| `DELETE` | `/api/tasks/{id}` | owner/admin |
-| `POST` | `/api/tasks/{id}/assign` | manager/admin |
+| `POST` | `/api/v1/tasks` | create task |
+| `GET` | `/api/v1/tasks` | paginated, filtered, scoped to caller |
+| `GET` | `/api/v1/tasks/{id}` | task detail with access check |
+| `PUT` | `/api/v1/tasks/{id}` | owner/admin |
+| `DELETE` | `/api/v1/tasks/{id}` | owner/admin |
+| `POST` | `/api/v1/tasks/{id}/assign` | manager/admin |
 
 ### Documents
 
 | Method | Route | Notes |
 |---|---|---|
-| `POST` | `/api/documents` | multipart upload |
-| `GET` | `/api/documents` | paginated, scoped document list |
-| `GET` | `/api/documents/shared-with-me` | explicitly shared documents |
-| `GET` | `/api/documents/{id}` | metadata with access check |
-| `GET` | `/api/documents/{id}/download` | file download with access check |
-| `POST` | `/api/documents/{id}/link-task` | link document to task |
-| `POST` | `/api/documents/{id}/share` | direct share |
-| `POST` | `/api/documents/{id}/tasks/{taskId}/share` | share task-linked document |
-| `DELETE` | `/api/documents/{id}/share/{userId}` | revoke share |
-| `DELETE` | `/api/documents/{id}` | delete document |
+| `POST` | `/api/v1/documents` | multipart upload |
+| `GET` | `/api/v1/documents` | paginated, scoped document list |
+| `GET` | `/api/v1/documents/shared-with-me` | explicitly shared documents |
+| `GET` | `/api/v1/documents/{id}` | metadata with access check |
+| `GET` | `/api/v1/documents/{id}/download` | file download with access check |
+| `POST` | `/api/v1/documents/{id}/link-task` | link document to task |
+| `POST` | `/api/v1/documents/{id}/share` | direct share |
+| `POST` | `/api/v1/documents/{id}/tasks/{taskId}/share` | share task-linked document |
+| `DELETE` | `/api/v1/documents/{id}/share/{userId}` | revoke share |
+| `DELETE` | `/api/v1/documents/{id}` | delete document |
 
 ### Notifications
 
 | Method | Route | Notes |
 |---|---|---|
-| `GET` | `/api/notifications` | list current user's notifications |
-| `PATCH` | `/api/notifications/{id}/read` | mark notification as read |
+| `GET` | `/api/v1/notifications` | list current user's notifications |
+| `PATCH` | `/api/v1/notifications/{id}/read` | mark notification as read |
 
 ### Search
 
 | Method | Route | Notes |
 |---|---|---|
-| `GET` | `/api/search` | scoped search across tasks and documents |
+| `GET` | `/api/v1/search` | scoped search across tasks and documents |
 
 ### Audit Logs
 
 | Method | Route | Notes |
 |---|---|---|
-| `GET` | `/api/audit-logs` | admin only |
+| `GET` | `/api/v1/audit-logs` | admin only |
+
+### Teams
+
+| Method | Route | Notes |
+|---|---|---|
+| `POST` | `/api/v1/teams` | workspace owner/admin/manager |
+| `GET` | `/api/v1/teams` | workspace member |
+| `POST` | `/api/v1/teams/{teamId}/members` | workspace owner/admin/manager |
+| `DELETE` | `/api/v1/teams/{teamId}/members/{userId}` | workspace owner/admin/manager |
 
 ## Task API
 
@@ -213,7 +222,7 @@ The task model currently includes:
 ### Create Task
 
 ```http
-POST /api/tasks
+POST /api/v1/tasks
 Authorization: Bearer <jwt>
 Content-Type: application/json
 
@@ -227,7 +236,7 @@ Content-Type: application/json
 
 ### List Task Query Parameters
 
-`GET /api/tasks` supports:
+`GET /api/v1/tasks` supports:
 
 - `pageNumber`
 - `pageSize`
@@ -247,7 +256,7 @@ Content-Type: application/json
 - `Admin` can list all tasks
 - `Manager` can list owned tasks and assigned tasks
 - `User` can list owned tasks only
-- `GET /api/tasks/{id}` validates access before returning the resource
+- `GET /api/v1/tasks/{id}` validates access before returning the resource
 - update/delete are ownership-based unless the caller is `Admin`
 
 ## Document API
@@ -265,7 +274,7 @@ Do not assume files are publicly addressable. There is no supported direct file 
 All document access must go through API endpoints such as:
 
 ```text
-GET /api/documents/{id}/download
+GET /api/v1/documents/{id}/download
 ```
 
 The backend enforces:
@@ -305,7 +314,7 @@ Example response:
 
 ### Document Listing Query Parameters
 
-`GET /api/documents` and `GET /api/documents/shared-with-me` support:
+`GET /api/v1/documents` and `GET /api/v1/documents/shared-with-me` support:
 
 - `searchTerm`
 - `contentType`
@@ -328,8 +337,8 @@ The REST API is the source of truth for notification state.
 
 Use:
 
-- `GET /api/notifications`
-- `PATCH /api/notifications/{id}/read`
+- `GET /api/v1/notifications`
+- `PATCH /api/v1/notifications/{id}/read`
 
 ### SignalR Hubs
 
@@ -362,7 +371,7 @@ Realtime is assistive. The API remains authoritative.
 
 ## Search API
 
-`GET /api/search` performs scoped search across tasks and documents.
+`GET /api/v1/search` performs scoped search across tasks and documents.
 
 Query parameters:
 
