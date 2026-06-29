@@ -34,6 +34,18 @@ Latest verified state:
 | Teams | Team entity, team membership, create/list/add/remove endpoints |
 | Tenant isolation | Workspace-scoped requests, query filters, and workspace-aware use cases |
 | API versioning | URL versioning via `/api/v1` route constants |
+| Performance guardrails | Paginated list responses, DTO returns, repository-level filtering |
+
+## Performance Guardrails
+
+The project now treats list endpoints as query operations, not "load everything" operations.
+
+- Tasks, documents, notifications, and audit logs use paginated responses.
+- Use cases return DTOs/results instead of exposing full domain entities to API clients.
+- Repositories apply filtering, sorting, ownership, workspace scope, `Skip`, and `Take` before materializing results.
+- Query objects are used where filters can grow over time, such as `TaskQuery`, `DocumentQuery`, `AuditQuery`, and `NotificationQuery`.
+
+This keeps the current implementation simple while avoiding common scaling issues like unbounded reads, in-memory filtering, and accidental N+1-style access patterns.
 
 ## Tech Stack
 
@@ -238,10 +250,10 @@ Team operations are scoped to the current workspace from the JWT.
 
 | Method | Route | Access |
 |---|---|---|
-| `GET` | `/api/v1/notifications` | authenticated |
+| `GET` | `/api/v1/notifications?pageNumber=1&pageSize=20` | authenticated |
 | `PATCH` | `/api/v1/notifications/{id}/read` | notification owner |
 
-Notifications are workspace-aware and are also pushed through SignalR.
+Notifications are workspace-aware, paginated, and are also pushed through SignalR.
 
 ### Search
 
@@ -409,7 +421,7 @@ The repo includes a small frontend shell under `wwwroot/js/site.js` and MVC view
 - log in
 - save a JWT locally
 - load the current user profile
-- list notifications
+- list the first page of notifications
 - connect to SignalR hubs
 - reconcile realtime events with REST API refreshes
 

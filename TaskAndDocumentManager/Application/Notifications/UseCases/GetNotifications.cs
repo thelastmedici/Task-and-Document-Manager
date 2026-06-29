@@ -1,3 +1,4 @@
+using TaskAndDocumentManager.Application.Common.DTOs;
 using TaskAndDocumentManager.Application.Notifications.DTOs;
 using TaskAndDocumentManager.Application.Notifications.Interfaces;
 
@@ -12,9 +13,10 @@ public class GetNotifications
         _notificationRepository = notificationRepository;
     }
 
-    public async Task<IReadOnlyCollection<NotificationDto>> ExecuteAsync(
+    public async Task<PaginatedResult<NotificationDto>> ExecuteAsync(
         Guid userId,
         Guid workspaceId,
+        NotificationQuery query,
         CancellationToken cancellationToken = default)
     {
         if (userId == Guid.Empty)
@@ -27,12 +29,15 @@ public class GetNotifications
             throw new ArgumentException("Workspace ID is required.", nameof(workspaceId));
         }
 
-        var notifications = await _notificationRepository.GetByUserIdAsync(
+        ArgumentNullException.ThrowIfNull(query);
+
+        var notifications = await _notificationRepository.SearchByUserIdAsync(
             userId,
             workspaceId,
+            query,
             cancellationToken);
 
-        return notifications
+        var items = notifications.Items
             .Select(notification => new NotificationDto(
                 notification.Id,
                 notification.Title,
@@ -40,5 +45,11 @@ public class GetNotifications
                 notification.IsRead,
                 notification.CreatedAtUtc))
             .ToList();
+
+        return new PaginatedResult<NotificationDto>(
+            items,
+            notifications.TotalCount,
+            notifications.Page,
+            notifications.PageSize);
     }
 }

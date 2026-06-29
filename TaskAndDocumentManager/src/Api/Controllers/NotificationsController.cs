@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using TaskAndDocumentManager.Api.Authorization;
 using TaskAndDocumentManager.Api.Extensions;
 using TaskAndDocumentManager.Api.Routing;
+using TaskAndDocumentManager.Application.Notifications.DTOs;
 using TaskAndDocumentManager.Application.Notifications.UseCases;
 
 namespace TaskAndDocumentManager.Controllers;
@@ -24,11 +25,14 @@ public class NotificationsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> List(CancellationToken cancellationToken)
+    public async Task<IActionResult> List(
+        [FromQuery] NotificationListRequest request,
+        CancellationToken cancellationToken)
     {
         var actorId = User.GetActorId();
         var workspaceId = User.GetWorkspaceId();
-        var notifications = await _getNotifications.ExecuteAsync(actorId, workspaceId, cancellationToken);
+        var query = new NotificationQuery(request.PageNumber, request.PageSize);
+        var notifications = await _getNotifications.ExecuteAsync(actorId, workspaceId, query, cancellationToken);
         return Ok(notifications);
     }
 
@@ -55,4 +59,8 @@ public class NotificationsController : ControllerBase
             return BadRequest(new { message = ex.Message });
         }
     }
+
+    public sealed record NotificationListRequest(
+        int PageNumber = 1,
+        int PageSize = NotificationQuery.DefaultPageSize);
 }
