@@ -1,4 +1,6 @@
 using Moq;
+using TaskAndDocumentManager.Application.Common.DTOs;
+using TaskAndDocumentManager.Application.Notifications.DTOs;
 using TaskAndDocumentManager.Application.Notifications.Interfaces;
 using TaskAndDocumentManager.Application.Notifications.UseCases;
 using TaskAndDocumentManager.Domain.Entities;
@@ -26,17 +28,33 @@ public class GetNotificationsTests
             workspaceId,
             "Document shared with you",
             "report.pdf was shared with you.");
+        var query = new NotificationQuery(PageNumber: 2, PageSize: 5);
 
         _notificationRepositoryMock
-            .Setup(repository => repository.GetByUserIdAsync(
+            .Setup(repository => repository.SearchByUserIdAsync(
                 userId,
                 workspaceId,
+                It.Is<NotificationQuery>(requestedQuery =>
+                    requestedQuery.PageNumber == query.PageNumber &&
+                    requestedQuery.PageSize == query.PageSize),
                 It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new[] { notification });
+            .ReturnsAsync(new PaginatedResult<Notification>(
+                new[] { notification },
+                6,
+                query.PageNumber,
+                query.PageSize));
 
-        var result = await _sut.ExecuteAsync(userId, workspaceId, CancellationToken.None);
+        var result = await _sut.ExecuteAsync(
+            userId,
+            workspaceId,
+            query,
+            CancellationToken.None);
 
-        var item = Assert.Single(result);
+        Assert.Equal(6, result.TotalCount);
+        Assert.Equal(query.PageNumber, result.Page);
+        Assert.Equal(query.PageSize, result.PageSize);
+
+        var item = Assert.Single(result.Items);
         Assert.Equal(notification.Id, item.Id);
         Assert.Equal(notification.Title, item.Title);
         Assert.Equal(notification.Message, item.Message);
@@ -47,7 +65,7 @@ public class GetNotificationsTests
     public async Task ExecuteAsync_ShouldRejectEmptyWorkspaceId()
     {
         var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
-            _sut.ExecuteAsync(Guid.NewGuid(), Guid.Empty, CancellationToken.None));
+            _sut.ExecuteAsync(Guid.NewGuid(), Guid.Empty, new NotificationQuery(), CancellationToken.None));
 
         Assert.Equal("workspaceId", exception.ParamName);
     }

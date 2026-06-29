@@ -10,6 +10,7 @@
     const reconnectRefreshDelayMs = 500;
     const eventRefreshDelayMs = 900;
     const periodicRefreshMs = 60_000;
+    const notificationPageSize = 20;
 
     const state = {
         token: localStorage.getItem(storageKey) || "",
@@ -166,14 +167,15 @@
         setSyncState("Refreshing", `Pulling notifications from the API because of ${reason}.`);
 
         try {
-            const notifications = await fetchJson(`${apiBase}/notifications`, {
+            const result = await fetchJson(`${apiBase}/notifications?pageNumber=1&pageSize=${notificationPageSize}`, {
                 headers: createAuthHeaders()
             });
+            const notifications = result.items || [];
 
             state.notifications = notifications;
             setSyncState(
                 "Synced",
-                `${notifications.length} notifications loaded from the API at ${new Date().toLocaleTimeString()}.`
+                `${notifications.length} of ${result.totalCount} notifications loaded from the API at ${new Date().toLocaleTimeString()}.`
             );
             render();
         } catch (error) {

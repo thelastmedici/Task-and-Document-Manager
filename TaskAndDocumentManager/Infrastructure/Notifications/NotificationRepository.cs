@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using TaskAndDocumentManager.Application.Common.DTOs;
+using TaskAndDocumentManager.Application.Notifications.DTOs;
 using TaskAndDocumentManager.Application.Notifications.Interfaces;
 using TaskAndDocumentManager.Domain.Entities;
 using TaskAndDocumentManager.Infrastructure.Tasks;
@@ -26,20 +28,36 @@ public class NotificationRepository(TaskDbContext dbContext) : INotificationRepo
             cancellationToken);
     }
 
-    public async Task<IReadOnlyCollection<Notification>> GetByUserIdAsync(
+    public async Task<PaginatedResult<Notification>> SearchByUserIdAsync(
         Guid userId,
         Guid workspaceId,
+        NotificationQuery query,
         CancellationToken cancellationToken = default)
     {
-        var notifications = await _dbContext.Notifications
+        var pageNumber = query.PageNumber < 1 ? 1 : query.PageNumber;
+        var pageSize = query.PageSize < 1
+            ? NotificationQuery.DefaultPageSize
+            : Math.Min(query.PageSize, NotificationQuery.MaxPageSize);
+
+        var filteredNotifications = _dbContext.Notifications
             .AsNoTracking()
             .Where(notification =>
                 notification.UserId == userId &&
-                notification.WorkspaceId == workspaceId)
+                notification.WorkspaceId == workspaceId);
+
+        var totalCount = await filteredNotifications.CountAsync(cancellationToken);
+
+        var notifications = await filteredNotifications
             .OrderByDescending(notification => notification.CreatedAtUtc)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync(cancellationToken);
 
-        return notifications;
+        return new PaginatedResult<Notification>(
+            notifications,
+            totalCount,
+            pageNumber,
+            pageSize);
     }
 
     public async Task UpdateAsync(Notification notification, CancellationToken cancellationToken = default)
