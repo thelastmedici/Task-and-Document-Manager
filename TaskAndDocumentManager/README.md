@@ -11,7 +11,7 @@ Latest verified state:
 - Target framework: `.NET 10` preview
 - API base path: `/api/v1`
 - Realtime hubs: `/hubs/notifications` and `/hubs/realtime`
-- Test suite: `139/139` passing
+- Test suite: `141/141` passing
 - Main remaining milestone: replace remaining in-memory repositories with database-backed persistence
 
 ## Implemented Architecture
@@ -35,6 +35,7 @@ Latest verified state:
 | Tenant isolation | Workspace-scoped requests, query filters, and workspace-aware use cases |
 | API versioning | URL versioning via `/api/v1` route constants |
 | Performance guardrails | Paginated list responses, DTO returns, repository-level filtering |
+| Caching | Built-in memory cache for stable reference data |
 
 ## Performance Guardrails
 
@@ -47,6 +48,21 @@ The project now treats list endpoints as query operations, not "load everything"
 
 This keeps the current implementation simple while avoiding common scaling issues like unbounded reads, in-memory filtering, and accidental N+1-style access patterns.
 
+## Caching
+
+The project uses ASP.NET Core's built-in memory cache for stable reference data:
+
+- built-in system role catalog
+- allowed document upload types
+
+The project intentionally does not cache volatile user data yet:
+
+- current notifications
+- user tasks
+- audit logs
+
+If the app later runs across multiple servers, this cache should move to a distributed cache such as Redis.
+
 ## Tech Stack
 
 - ASP.NET Core
@@ -54,6 +70,7 @@ This keeps the current implementation simple while avoiding common scaling issue
 - PostgreSQL
 - JWT bearer authentication
 - SignalR
+- Memory cache
 - Hosted services for background jobs
 - xUnit and Moq
 
@@ -401,6 +418,7 @@ The test suite covers:
 - workspace/team domain behavior
 - team use cases
 - API route versioning
+- memory-cached reference catalogs
 
 Run:
 
@@ -411,7 +429,7 @@ dotnet test Application/Tests/Tests.csproj
 Latest verified result:
 
 ```text
-139 passed
+141 passed
 ```
 
 ## Minimal Frontend Shell

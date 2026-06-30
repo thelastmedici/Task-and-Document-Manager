@@ -135,13 +135,21 @@ public class DocumentUploadSecurityTests
         var documentAccessRepositoryMock = new Mock<IDocumentAccessRepository>();
         var taskRepositoryMock = new Mock<ITaskRepository>();
         var fileStorageServiceMock = new Mock<IFileStorageService>();
+        var allowedDocumentTypeCatalogMock = new Mock<IAllowedDocumentTypeCatalog>();
         var auditLogRepositoryMock = new Mock<IAuditLogRepository>();
         var notificationDispatcherMock = new Mock<INotificationDispatcher>();
         var notificationRepositoryMock = new Mock<INotificationRepository>();
         var workspaceMemberRepositoryMock = new Mock<IWorkspaceMemberRepository>();
+        allowedDocumentTypeCatalogMock
+            .Setup(catalog => catalog.IsAllowedExtension(".pdf"))
+            .Returns(true);
+        allowedDocumentTypeCatalogMock
+            .Setup(catalog => catalog.IsAllowedContentType(".pdf", "application/pdf"))
+            .Returns(true);
 
         var uploadDocument = new UploadDocument(
             auditLogRepositoryMock.Object,
+            allowedDocumentTypeCatalogMock.Object,
             documentRepositoryMock.Object,
             fileStorageServiceMock.Object);
         var linkDocumentToTask = new LinkDocumentToTask(documentRepositoryMock.Object, taskRepositoryMock.Object);

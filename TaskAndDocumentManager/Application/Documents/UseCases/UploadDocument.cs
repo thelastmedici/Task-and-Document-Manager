@@ -8,30 +8,21 @@ namespace TaskAndDocumentManager.Application.Documents.UseCases;
 
 public class UploadDocument
 {
-    private static readonly Dictionary<string, string[]> AllowedFileTypes = new(StringComparer.OrdinalIgnoreCase)
-    {
-        [".pdf"] = ["application/pdf"],
-        [".png"] = ["image/png"],
-        [".jpg"] = ["image/jpeg"],
-        [".jpeg"] = ["image/jpeg"],
-        [".docx"] =
-        [
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-        ]
-    };
-
     private const long MaxFileSizeBytes = 20 * 1024 * 1024;
 
     private readonly IAuditLogRepository _auditLogRepository;
+    private readonly IAllowedDocumentTypeCatalog _allowedDocumentTypeCatalog;
     private readonly IDocumentRepository _documentRepository;
     private readonly IFileStorageService _fileStorageService;
 
     public UploadDocument(
         IAuditLogRepository auditLogRepository,
+        IAllowedDocumentTypeCatalog allowedDocumentTypeCatalog,
         IDocumentRepository documentRepository,
         IFileStorageService fileStorageService)
     {
         _auditLogRepository = auditLogRepository;
+        _allowedDocumentTypeCatalog = allowedDocumentTypeCatalog;
         _documentRepository = documentRepository;
         _fileStorageService = fileStorageService;
     }
@@ -79,12 +70,12 @@ public class UploadDocument
 
         var extension = Path.GetExtension(request.FileName);
 
-        if (string.IsNullOrWhiteSpace(extension) || !AllowedFileTypes.TryGetValue(extension, out var allowedContentTypes))
+        if (!_allowedDocumentTypeCatalog.IsAllowedExtension(extension))
         {
             throw new ArgumentException("File type is not allowed.", nameof(request.FileName));
         }
 
-        if (!allowedContentTypes.Contains(request.ContentType, StringComparer.OrdinalIgnoreCase))
+        if (!_allowedDocumentTypeCatalog.IsAllowedContentType(extension, request.ContentType))
         {
             throw new ArgumentException("File content type is not allowed for the given file extension.", nameof(request.ContentType));
         }
