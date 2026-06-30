@@ -15,6 +15,7 @@ namespace TaskAndDocumentManager.Application.Tests.Documents.UseCases;
 public class UploadDocumentTests
 {
     private readonly Mock<IAuditLogRepository> _auditLogRepositoryMock;
+    private readonly Mock<IAllowedDocumentTypeCatalog> _allowedDocumentTypeCatalogMock;
     private readonly Mock<IDocumentRepository> _documentRepositoryMock;
     private readonly Mock<IFileStorageService> _fileStorageServiceMock;
     private readonly UploadDocument _sut;
@@ -22,10 +23,19 @@ public class UploadDocumentTests
     public UploadDocumentTests()
     {
         _auditLogRepositoryMock = new Mock<IAuditLogRepository>();
+        _allowedDocumentTypeCatalogMock = new Mock<IAllowedDocumentTypeCatalog>();
         _documentRepositoryMock = new Mock<IDocumentRepository>();
         _fileStorageServiceMock = new Mock<IFileStorageService>();
+        _allowedDocumentTypeCatalogMock
+            .Setup(catalog => catalog.IsAllowedExtension(".pdf"))
+            .Returns(true);
+        _allowedDocumentTypeCatalogMock
+            .Setup(catalog => catalog.IsAllowedContentType(".pdf", "application/pdf"))
+            .Returns(true);
+
         _sut = new UploadDocument(
             _auditLogRepositoryMock.Object,
+            _allowedDocumentTypeCatalogMock.Object,
             _documentRepositoryMock.Object,
             _fileStorageServiceMock.Object);
     }

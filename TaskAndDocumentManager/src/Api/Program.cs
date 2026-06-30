@@ -46,11 +46,13 @@ var audience = jwtSection["Audience"] ?? "TaskAndDocumentManager.Client";
 //register service here IUserRepository, IPasswordHasher, IEmailValidator
 builder.Services.AddDbContext<TaskDbContext>(options =>
     options.UseNpgsql(connectionString));
+builder.Services.AddMemoryCache();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 builder.Services.AddScoped<ITaskRepository, TaskRepository>();
 builder.Services.AddScoped<IDocumentRepository, DocumentRepository>();
 builder.Services.AddScoped<IDocumentAccessRepository, DocumentAccessRepository>();
+builder.Services.AddSingleton<IAllowedDocumentTypeCatalog, AllowedDocumentTypeCatalog>();
 builder.Services.AddScoped<FileStorageService>();
 builder.Services.AddScoped<IFileStorageService>(serviceProvider =>
     serviceProvider.GetRequiredService<FileStorageService>());
