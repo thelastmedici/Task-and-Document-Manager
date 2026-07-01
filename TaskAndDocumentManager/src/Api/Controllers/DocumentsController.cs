@@ -110,7 +110,7 @@ public class DocumentsController : ControllerBase
         {
             return StatusCode(
                 StatusCodes.Status500InternalServerError,
-                new { message = "An unexpected error occurred while uploading the document." });
+                new { message = "The document could not be uploaded. Please try again." });
         }
     }
 
