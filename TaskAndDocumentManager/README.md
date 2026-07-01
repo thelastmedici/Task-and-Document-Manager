@@ -11,7 +11,7 @@ Latest verified state:
 - Target framework: `.NET 10` preview
 - API base path: `/api/v1`
 - Realtime hubs: `/hubs/notifications` and `/hubs/realtime`
-- Test suite: `141/141` passing
+- Test suite: `145/145` passing
 - Main remaining milestone: replace remaining in-memory repositories with database-backed persistence
 
 ## Implemented Architecture
@@ -36,6 +36,7 @@ Latest verified state:
 | API versioning | URL versioning via `/api/v1` route constants |
 | Performance guardrails | Paginated list responses, DTO returns, repository-level filtering |
 | Caching | Built-in memory cache for stable reference data |
+| Resilience | Safe failure responses, internal exception logging, storage/realtime timeouts |
 
 ## Performance Guardrails
 
@@ -62,6 +63,20 @@ The project intentionally does not cache volatile user data yet:
 - audit logs
 
 If the app later runs across multiple servers, this cache should move to a distributed cache such as Redis.
+
+## Resilience
+
+The project now expects common infrastructure failures and avoids exposing technical details to clients.
+
+- File storage operations have configurable timeouts through `FileStorage:OperationTimeout`.
+- Realtime notification dispatch has a configurable timeout through `RealtimeDispatch:OperationTimeout`.
+- Upload failures return a safe message: `The document could not be uploaded. Please try again.`
+- Technical details are logged internally instead of being returned in API responses.
+- Partial uploaded files are cleaned up when storage fails or times out.
+- Metadata save failures still trigger compensating cleanup of the already-saved file.
+- A global API exception middleware returns a generic failure response for unexpected errors.
+
+The app does not add blind retries around unsafe operations like creating tasks or uploading files, because retrying those without idempotency can create duplicates.
 
 ## Tech Stack
 
@@ -419,6 +434,7 @@ The test suite covers:
 - team use cases
 - API route versioning
 - memory-cached reference catalogs
+- resilience middleware and storage timeout behavior
 
 Run:
 
@@ -429,7 +445,7 @@ dotnet test Application/Tests/Tests.csproj
 Latest verified result:
 
 ```text
-141 passed
+145 passed
 ```
 
 ## Minimal Frontend Shell

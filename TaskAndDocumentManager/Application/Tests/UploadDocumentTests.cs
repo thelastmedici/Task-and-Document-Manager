@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using TaskAndDocumentManager.Application.Audit.Interfaces;
 using TaskAndDocumentManager.Application.Documents.DTOs;
@@ -37,7 +38,8 @@ public class UploadDocumentTests
             _auditLogRepositoryMock.Object,
             _allowedDocumentTypeCatalogMock.Object,
             _documentRepositoryMock.Object,
-            _fileStorageServiceMock.Object);
+            _fileStorageServiceMock.Object,
+            NullLogger<UploadDocument>.Instance);
     }
 
     [Fact]
@@ -162,6 +164,45 @@ public class UploadDocumentTests
         _fileStorageServiceMock.Verify(
             storage => storage.DeleteAsync("/tmp/report.pdf", It.IsAny<CancellationToken>()),
             Times.Once);
+
+        _auditLogRepositoryMock.Verify(
+            repository => repository.AddAsync(It.IsAny<AuditLog>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_ShouldReturnSafeUploadFailure_WhenStorageTimesOut()
+    {
+        var ownerId = Guid.NewGuid();
+        await using var content = new MemoryStream(new byte[] { 1, 2, 3, 4 });
+
+        var request = new UploadDocumentRequest
+        {
+            FileName = "report.pdf",
+            ContentType = "application/pdf",
+            Content = content,
+            SizeInBytes = 4,
+            UploadedByUserId = ownerId,
+            WorkspaceId = Guid.NewGuid()
+        };
+
+        _fileStorageServiceMock
+            .Setup(storage => storage.SaveAsync(
+                ownerId,
+                request.FileName,
+                It.IsAny<Stream>(),
+                It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new TimeoutException("Disk write timed out."));
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            _sut.ExecuteAsync(request, CancellationToken.None));
+
+        Assert.Equal("The document could not be uploaded. Please try again.", exception.Message);
+        Assert.IsType<TimeoutException>(exception.InnerException);
+
+        _documentRepositoryMock.Verify(
+            repository => repository.AddAsync(It.IsAny<Document>(), It.IsAny<CancellationToken>()),
+            Times.Never);
 
         _auditLogRepositoryMock.Verify(
             repository => repository.AddAsync(It.IsAny<AuditLog>(), It.IsAny<CancellationToken>()),

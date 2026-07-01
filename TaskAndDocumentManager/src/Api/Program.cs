@@ -27,6 +27,7 @@ using TaskAndDocumentManager.Infrastructure.Storage;
 using TaskAndDocumentManager.Infrastructure.Tasks;
 using TaskAndDocumentManager.Infrastructure.Workspaces;
 using TaskAndDocumentManager.Api.Authorization;
+using TaskAndDocumentManager.Api.Middleware;
 using TaskAndDocumentManager.Application.Documents.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -47,6 +48,8 @@ var audience = jwtSection["Audience"] ?? "TaskAndDocumentManager.Client";
 builder.Services.AddDbContext<TaskDbContext>(options =>
     options.UseNpgsql(connectionString));
 builder.Services.AddMemoryCache();
+builder.Services.Configure<FileStorageOptions>(builder.Configuration.GetSection("FileStorage"));
+builder.Services.Configure<RealtimeDispatchOptions>(builder.Configuration.GetSection("RealtimeDispatch"));
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 builder.Services.AddScoped<ITaskRepository, TaskRepository>();
@@ -175,6 +178,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseMiddleware<ApiExceptionHandlingMiddleware>();
 app.UseAuthentication();
 // Set the tenant before authorization and endpoint code can query the DbContext.
 app.Use(async (context, next) =>

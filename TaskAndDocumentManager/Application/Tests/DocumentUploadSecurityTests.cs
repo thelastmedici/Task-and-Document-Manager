@@ -97,6 +97,43 @@ public class DocumentUploadSecurityTests
     }
 
     [Fact]
+    public async Task Upload_ShouldReturnSafeFailureMessage_WhenStorageFails()
+    {
+        var ownerId = Guid.NewGuid();
+        var controller = CreateController();
+        SetUser(controller, ownerId, "User");
+
+        var fileMock = new Mock<IFormFile>();
+        var stream = new MemoryStream(new byte[] { 1, 2, 3, 4 });
+
+        fileMock.SetupGet(file => file.Length).Returns(4);
+        fileMock.SetupGet(file => file.FileName).Returns("report.pdf");
+        fileMock.SetupGet(file => file.ContentType).Returns("application/pdf");
+        fileMock.Setup(file => file.OpenReadStream()).Returns(stream);
+
+        var request = new UploadDocumentFormRequest
+        {
+            File = fileMock.Object
+        };
+
+        _ = Mock.Get(GetFileStorageService(controller))
+            .Setup(storage => storage.SaveAsync(
+                ownerId,
+                "report.pdf",
+                It.IsAny<Stream>(),
+                It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new IOException("Disk is full."));
+
+        var result = await controller.Upload(request, CancellationToken.None);
+
+        var failure = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(StatusCodes.Status500InternalServerError, failure.StatusCode);
+
+        var message = failure.Value?.GetType().GetProperty("message")?.GetValue(failure.Value);
+        Assert.Equal("The document could not be uploaded. Please try again.", message);
+    }
+
+    [Fact]
     public async Task SaveAsync_ShouldStoreFileInUserFolderWithSafeGuidFileName()
     {
         var sut = new FileStorageService();
@@ -151,7 +188,8 @@ public class DocumentUploadSecurityTests
             auditLogRepositoryMock.Object,
             allowedDocumentTypeCatalogMock.Object,
             documentRepositoryMock.Object,
-            fileStorageServiceMock.Object);
+            fileStorageServiceMock.Object,
+            NullLogger<UploadDocument>.Instance);
         var linkDocumentToTask = new LinkDocumentToTask(documentRepositoryMock.Object, taskRepositoryMock.Object);
         var shareDocument = new ShareDocument(
             auditLogRepositoryMock.Object,
