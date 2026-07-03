@@ -9,6 +9,7 @@ using TaskAndDocumentManager.Application.Documents.DTOs;
 using TaskAndDocumentManager.Application.Documents.Interfaces;
 using TaskAndDocumentManager.Application.Documents.UseCases;
 using TaskAndDocumentManager.Application.Notifications.Interfaces;
+using TaskAndDocumentManager.Application.Tests;
 using TaskAndDocumentManager.Application.Tasks.Interfaces;
 using TaskAndDocumentManager.Application.Workspaces.Interfaces;
 using TaskAndDocumentManager.Controllers;
@@ -189,7 +190,8 @@ public class DocumentUploadSecurityTests
             allowedDocumentTypeCatalogMock.Object,
             documentRepositoryMock.Object,
             fileStorageServiceMock.Object,
-            NullLogger<UploadDocument>.Instance);
+            NullLogger<UploadDocument>.Instance,
+            new NoOpApplicationMetrics());
         var linkDocumentToTask = new LinkDocumentToTask(documentRepositoryMock.Object, taskRepositoryMock.Object);
         var shareDocument = new ShareDocument(
             auditLogRepositoryMock.Object,

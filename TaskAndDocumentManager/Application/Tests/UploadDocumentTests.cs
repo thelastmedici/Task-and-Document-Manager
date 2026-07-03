@@ -8,6 +8,7 @@ using TaskAndDocumentManager.Application.Audit.Interfaces;
 using TaskAndDocumentManager.Application.Documents.DTOs;
 using TaskAndDocumentManager.Application.Documents.Interfaces;
 using TaskAndDocumentManager.Application.Documents.UseCases;
+using TaskAndDocumentManager.Application.Tests;
 using TaskAndDocumentManager.Domain.Entities;
 using Xunit;
 
@@ -39,7 +40,8 @@ public class UploadDocumentTests
             _allowedDocumentTypeCatalogMock.Object,
             _documentRepositoryMock.Object,
             _fileStorageServiceMock.Object,
-            NullLogger<UploadDocument>.Instance);
+            NullLogger<UploadDocument>.Instance,
+            new NoOpApplicationMetrics());
     }
 
     [Fact]

@@ -1,8 +1,10 @@
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using TaskAndDocumentManager.Application.Auth.DTOs;
 using TaskAndDocumentManager.Application.Auth.Interfaces;
 using TaskAndDocumentManager.Application.Auth.UseCases;
 using TaskAndDocumentManager.Application.Audit.Interfaces;
+using TaskAndDocumentManager.Application.Tests;
 using TaskAndDocumentManager.Application.Workspaces.Interfaces;
 using TaskAndDocumentManager.Domain.Auth;
 using TaskAndDocumentManager.Domain.Entities;
@@ -35,7 +37,9 @@ public class AuthenticateUserTests
             _passwordHasherMock.Object,
             _tokenServiceMock.Object,
             _roleCatalogMock.Object,
-            _workspaceMemberRepositoryMock.Object);
+            _workspaceMemberRepositoryMock.Object,
+            NullLogger<AuthenticateUser>.Instance,
+            new NoOpApplicationMetrics());
     }
 
     [Fact]

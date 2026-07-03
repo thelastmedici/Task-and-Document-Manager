@@ -1,4 +1,6 @@
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using TaskAndDocumentManager.Application.Tests;
 using TaskAndDocumentManager.Application.Auth.Interfaces;
 using TaskAndDocumentManager.Application.Auth.UseCases;
 using TaskAndDocumentManager.Application.Workspaces.Interfaces;
@@ -44,7 +46,9 @@ public class RegisterUserWorkspaceTests
             passwordValidatorMock.Object,
             roleCatalogMock.Object,
             workspaceRepositoryMock.Object,
-            workspaceMemberRepositoryMock.Object);
+            workspaceMemberRepositoryMock.Object,
+            NullLogger<RegisterUser>.Instance,
+            new NoOpApplicationMetrics());
 
         sut.Execute("owner@example.com", "Password1");
 

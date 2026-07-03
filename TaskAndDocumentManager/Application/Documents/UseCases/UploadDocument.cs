@@ -1,6 +1,7 @@
 using System.IO;
 using Microsoft.Extensions.Logging;
 using TaskAndDocumentManager.Application.Audit.Interfaces;
+using TaskAndDocumentManager.Application.Common.Interfaces;
 using TaskAndDocumentManager.Application.Documents.DTOs;
 using TaskAndDocumentManager.Application.Documents.Interfaces;
 using TaskAndDocumentManager.Domain.Entities;
@@ -16,19 +17,22 @@ public class UploadDocument
     private readonly IDocumentRepository _documentRepository;
     private readonly IFileStorageService _fileStorageService;
     private readonly ILogger<UploadDocument> _logger;
+    private readonly IApplicationMetrics _metrics;
 
     public UploadDocument(
         IAuditLogRepository auditLogRepository,
         IAllowedDocumentTypeCatalog allowedDocumentTypeCatalog,
         IDocumentRepository documentRepository,
         IFileStorageService fileStorageService,
-        ILogger<UploadDocument> logger)
+        ILogger<UploadDocument> logger,
+        IApplicationMetrics metrics)
     {
         _auditLogRepository = auditLogRepository;
         _allowedDocumentTypeCatalog = allowedDocumentTypeCatalog;
         _documentRepository = documentRepository;
         _fileStorageService = fileStorageService;
         _logger = logger;
+        _metrics = metrics;
     }
 
     public async Task<UploadDocumentResult> ExecuteAsync(
@@ -101,6 +105,7 @@ public class UploadDocument
                 "Failed to store uploaded document for user {UserId} in workspace {WorkspaceId}.",
                 request.UploadedByUserId,
                 request.WorkspaceId);
+            _metrics.RecordDocumentUploadFailed(request.UploadedByUserId, request.WorkspaceId, "storage_failure");
 
             throw new InvalidOperationException("The document could not be uploaded. Please try again.", ex);
         }
@@ -138,6 +143,7 @@ public class UploadDocument
                 "Document metadata persistence failed after file storage succeeded for user {UserId} in workspace {WorkspaceId}.",
                 request.UploadedByUserId,
                 request.WorkspaceId);
+            _metrics.RecordDocumentUploadFailed(request.UploadedByUserId, request.WorkspaceId, "metadata_failure");
 
             throw;
         }
@@ -150,6 +156,17 @@ public class UploadDocument
                 document.Id,
                 request.WorkspaceId),
             cancellationToken);
+
+        _logger.LogInformation(
+            "Document {DocumentId} uploaded by user {UserId} in workspace {WorkspaceId}.",
+            document.Id,
+            request.UploadedByUserId,
+            request.WorkspaceId);
+        _metrics.RecordDocumentUploadSucceeded(
+            document.Id,
+            request.UploadedByUserId,
+            request.WorkspaceId,
+            request.SizeInBytes);
 
         return new UploadDocumentResult(
             document.Id,

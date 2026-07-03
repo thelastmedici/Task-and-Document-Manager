@@ -1,6 +1,8 @@
+using Microsoft.Extensions.Logging;
 using TaskAndDocumentManager.Application.Auth.DTOs;
 using TaskAndDocumentManager.Application.Auth.Interfaces;
 using TaskAndDocumentManager.Application.Audit.Interfaces;
+using TaskAndDocumentManager.Application.Common.Interfaces;
 using TaskAndDocumentManager.Application.Workspaces.Interfaces;
 using TaskAndDocumentManager.Domain.Auth;
 using TaskAndDocumentManager.Domain.Entities;
@@ -15,6 +17,8 @@ public class AuthenticateUser
     private readonly ITokenService _tokenService;
     private readonly IRoleCatalog _roleCatalog;
     private readonly IWorkspaceMemberRepository _workspaceMemberRepository;
+    private readonly ILogger<AuthenticateUser> _logger;
+    private readonly IApplicationMetrics _metrics;
 
     public AuthenticateUser(
         IAuditLogRepository auditLogRepository,
@@ -22,7 +26,9 @@ public class AuthenticateUser
         IPasswordHasher passwordHasher,
         ITokenService tokenService,
         IRoleCatalog roleCatalog,
-        IWorkspaceMemberRepository workspaceMemberRepository)
+        IWorkspaceMemberRepository workspaceMemberRepository,
+        ILogger<AuthenticateUser> logger,
+        IApplicationMetrics metrics)
     {
         _auditLogRepository = auditLogRepository;
         _userRepository = userRepository;
@@ -30,6 +36,8 @@ public class AuthenticateUser
         _tokenService = tokenService;
         _roleCatalog = roleCatalog;
         _workspaceMemberRepository = workspaceMemberRepository;
+        _logger = logger;
+        _metrics = metrics;
     }
 
     public async Task<AuthResponse> ExecuteAsync(
@@ -52,18 +60,22 @@ public class AuthenticateUser
 
         if (user is null)
         {
+            _logger.LogWarning("Login failed because no matching user was found.");
+            _metrics.RecordLoginFailed(null, null);
             throw new UnauthorizedAccessException("Invalid email or password.");
         }
 
         if (!user.IsActive)
         {
             await LogFailedLoginAsync(user.Id, cancellationToken);
+            _logger.LogWarning("Login denied for inactive user {UserId}.", user.Id);
             throw new UnauthorizedAccessException("This account is deactivated.");
         }
 
         if (!_passwordHasher.VerifyPassword(password, user.PasswordHash))
         {
             await LogFailedLoginAsync(user.Id, cancellationToken);
+            _logger.LogWarning("Login failed for user {UserId}.", user.Id);
             throw new UnauthorizedAccessException("Invalid email or password.");
         }
 
@@ -88,6 +100,13 @@ public class AuthenticateUser
                 membership.WorkspaceId),
             cancellationToken);
 
+        _logger.LogInformation(
+            "User {UserId} logged in to workspace {WorkspaceId} with role {Role}.",
+            user.Id,
+            membership.WorkspaceId,
+            role);
+        _metrics.RecordLoginSucceeded(user.Id, membership.WorkspaceId);
+
         return new AuthResponse
         {
             Token = tokenResult.Token,
@@ -108,9 +127,11 @@ public class AuthenticateUser
         var membership = _workspaceMemberRepository.GetDefaultMembershipForUser(userId);
         if (membership is null)
         {
+            _metrics.RecordLoginFailed(userId, null);
             return Task.CompletedTask;
         }
 
+        _metrics.RecordLoginFailed(userId, membership.WorkspaceId);
         return _auditLogRepository.AddAsync(
             new AuditLog(
                 userId,
