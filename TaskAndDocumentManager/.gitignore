@@ -22,4 +22,7 @@ x86/
 bld/
 [Bb]in/
 [Oo]bj/
-/home/asiwaju/Documents/medici/TaskAndDocumentManager/TaskAndDocumentManager/Application/Tests
+**/[Bb]in/
+**/[Oo]bj/
+TestResults/
+**/TestResults/
