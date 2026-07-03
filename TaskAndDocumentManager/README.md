@@ -11,7 +11,7 @@ Latest verified state:
 - Target framework: `.NET 10` preview
 - API base path: `/api/v1`
 - Realtime hubs: `/hubs/notifications` and `/hubs/realtime`
-- Test suite: `145/145` passing
+- Test suite: `147/147` passing
 - Main remaining milestone: replace remaining in-memory repositories with database-backed persistence
 
 ## Implemented Architecture
@@ -37,6 +37,7 @@ Latest verified state:
 | Performance guardrails | Paginated list responses, DTO returns, repository-level filtering |
 | Caching | Built-in memory cache for stable reference data |
 | Resilience | Safe failure responses, internal exception logging, storage/realtime timeouts |
+| Observability | Structured business logs, health checks, request and business metrics |
 
 ## Performance Guardrails
 
@@ -78,6 +79,27 @@ The project now expects common infrastructure failures and avoids exposing techn
 
 The app does not add blind retries around unsafe operations like creating tasks or uploading files, because retrying those without idempotency can create duplicates.
 
+## Monitoring And Observability
+
+The project includes basic production observability hooks:
+
+- structured logs for user registration, login success/failure, task creation, document upload, storage failures, realtime delivery failures, and background job execution
+- request metrics for duration, status codes, and server-side errors
+- business metrics for user registration, login success/failure, task creation, upload success/failure, and uploaded file size
+- health endpoints for liveness and readiness
+
+Health endpoints:
+
+- `GET /health/live`
+- `GET /health/ready`
+
+Readiness checks currently validate:
+
+- database connectivity
+- file storage writability
+
+Sensitive data such as passwords and tokens should never be logged.
+
 ## Tech Stack
 
 - ASP.NET Core
@@ -86,6 +108,8 @@ The app does not add blind retries around unsafe operations like creating tasks 
 - JWT bearer authentication
 - SignalR
 - Memory cache
+- Health checks
+- System.Diagnostics.Metrics
 - Hosted services for background jobs
 - xUnit and Moq
 
@@ -435,6 +459,7 @@ The test suite covers:
 - API route versioning
 - memory-cached reference catalogs
 - resilience middleware and storage timeout behavior
+- request metrics middleware and storage health checks
 
 Run:
 
@@ -445,7 +470,7 @@ dotnet test Application/Tests/Tests.csproj
 Latest verified result:
 
 ```text
-145 passed
+147 passed
 ```
 
 ## Minimal Frontend Shell

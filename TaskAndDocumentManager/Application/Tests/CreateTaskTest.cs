@@ -1,7 +1,9 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using TaskAndDocumentManager.Application.Tests;
 using TaskAndDocumentManager.Application.Tasks.Interfaces;
 using TaskAndDocumentManager.Application.Tasks.UseCases;
 using TaskAndDocumentManager.Domain.Tasks;
@@ -17,7 +19,10 @@ public class CreateTaskTests
     public CreateTaskTests()
     {
         _taskRepositoryMock = new Mock<ITaskRepository>();
-        _sut = new CreateTask(_taskRepositoryMock.Object);
+        _sut = new CreateTask(
+            _taskRepositoryMock.Object,
+            NullLogger<CreateTask>.Instance,
+            new NoOpApplicationMetrics());
     }
 
     [Fact]

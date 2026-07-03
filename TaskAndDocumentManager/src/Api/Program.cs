@@ -1,12 +1,14 @@
 using TaskAndDocumentManager.Application.Auth.Interfaces;
 using TaskAndDocumentManager.Api.Extensions;
 using TaskAndDocumentManager.Api.BackgroundJobs;
+using TaskAndDocumentManager.Api.Health;
 using TaskAndDocumentManager.Api.Hubs;
 using TaskAndDocumentManager.Api.Realtime;
 using TaskAndDocumentManager.Application.BackgroundJobs;
 using TaskAndDocumentManager.Application.Audit.UseCases;
 using TaskAndDocumentManager.Application.Auth.UseCases;
 using TaskAndDocumentManager.Application.Audit.Interfaces;
+using TaskAndDocumentManager.Application.Common.Interfaces;
 using TaskAndDocumentManager.Application.Documents.Interfaces;
 using TaskAndDocumentManager.Application.Documents.UseCases;
 using TaskAndDocumentManager.Application.Notifications.Interfaces;
@@ -22,6 +24,7 @@ using TaskAndDocumentManager.Infrastructure.Auth;
 using TaskAndDocumentManager.Infrastructure.Auth.Token;
 using TaskAndDocumentManager.Infrastructure.Documents;
 using TaskAndDocumentManager.Infrastructure.Notifications;
+using TaskAndDocumentManager.Infrastructure.Observability;
 using TaskAndDocumentManager.Infrastructure.Persistence;
 using TaskAndDocumentManager.Infrastructure.Storage;
 using TaskAndDocumentManager.Infrastructure.Tasks;
@@ -50,6 +53,7 @@ builder.Services.AddDbContext<TaskDbContext>(options =>
 builder.Services.AddMemoryCache();
 builder.Services.Configure<FileStorageOptions>(builder.Configuration.GetSection("FileStorage"));
 builder.Services.Configure<RealtimeDispatchOptions>(builder.Configuration.GetSection("RealtimeDispatch"));
+builder.Services.AddSingleton<IApplicationMetrics, ApplicationMetrics>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 builder.Services.AddScoped<ITaskRepository, TaskRepository>();
@@ -147,6 +151,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddControllers();
 builder.Services.AddSignalR();
+builder.Services.AddHealthChecks()
+    .AddCheck<DatabaseHealthCheck>("database")
+    .AddCheck<FileStorageHealthCheck>("file-storage");
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddAuthorization(options =>
@@ -178,6 +185,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseMiddleware<RequestMetricsMiddleware>();
 app.UseMiddleware<ApiExceptionHandlingMiddleware>();
 app.UseAuthentication();
 // Set the tenant before authorization and endpoint code can query the DbContext.
@@ -200,6 +208,8 @@ app.Use(async (context, next) =>
     await next();
 });
 app.UseAuthorization();
+app.MapGet("/health/live", () => Results.Ok(new { status = "Healthy" }));
+app.MapHealthChecks("/health/ready");
 app.MapControllers();
 app.MapHub<NotificationHub>("/hubs/notifications");
 app.MapHub<RealtimeHub>("/hubs/realtime");

@@ -1,5 +1,7 @@
 using System;
+using Microsoft.Extensions.Logging;
 using TaskAndDocumentManager.Application.Auth.Interfaces;
+using TaskAndDocumentManager.Application.Common.Interfaces;
 using TaskAndDocumentManager.Application.Workspaces.Interfaces;
 using TaskAndDocumentManager.Domain.Auth;
 using TaskAndDocumentManager.Domain.Workspaces;
@@ -15,6 +17,8 @@ namespace TaskAndDocumentManager.Application.Auth.UseCases
         private readonly IRoleCatalog _roleCatalog;
         private readonly IWorkspaceRepository _workspaceRepository;
         private readonly IWorkspaceMemberRepository _workspaceMemberRepository;
+        private readonly ILogger<RegisterUser> _logger;
+        private readonly IApplicationMetrics _metrics;
 
         public RegisterUser(
             IUserRepository userRepository,
@@ -23,7 +27,9 @@ namespace TaskAndDocumentManager.Application.Auth.UseCases
             IPasswordValidator passwordValidator,
             IRoleCatalog roleCatalog,
             IWorkspaceRepository workspaceRepository,
-            IWorkspaceMemberRepository workspaceMemberRepository)
+            IWorkspaceMemberRepository workspaceMemberRepository,
+            ILogger<RegisterUser> logger,
+            IApplicationMetrics metrics)
         {
             _userRepository = userRepository;
             _passwordHasher = passwordHasher;
@@ -32,6 +38,8 @@ namespace TaskAndDocumentManager.Application.Auth.UseCases
             _roleCatalog = roleCatalog;
             _workspaceRepository = workspaceRepository;
             _workspaceMemberRepository = workspaceMemberRepository;
+            _logger = logger;
+            _metrics = metrics;
         }
 
         public void Execute(string email, string password)
@@ -68,6 +76,12 @@ namespace TaskAndDocumentManager.Application.Auth.UseCases
             _userRepository.Save(user);
             _workspaceRepository.Add(workspace);
             _workspaceMemberRepository.Add(new WorkspaceMember(workspace.Id, user.Id, WorkspaceRoles.Owner));
+
+            _logger.LogInformation(
+                "User registered with user {UserId} and workspace {WorkspaceId}.",
+                user.Id,
+                workspace.Id);
+            _metrics.RecordUserRegistered(user.Id, workspace.Id);
         }
 
         private static string BuildDefaultWorkspaceName(string email)
