@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using TaskAndDocumentManager.Api.Security;
 using TaskAndDocumentManager.Application.Auth.DTOs;
 using TaskAndDocumentManager.Application.Auth.UseCases;
 using TaskAndDocumentManager.Api.Authorization;
@@ -43,6 +45,7 @@ public class AuthController : ControllerBase
     }
 
     [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicies.AuthSensitive)]
     [HttpPost("register")]
     public IActionResult Register([FromBody] RegisterRequest request)
     {
@@ -71,6 +74,7 @@ public class AuthController : ControllerBase
     }
 
     [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicies.AuthSensitive)]
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {

@@ -31,15 +31,24 @@ using TaskAndDocumentManager.Infrastructure.Tasks;
 using TaskAndDocumentManager.Infrastructure.Workspaces;
 using TaskAndDocumentManager.Api.Authorization;
 using TaskAndDocumentManager.Api.Middleware;
+using TaskAndDocumentManager.Api.Security;
 using TaskAndDocumentManager.Application.Documents.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using System.Security.Claims;
 using System.Text;
+using System.Threading.RateLimiting;
 
 
 
 var builder = WebApplication.CreateBuilder(args);
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.AddServerHeader = false;
+});
+
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException(
         "Connection string 'DefaultConnection' is missing. Configure it before starting the API.");
@@ -154,6 +163,39 @@ builder.Services.AddSignalR();
 builder.Services.AddHealthChecks()
     .AddCheck<DatabaseHealthCheck>("database")
     .AddCheck<FileStorageHealthCheck>("file-storage");
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.OnRejected = async (context, cancellationToken) =>
+    {
+        context.HttpContext.Response.ContentType = "application/json";
+        await context.HttpContext.Response.WriteAsJsonAsync(
+            new { message = "Too many requests. Please try again later." },
+            cancellationToken);
+    };
+
+    options.AddPolicy(RateLimitPolicies.AuthSensitive, httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            GetClientPartitionKey(httpContext),
+            _ => new FixedWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = 5,
+                QueueLimit = 0,
+                Window = TimeSpan.FromMinutes(1)
+            }));
+
+    options.AddPolicy(RateLimitPolicies.FileUpload, httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            GetUserOrClientPartitionKey(httpContext),
+            _ => new FixedWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = 10,
+                QueueLimit = 0,
+                Window = TimeSpan.FromMinutes(5)
+            }));
+});
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddAuthorization(options =>
@@ -184,9 +226,14 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+else
+{
+    app.UseHsts();
+}
 
 app.UseMiddleware<RequestMetricsMiddleware>();
 app.UseMiddleware<ApiExceptionHandlingMiddleware>();
+app.UseMiddleware<SecurityHeadersMiddleware>();
 app.UseAuthentication();
 // Set the tenant before authorization and endpoint code can query the DbContext.
 app.Use(async (context, next) =>
@@ -207,6 +254,7 @@ app.Use(async (context, next) =>
 
     await next();
 });
+app.UseRateLimiter();
 app.UseAuthorization();
 app.MapGet("/health/live", () => Results.Ok(new { status = "Healthy" }));
 app.MapHealthChecks("/health/ready");
@@ -214,3 +262,16 @@ app.MapControllers();
 app.MapHub<NotificationHub>("/hubs/notifications");
 app.MapHub<RealtimeHub>("/hubs/realtime");
 app.Run();
+
+static string GetClientPartitionKey(HttpContext context)
+{
+    return $"ip:{context.Connection.RemoteIpAddress?.ToString() ?? "unknown"}";
+}
+
+static string GetUserOrClientPartitionKey(HttpContext context)
+{
+    var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+    return string.IsNullOrWhiteSpace(userId)
+        ? GetClientPartitionKey(context)
+        : $"user:{userId}";
+}
