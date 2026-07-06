@@ -11,7 +11,7 @@ Latest verified state:
 - Target framework: `.NET 10` preview
 - API base path: `/api/v1`
 - Realtime hubs: `/hubs/notifications` and `/hubs/realtime`
-- Test suite: `147/147` passing
+- Test suite: `152/152` passing
 - Main remaining milestone: replace remaining in-memory repositories with database-backed persistence
 
 ## Implemented Architecture
@@ -38,6 +38,7 @@ Latest verified state:
 | Caching | Built-in memory cache for stable reference data |
 | Resilience | Safe failure responses, internal exception logging, storage/realtime timeouts |
 | Observability | Structured business logs, health checks, request and business metrics |
+| Security hardening | Rate limiting, security headers, strict upload validation |
 
 ## Performance Guardrails
 
@@ -99,6 +100,28 @@ Readiness checks currently validate:
 - file storage writability
 
 Sensitive data such as passwords and tokens should never be logged.
+
+## Security Hardening
+
+The API hardens common abuse and browser-edge risks:
+
+- rate limiting for login and registration attempts
+- rate limiting for file uploads
+- `X-Content-Type-Options: nosniff`
+- `X-Frame-Options: DENY`
+- `Referrer-Policy: no-referrer`
+- restrictive `Permissions-Policy`
+- Content Security Policy for non-Swagger responses
+- HSTS outside development
+- Kestrel server header suppression
+
+File upload security remains enforced in the backend:
+
+- maximum upload size is `20 MB`
+- allowed extensions are restricted to `.pdf`, `.png`, `.jpg`, `.jpeg`, and `.docx`
+- content type must match the extension
+- storage filenames are generated safely
+- uploaded files are stored outside public static paths
 
 ## Tech Stack
 
@@ -460,6 +483,7 @@ The test suite covers:
 - memory-cached reference catalogs
 - resilience middleware and storage timeout behavior
 - request metrics middleware and storage health checks
+- security headers and rate-limit policy attributes
 
 Run:
 
@@ -470,7 +494,7 @@ dotnet test Application/Tests/Tests.csproj
 Latest verified result:
 
 ```text
-147 passed
+152 passed
 ```
 
 ## Minimal Frontend Shell

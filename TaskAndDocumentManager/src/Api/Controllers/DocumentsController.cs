@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using TaskAndDocumentManager.Api.Authorization;
 using TaskAndDocumentManager.Api.Extensions;
 using TaskAndDocumentManager.Api.Routing;
+using TaskAndDocumentManager.Api.Security;
 using TaskAndDocumentManager.Application.Documents.DTOs;
 using TaskAndDocumentManager.Application.Documents.Interfaces;
 using TaskAndDocumentManager.Application.Documents.UseCases;
@@ -66,6 +68,7 @@ public class DocumentsController : ControllerBase
     }
 
     [HttpPost]
+    [EnableRateLimiting(RateLimitPolicies.FileUpload)]
     [RequestSizeLimit(MaxFileSizeBytes)]
     public async Task<IActionResult> Upload(
         [FromForm] UploadDocumentFormRequest request,
