@@ -39,6 +39,7 @@ Latest verified state:
 | Resilience | Safe failure responses, internal exception logging, storage/realtime timeouts |
 | Observability | Structured business logs, health checks, request and business metrics |
 | Security hardening | Rate limiting, security headers, strict upload validation |
+| CI/CD | GitHub Actions workflow for restore, build, test, publish, and deployment handoff |
 
 ## Performance Guardrails
 
@@ -215,6 +216,24 @@ dotnet run
 ```
 
 Swagger is enabled in development.
+
+## CI/CD
+
+The repository includes a GitHub Actions workflow at:
+
+```text
+.github/workflows/dotnet-ci.yml
+```
+
+The workflow runs on pushes, pull requests, and manual dispatch. It performs the production safety loop:
+
+- restore dependencies
+- build the API project in `Release`
+- run the xUnit test project
+- publish the API
+- upload test results and the published API as workflow artifacts
+
+The deployment job is intentionally a safe handoff placeholder for now. Once the hosting target is chosen, such as Azure App Service, Container Apps, or another platform, that job is where the real deployment step should be added.
 
 ## API Versioning
 
