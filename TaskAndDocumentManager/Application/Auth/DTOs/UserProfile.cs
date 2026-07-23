@@ -5,6 +5,5 @@ public sealed class UserProfile
     public Guid Id { get; init; }
     public required string Email { get; init; }
     public string Role { get; init; } = "User";
-    public Guid WorkspaceId { get; init; }
     public bool IsActive { get; init; } = true;
 }
