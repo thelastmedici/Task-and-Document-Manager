@@ -40,6 +40,7 @@ Latest verified state:
 | Observability | Structured business logs, health checks, request and business metrics |
 | Security hardening | Rate limiting, security headers, strict upload validation |
 | CI/CD | GitHub Actions workflow for restore, build, test, publish, and deployment handoff |
+| Testing strategy | Layered unit, integration, and end-to-end testing strategy documented |
 
 ## Performance Guardrails
 
@@ -234,6 +235,22 @@ The workflow runs on pushes, pull requests, and manual dispatch. It performs the
 - upload test results and the published API as workflow artifacts
 
 The deployment job is intentionally a safe handoff placeholder for now. Once the hosting target is chosen, such as Azure App Service, Container Apps, or another platform, that job is where the real deployment step should be added.
+
+## Testing Strategy
+
+The project uses a layered testing strategy:
+
+- unit tests for domain entities, use cases, validators, and small services
+- integration tests for database repositories, authentication, controllers, middleware, and infrastructure wiring
+- end-to-end tests for full user journeys such as register, login, upload, share, and download
+
+The current automated suite lives in `Application/Tests/` and is run by CI. The next major testing milestone is database-backed integration coverage after persistence is finalized.
+
+More detail is documented in:
+
+```text
+docs/testing-strategy.md
+```
 
 ## API Versioning
 
