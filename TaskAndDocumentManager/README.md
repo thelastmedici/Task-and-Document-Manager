@@ -1,144 +1,50 @@
 # TaskAndDocumentManager
 
-TaskAndDocumentManager is a versioned ASP.NET Core API for task management, secure document handling, workspace-based collaboration, notifications, realtime updates, audit logging, search, and background processing.
+TaskAndDocumentManager is an API-first ASP.NET Core application for secure task management, document handling, workspace collaboration, notifications, audit logging, realtime updates, search, and scheduled background processing.
 
-The project is API-first. A small MVC/JavaScript page is included only as a lightweight local client for login, notifications, and SignalR checks.
+The project is currently a feature-rich backend prototype with a clean-architecture direction. It has many production-minded patterns already in place, but it is not yet production-ready because several repositories still use in-memory storage and deployment is not fully configured.
 
 ## Current Status
 
-Latest verified state:
-
-- Target framework: `.NET 10` preview
-- API base path: `/api/v1`
-- Realtime hubs: `/hubs/notifications` and `/hubs/realtime`
-- Test suite: `152/152` passing
-- Main remaining milestone: replace remaining in-memory repositories with database-backed persistence
-
-## Implemented Architecture
-
 | Area | Status |
 |---|---|
-| Authentication | Implemented with JWT login/register flow |
-| Authorization | Implemented with ASP.NET Core policies |
-| System RBAC | Implemented with `Admin`, `Manager`, `User` |
-| Workspace roles | Implemented with `Owner`, `Admin`, `Manager`, `Member` |
-| Ownership | Implemented on tasks and documents through `OwnerId` |
-| Documents | Upload, metadata, download, delete, link-to-task, share, revoke |
-| Sharing | Explicit `DocumentAccess` model with workspace scope |
-| Notifications | DB-backed via EF repository, unread/read support, realtime dispatch |
-| Audit logs | Structured audit actions and workspace-aware query model |
-| SignalR | Notification and realtime/presence hubs wired at runtime |
-| Background jobs | Hosted service wired with task reminders and orphan-file cleanup |
-| Search | Task search, document search, audit search, global search |
-| Workspaces | Workspace entity, membership, roles, request workspace context |
-| Teams | Team entity, team membership, create/list/add/remove endpoints |
-| Tenant isolation | Workspace-scoped requests, query filters, and workspace-aware use cases |
-| API versioning | URL versioning via `/api/v1` route constants |
-| Performance guardrails | Paginated list responses, DTO returns, repository-level filtering |
-| Caching | Built-in memory cache for stable reference data |
-| Resilience | Safe failure responses, internal exception logging, storage/realtime timeouts |
-| Observability | Structured business logs, health checks, request and business metrics |
-| Security hardening | Rate limiting, security headers, strict upload validation |
-| CI/CD | GitHub Actions workflow for restore, build, test, publish, and deployment handoff |
-| Testing strategy | Layered unit, integration, and end-to-end testing strategy documented |
+| Runtime | ASP.NET Core on `.NET 10` preview, pinned by `global.json` |
+| API style | REST API under `/api/v1` |
+| Realtime | SignalR hubs at `/hubs/notifications` and `/hubs/realtime` |
+| Database provider | EF Core configured with PostgreSQL/Npgsql |
+| Testing | xUnit test suite, currently `152` passing tests |
+| CI/CD | GitHub Actions restore, build, test, publish, and deployment handoff workflow |
+| Production readiness | Not production-ready yet; durable persistence and deployment hardening remain |
 
-## Performance Guardrails
+## What Is Implemented
 
-The project now treats list endpoints as query operations, not "load everything" operations.
+| Capability | Current Implementation |
+|---|---|
+| Authentication | Register, login, current-user endpoint, JWT bearer authentication |
+| Authorization | Policy-based authorization with admin, manager, and user roles |
+| RBAC | System roles through built-in role catalog |
+| Workspace roles | Workspace owner, admin, manager, and member roles |
+| Ownership | Tasks and documents use backend-owned `OwnerId` checks |
+| Tenant isolation | Workspace ID is resolved from JWT and applied to scoped queries |
+| Tasks | Create, list, update, delete, assign, complete/reminder-ready task flows |
+| Documents | Upload, metadata, secure download streaming, delete, link to task |
+| File security | Safe stored filenames, 20 MB upload limit, extension and content-type validation |
+| Sharing | Explicit `DocumentAccess` grants with share and revoke flows |
+| Notifications | Workspace-aware notifications with read/unread support |
+| Audit logs | Structured audit actions with workspace-aware querying |
+| SignalR | Notification delivery, user connection tracking, presence tracking |
+| Background jobs | Hosted service runner for task reminders and orphaned document file cleanup |
+| Search | Task search, document search, audit search, and global search |
+| Pagination | Reusable paginated response model for list/query endpoints |
+| Caching | Memory cache for stable reference data such as roles and allowed upload types |
+| Observability | Structured logs, request metrics middleware, business metrics, health checks |
+| Resilience | Safe error responses, timeout-aware storage/realtime operations, cleanup on upload failure |
+| Security hardening | Rate limiting, security headers, HSTS outside development, Kestrel server header suppression |
+| Testing strategy | Documented unit, integration, and end-to-end testing strategy |
 
-- Tasks, documents, notifications, and audit logs use paginated responses.
-- Use cases return DTOs/results instead of exposing full domain entities to API clients.
-- Repositories apply filtering, sorting, ownership, workspace scope, `Skip`, and `Take` before materializing results.
-- Query objects are used where filters can grow over time, such as `TaskQuery`, `DocumentQuery`, `AuditQuery`, and `NotificationQuery`.
+## Architecture
 
-This keeps the current implementation simple while avoiding common scaling issues like unbounded reads, in-memory filtering, and accidental N+1-style access patterns.
-
-## Caching
-
-The project uses ASP.NET Core's built-in memory cache for stable reference data:
-
-- built-in system role catalog
-- allowed document upload types
-
-The project intentionally does not cache volatile user data yet:
-
-- current notifications
-- user tasks
-- audit logs
-
-If the app later runs across multiple servers, this cache should move to a distributed cache such as Redis.
-
-## Resilience
-
-The project now expects common infrastructure failures and avoids exposing technical details to clients.
-
-- File storage operations have configurable timeouts through `FileStorage:OperationTimeout`.
-- Realtime notification dispatch has a configurable timeout through `RealtimeDispatch:OperationTimeout`.
-- Upload failures return a safe message: `The document could not be uploaded. Please try again.`
-- Technical details are logged internally instead of being returned in API responses.
-- Partial uploaded files are cleaned up when storage fails or times out.
-- Metadata save failures still trigger compensating cleanup of the already-saved file.
-- A global API exception middleware returns a generic failure response for unexpected errors.
-
-The app does not add blind retries around unsafe operations like creating tasks or uploading files, because retrying those without idempotency can create duplicates.
-
-## Monitoring And Observability
-
-The project includes basic production observability hooks:
-
-- structured logs for user registration, login success/failure, task creation, document upload, storage failures, realtime delivery failures, and background job execution
-- request metrics for duration, status codes, and server-side errors
-- business metrics for user registration, login success/failure, task creation, upload success/failure, and uploaded file size
-- health endpoints for liveness and readiness
-
-Health endpoints:
-
-- `GET /health/live`
-- `GET /health/ready`
-
-Readiness checks currently validate:
-
-- database connectivity
-- file storage writability
-
-Sensitive data such as passwords and tokens should never be logged.
-
-## Security Hardening
-
-The API hardens common abuse and browser-edge risks:
-
-- rate limiting for login and registration attempts
-- rate limiting for file uploads
-- `X-Content-Type-Options: nosniff`
-- `X-Frame-Options: DENY`
-- `Referrer-Policy: no-referrer`
-- restrictive `Permissions-Policy`
-- Content Security Policy for non-Swagger responses
-- HSTS outside development
-- Kestrel server header suppression
-
-File upload security remains enforced in the backend:
-
-- maximum upload size is `20 MB`
-- allowed extensions are restricted to `.pdf`, `.png`, `.jpg`, `.jpeg`, and `.docx`
-- content type must match the extension
-- storage filenames are generated safely
-- uploaded files are stored outside public static paths
-
-## Tech Stack
-
-- ASP.NET Core
-- EF Core with Npgsql
-- PostgreSQL
-- JWT bearer authentication
-- SignalR
-- Memory cache
-- Health checks
-- System.Diagnostics.Metrics
-- Hosted services for background jobs
-- xUnit and Moq
-
-## Project Layout
+The codebase is organized around domain, application, infrastructure, and API boundaries.
 
 ```text
 Domain/
@@ -165,6 +71,7 @@ Infrastructure/
   Auth/
   Documents/
   Notifications/
+  Observability/
   Persistence/
   Storage/
   Tasks/
@@ -174,228 +81,142 @@ src/Api/
   Authorization/
   BackgroundJobs/
   Controllers/
+  Health/
   Hubs/
+  Middleware/
   Realtime/
   Routing/
+  Security/
 
+Application/Tests/
+docs/
 wwwroot/
 Views/
-Application/Tests/
 ```
 
-## Configuration
-
-The app expects a PostgreSQL connection string and JWT settings.
-
-```json
-{
-  "ConnectionStrings": {
-    "DefaultConnection": "Host=localhost;Port=5432;Database=taskanddocumentmanager;Username=postgres;Password=postgres"
-  },
-  "Jwt": {
-    "Key": "REPLACE_WITH_A_LONG_RANDOM_SECRET_KEY_FOR_PRODUCTION_123456789",
-    "Issuer": "TaskAndDocumentManager",
-    "Audience": "TaskAndDocumentManager.Client",
-    "ExpiresMinutes": 60
-  },
-  "BackgroundJobs": {
-    "Enabled": true,
-    "RunOnStartup": true,
-    "InitialDelay": "00:00:30",
-    "Interval": "01:00:00"
-  }
-}
-```
-
-## Running Locally
-
-```bash
-dotnet restore
-dotnet build TaskAndDocumentManager.sln
-dotnet test Application/Tests/Tests.csproj
-dotnet run
-```
-
-Swagger is enabled in development.
-
-## CI/CD
-
-The repository includes a GitHub Actions workflow at:
+The intended dependency direction is:
 
 ```text
-.github/workflows/dotnet-ci.yml
+API -> Application -> Domain
+API -> Infrastructure
+Infrastructure -> Application abstractions
 ```
 
-The workflow runs on pushes, pull requests, and manual dispatch. It performs the production safety loop:
+Controllers should stay thin. Business rules belong in application use cases. Infrastructure details such as EF Core, file storage, SignalR delivery, and caching stay behind abstractions where practical.
 
-- restore dependencies
-- build the API project in `Release`
-- run the xUnit test project
-- publish the API
-- upload test results and the published API as workflow artifacts
+## API Surface
 
-The deployment job is intentionally a safe handoff placeholder for now. Once the hosting target is chosen, such as Azure App Service, Container Apps, or another platform, that job is where the real deployment step should be added.
-
-## Testing Strategy
-
-The project uses a layered testing strategy:
-
-- unit tests for domain entities, use cases, validators, and small services
-- integration tests for database repositories, authentication, controllers, middleware, and infrastructure wiring
-- end-to-end tests for full user journeys such as register, login, upload, share, and download
-
-The current automated suite lives in `Application/Tests/` and is run by CI. The next major testing milestone is database-backed integration coverage after persistence is finalized.
-
-More detail is documented in:
-
-```text
-docs/testing-strategy.md
-```
-
-## API Versioning
-
-All REST endpoints are versioned under:
+All REST routes are versioned under:
 
 ```text
 /api/v1
 ```
 
-Routes are centralized in:
+Route constants are centralized in:
 
 ```text
 src/Api/Routing/ApiRoutes.cs
 ```
 
-SignalR hubs are not versioned through the REST route prefix. They remain:
+High-level API areas:
+
+| Area | Example Routes |
+|---|---|
+| Auth | `/api/v1/auth/register`, `/api/v1/auth/login`, `/api/v1/auth/me` |
+| Users | `/api/v1/auth/users`, `/api/v1/auth/users/{id}/role` |
+| Tasks | `/api/v1/tasks`, `/api/v1/tasks/{id}`, `/api/v1/tasks/{id}/assign` |
+| Documents | `/api/v1/documents`, `/api/v1/documents/{id}/download`, `/api/v1/documents/{id}/share` |
+| Shared documents | `/api/v1/documents/shared-with-me` |
+| Teams | `/api/v1/teams`, `/api/v1/teams/{teamId}/members` |
+| Notifications | `/api/v1/notifications`, `/api/v1/notifications/{id}/read` |
+| Search | `/api/v1/search` |
+| Audit logs | `/api/v1/audit-logs` |
+| Health | `/health/live`, `/health/ready` |
+
+SignalR hubs are intentionally not under the REST version prefix:
 
 ```text
 /hubs/notifications
 /hubs/realtime
 ```
 
-## Authentication Flow
+## Security Model
 
-1. Register a user.
-2. Log in to receive a JWT.
-3. Send the JWT on protected requests.
+Implemented security rules:
 
-```http
-POST /api/v1/auth/login
-Content-Type: application/json
+- Protected routes require JWT authentication.
+- Admin and manager operations use policy-based authorization.
+- Users never submit `OwnerId` or workspace ownership claims directly for protected resource decisions.
+- The backend extracts user identity and workspace context from JWT claims.
+- Document downloads are streamed through the API after authorization checks.
+- Uploaded files are not exposed through public static URLs.
+- Original filenames are metadata only; physical storage names are generated safely.
+- Upload validation checks file size, extension, and content type in the application layer.
+- Sharing does not change ownership; it creates explicit access grants.
+- Audit logs are written after successful critical business actions.
+- Rate limits protect sensitive auth routes and document upload routes.
+- Security headers reduce common browser-edge risks.
 
-{
-  "email": "user@example.com",
-  "password": "Password1"
-}
-```
+Security work still needed before production:
 
-Use the token like this:
+- Move secrets out of local config and into environment variables or a secret manager.
+- Add refresh-token/session management and token revocation strategy if long-lived sessions are needed.
+- Add account lockout or stronger throttling for repeated failed login attempts.
+- Add production-grade file scanning for malware and deeper content inspection.
+- Add centralized authorization policies/handlers for repeated owner/admin/shared-user rules.
+- Add distributed rate limiting if the app runs on more than one instance.
 
-```http
-Authorization: Bearer <jwt>
-```
+## Persistence Status
 
-For SignalR browser clients, the JWT can be sent as `access_token` in the hub query string.
+This is the largest current production gap.
 
-## REST Endpoints
+| Data Area | Current Runtime Persistence |
+|---|---|
+| Tasks | EF Core/PostgreSQL-backed |
+| Notifications | EF Core/PostgreSQL-backed |
+| Roles | Built-in EF seed/configuration |
+| Users | In-memory runtime repository |
+| Document metadata | In-memory runtime repository |
+| Document access grants | In-memory runtime repository |
+| Audit logs | In-memory runtime repository |
+| Workspaces | In-memory runtime repository |
+| Workspace memberships | In-memory runtime repository |
+| Teams | In-memory runtime repository |
+| Team memberships | In-memory runtime repository |
+| Uploaded file bytes | Filesystem-backed |
+| SignalR connection tracking | In-memory runtime state |
+| Presence state | In-memory runtime state |
 
-### Auth
+Important implications:
 
-| Method | Route | Access |
-|---|---|---|
-| `POST` | `/api/v1/auth/register` | anonymous |
-| `POST` | `/api/v1/auth/login` | anonymous |
-| `GET` | `/api/v1/auth/me` | authenticated |
-| `GET` | `/api/v1/auth/users` | manager/admin |
-| `POST` | `/api/v1/auth/users` | admin |
-| `PUT` | `/api/v1/auth/users/{id}/deactivate` | admin |
-| `PUT` | `/api/v1/auth/users/{id}/role` | admin |
-| `DELETE` | `/api/v1/auth/users/{id}` | admin |
+- User accounts do not survive app restart.
+- Document metadata does not survive app restart.
+- Document shares do not survive app restart.
+- Audit logs do not survive app restart.
+- Workspace and team runtime state does not survive app restart.
+- Uploaded files may remain on disk even when their document metadata is lost.
+- Multi-instance deployments would not share presence or SignalR connection state.
 
-### Tasks
-
-| Method | Route | Access |
-|---|---|---|
-| `POST` | `/api/v1/tasks` | authenticated |
-| `GET` | `/api/v1/tasks` | authenticated, scoped |
-| `GET` | `/api/v1/tasks/{id}` | authenticated, scoped |
-| `PUT` | `/api/v1/tasks/{id}` | owner/admin pattern |
-| `DELETE` | `/api/v1/tasks/{id}` | owner/admin pattern |
-| `POST` | `/api/v1/tasks/{id}/assign` | manager/admin |
-
-Task listing supports pagination, search, status, priority, due-date filters, owner/assignee filters, and sorting.
-
-### Documents
-
-| Method | Route | Access |
-|---|---|---|
-| `POST` | `/api/v1/documents` | authenticated |
-| `GET` | `/api/v1/documents` | authenticated, scoped |
-| `GET` | `/api/v1/documents/shared-with-me` | authenticated, scoped |
-| `GET` | `/api/v1/documents/{id}` | owner/admin/shared |
-| `GET` | `/api/v1/documents/{id}/download` | owner/admin/shared |
-| `POST` | `/api/v1/documents/{id}/link-task` | owner |
-| `POST` | `/api/v1/documents/{id}/share` | owner/admin |
-| `POST` | `/api/v1/documents/{id}/tasks/{taskId}/share` | owner/admin/task participant rules |
-| `DELETE` | `/api/v1/documents/{id}/share/{userId}` | owner/admin |
-| `DELETE` | `/api/v1/documents/{id}` | owner/admin pattern |
-
-Upload validation currently allows:
-
-- `.pdf`
-- `.png`
-- `.jpg`
-- `.jpeg`
-- `.docx`
-
-The max upload size is `20 MB`. The API validates both extension and content type. Original filenames are stored as metadata only; stored disk filenames are generated safely.
-
-### Teams
-
-| Method | Route | Access |
-|---|---|---|
-| `POST` | `/api/v1/teams` | workspace owner/admin/manager |
-| `GET` | `/api/v1/teams` | workspace member |
-| `POST` | `/api/v1/teams/{teamId}/members` | workspace owner/admin/manager |
-| `DELETE` | `/api/v1/teams/{teamId}/members/{userId}` | workspace owner/admin/manager |
-
-Team operations are scoped to the current workspace from the JWT.
-
-### Notifications
-
-| Method | Route | Access |
-|---|---|---|
-| `GET` | `/api/v1/notifications?pageNumber=1&pageSize=20` | authenticated |
-| `PATCH` | `/api/v1/notifications/{id}/read` | notification owner |
-
-Notifications are workspace-aware, paginated, and are also pushed through SignalR.
-
-### Search
-
-| Method | Route | Access |
-|---|---|---|
-| `GET` | `/api/v1/search` | authenticated |
-
-Global search currently searches tasks and documents. Results are scoped by workspace and resource access.
-
-### Audit Logs
-
-| Method | Route | Access |
-|---|---|---|
-| `GET` | `/api/v1/audit-logs` | admin |
-
-Audit search supports user, action, date range, pagination, and workspace scoping.
+EF model configuration already exists for several entities that are not yet wired to durable runtime repositories. Committed EF Core migrations are still missing.
 
 ## Realtime
 
-Two SignalR hubs are wired:
+Realtime uses SignalR.
 
 | Hub | Purpose |
 |---|---|
-| `/hubs/notifications` | private notification delivery |
-| `/hubs/realtime` | presence and task/document collaboration events |
+| `/hubs/notifications` | Private notification delivery |
+| `/hubs/realtime` | Presence and collaboration-style realtime events |
 
-Realtime event constants currently include:
+Current realtime design:
+
+- Users can have multiple active SignalR connections.
+- Hubs should not contain business logic.
+- Application use cases create durable notification records first.
+- Realtime delivery happens after successful business actions.
+- Realtime is not treated as the source of truth; clients should refresh from REST APIs when needed.
+
+Current event vocabulary includes:
 
 - `NotificationCreated`
 - `DocumentShared`
@@ -404,13 +225,15 @@ Realtime event constants currently include:
 - `TaskCompleted`
 - `UserPresenceUpdated`
 
-Events actively sent today include notification creation and presence updates. Some task/document event constants are present as the intended event vocabulary for future dispatchers.
+Production work still needed:
 
-The client should still refresh from REST APIs after reconnects or important realtime events. Realtime is a delivery channel, not the source of truth.
+- Add a distributed SignalR backplane or managed SignalR service for multi-instance deployments.
+- Move presence and connection state out of in-memory storage.
+- Add reconnect/replay strategy for missed notifications if the frontend becomes more serious.
 
 ## Background Jobs
 
-The app uses a hosted service:
+The app uses an ASP.NET Core hosted service:
 
 ```text
 src/Api/BackgroundJobs/ScheduledBackgroundJobService.cs
@@ -421,143 +244,279 @@ Registered jobs:
 - `SendTaskDeadlineReminders`
 - `CleanupOrphanedDocumentFiles`
 
-The job runner is configurable through `BackgroundJobs` settings.
+The runner is configured through the `BackgroundJobs` settings section.
 
-## Workspace And Tenant Isolation
+Production work still needed:
 
-The JWT contains the current workspace ID. API requests resolve:
+- Add durable job execution if jobs must survive restarts.
+- Add retries and dead-letter behavior for future email or external integrations.
+- Consider Hangfire, Quartz.NET, or a queue-backed worker once background work grows.
+- Add operational visibility for job duration, failure count, and last successful run.
 
-- current user
-- current system role
-- current workspace
+## Search And Querying
 
-The DbContext has a `CurrentWorkspaceId` that is set per authenticated request. Workspace-scoped EF entities use query filters, and application use cases also pass workspace IDs explicitly for authorization-sensitive operations.
+Implemented query patterns:
 
-Implemented workspace concepts:
+- `TaskQuery`
+- `DocumentQuery`
+- `AuditQuery`
+- `NotificationQuery`
+- `GlobalSearchQuery`
+- `PaginatedResult<T>`
 
-- `Workspace`
-- `WorkspaceMember`
-- `WorkspaceRoles`
-- `Team`
-- `TeamMember`
+Current search behavior:
 
-System roles and workspace roles are intentionally separate.
+- Tasks support search, status/completion, priority, due-date, owner/assignee filters, sorting, and pagination.
+- Documents support filename/content-type/date filtering and pagination.
+- Audit logs support user, action, date range, workspace scope, and pagination.
+- Global search searches tasks and documents.
+- Normal users see only accessible workspace data.
+- Admins can access broader results depending on the use case.
 
-## Persistence Status
+Production work still needed:
 
-This is the most important current limitation.
+- Add database indexes for the most common query paths.
+- Add full-text search only after database-backed search is stable.
+- Consider OpenSearch, Elasticsearch, or Azure AI Search later, not before the relational query layer is solid.
 
-Durable through EF/PostgreSQL at runtime:
+## Observability
 
-- tasks
-- notifications
-- built-in role seed/configuration
+Implemented:
 
-Configured in EF but not yet used by runtime repositories:
+- Structured logging for important business and infrastructure events.
+- Request metrics for duration, status codes, and server-side failures.
+- Business metrics for registrations, logins, task creation, upload success/failure, and upload size.
+- Health checks for liveness, readiness, database connectivity, and file storage writability.
 
-- users
-- workspaces
-- workspace members
-- teams
-- team members
+Health endpoints:
 
-Still in-memory at runtime:
+```text
+GET /health/live
+GET /health/ready
+```
 
-- users
-- document metadata
-- document access grants
-- audit logs
-- workspaces
-- workspace memberships
-- teams
-- team memberships
-- realtime connection tracking
-- presence state
+Production work still needed:
 
-Filesystem-backed:
+- Export logs, metrics, and traces to a real observability backend.
+- Add dashboards and alerts for error rate, latency, failed uploads, failed logins, and background job failures.
+- Add correlation IDs across requests, background jobs, and realtime dispatch.
+- Review all logs for sensitive data leakage.
 
-- uploaded file bytes
+## CI/CD
 
-Important implication:
+GitHub Actions workflow:
 
-- uploaded files may remain on disk after app restart
-- document metadata and shares reset on app restart
-- users reset on app restart
-- audit logs reset on app restart
-- workspace/team runtime state resets on app restart
+```text
+.github/workflows/dotnet-ci.yml
+```
 
-## Security Model
+The workflow runs on pushes, pull requests, and manual dispatch.
 
-Current security rules include:
+Current pipeline:
 
-- JWT authentication on protected routes
-- policy-based authorization for admin/manager actions
-- backend-only ownership checks
-- workspace-scoped access checks
-- secure document download through API streaming
-- no public document file URLs
-- file size and type validation in the upload use case
-- workspace-aware sharing and notifications
-- audit logging after successful critical actions
+```text
+Restore API
+Restore tests
+Build API in Release
+Run xUnit tests
+Publish API artifact
+Upload test results
+Upload published artifact
+Deployment handoff placeholder
+```
 
-## Tests
+Production work still needed:
 
-The test suite covers:
+- Replace the deployment placeholder with a real deployment target.
+- Add environment-specific deployment stages.
+- Add migration execution strategy.
+- Add secret injection through the chosen hosting platform.
+- Add rollback strategy.
+- Add deployment smoke tests.
 
-- authentication and password behavior
-- role changes
-- task creation, listing, updating, deletion, and reminders
-- document upload validation, download authorization, deletion, sharing, revocation, and metadata
-- search and pagination
-- notifications
-- audit logs
-- SignalR helper behavior
-- presence tracking
-- workspace/team domain behavior
-- team use cases
-- API route versioning
-- memory-cached reference catalogs
-- resilience middleware and storage timeout behavior
-- request metrics middleware and storage health checks
-- security headers and rate-limit policy attributes
+## Testing
 
-Run:
+Automated tests live in:
+
+```text
+Application/Tests/
+```
+
+Run tests:
 
 ```bash
 dotnet test Application/Tests/Tests.csproj
 ```
 
-Latest verified result:
+Current verified result:
 
 ```text
 152 passed
 ```
 
+The current suite covers:
+
+- authentication and password behavior
+- role changes
+- task create/list/update/delete flows
+- task reminders
+- document upload validation
+- document download authorization
+- document delete/share/revoke/metadata flows
+- task-linked document sharing
+- notifications
+- audit logs
+- search and pagination
+- workspace and team use cases
+- SignalR helpers
+- presence tracking
+- API route versioning
+- caching
+- exception handling middleware
+- request metrics middleware
+- health checks
+- security headers and rate-limit policy attributes
+
+Testing strategy:
+
+```text
+docs/testing-strategy.md
+```
+
+Production work still needed:
+
+- Add database-backed integration tests.
+- Add controller/API integration tests using `WebApplicationFactory`.
+- Add end-to-end tests for register, login, upload, share, download, and revoke flows.
+- Split CI test stages once integration and end-to-end suites become slower.
+
 ## Minimal Frontend Shell
 
-The repo includes a small frontend shell under `wwwroot/js/site.js` and MVC views. It can:
+The project includes a small MVC/JavaScript client under `Views/` and `wwwroot/`.
 
-- log in
-- save a JWT locally
-- load the current user profile
-- list the first page of notifications
+It is useful for local checks:
+
+- login
+- store a JWT locally
+- load current user profile
+- list notifications
 - connect to SignalR hubs
-- reconcile realtime events with REST API refreshes
+- reconcile realtime events with API refreshes
 
-It is a test harness, not a full product UI.
+It is not a production frontend.
 
-## What Is Left
+## Configuration
 
-The main remaining engineering milestone is database-backed persistence for the repositories that still use static in-memory lists.
+The app expects PostgreSQL and JWT configuration.
 
-Recommended next work:
+Example shape:
 
-1. Replace `UserRepository` with EF persistence.
-2. Add EF persistence for documents and document access grants.
-3. Add EF persistence for audit logs.
-4. Replace in-memory workspace/team repositories with EF-backed repositories.
-5. Add committed EF Core migrations.
-6. Move uploaded file storage to object storage for production.
-7. Make SignalR presence/connection tracking distributed for multi-instance deployments.
+```json
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Host=localhost;Port=5432;Database=taskanddocumentmanager;Username=postgres;Password=postgres"
+  },
+  "Jwt": {
+    "Key": "REPLACE_WITH_A_LONG_RANDOM_SECRET_KEY_FOR_PRODUCTION",
+    "Issuer": "TaskAndDocumentManager",
+    "Audience": "TaskAndDocumentManager.Client",
+    "ExpiresMinutes": 60
+  },
+  "FileStorage": {
+    "RootPath": "storage/uploads",
+    "OperationTimeout": "00:00:10"
+  },
+  "RealtimeDispatch": {
+    "OperationTimeout": "00:00:05"
+  },
+  "BackgroundJobs": {
+    "Enabled": true,
+    "RunOnStartup": true,
+    "InitialDelay": "00:00:30",
+    "Interval": "01:00:00"
+  }
+}
+```
 
-Once those are complete, the architecture will be much closer to a production-ready multi-tenant platform.
+Do not use development secrets or placeholder JWT keys in production.
+
+## Running Locally
+
+Restore dependencies:
+
+```bash
+dotnet restore
+```
+
+Build:
+
+```bash
+dotnet build TaskAndDocumentManager.sln
+```
+
+Run tests:
+
+```bash
+dotnet test Application/Tests/Tests.csproj
+```
+
+Run the API:
+
+```bash
+dotnet run
+```
+
+Swagger is enabled in development.
+
+## Production Readiness Roadmap
+
+### Priority 0: Production Blockers
+
+These should be completed before the system is treated as production-grade.
+
+- Replace in-memory `UserRepository` with EF/PostgreSQL persistence.
+- Replace in-memory document metadata repository with EF/PostgreSQL persistence.
+- Replace in-memory document access repository with EF/PostgreSQL persistence.
+- Replace in-memory audit log repository with EF/PostgreSQL persistence.
+- Replace in-memory workspace and team repositories with EF/PostgreSQL persistence.
+- Add EF Core migrations and a safe migration deployment process.
+- Move file storage to production-grade storage such as object storage or a durable mounted volume.
+- Add a real deployment target to CI/CD.
+- Move secrets to environment variables or a secret manager.
+- Add integration tests against real persistence.
+
+### Priority 1: Production Hardening
+
+- Add full API integration tests.
+- Add end-to-end tests for core user journeys.
+- Add refresh-token/session strategy if needed.
+- Add distributed cache/rate limiting for multi-instance deployments.
+- Add distributed SignalR backplane or managed SignalR service.
+- Add durable background job processing for retryable external work.
+- Add file malware scanning.
+- Add stronger audit retention and export/archive strategy.
+- Add centralized authorization handlers for repeated access patterns.
+- Add observability export, dashboards, alerts, and correlation IDs.
+
+### Priority 2: Scale And Product Maturity
+
+- Add database indexes based on query patterns.
+- Add full-text search or external search service when needed.
+- Add email/push notification delivery pipeline.
+- Add saved filters and richer search UX.
+- Add workspace/team administration flows.
+- Add formal OpenAPI contract publishing.
+- Add deployment smoke tests and rollback automation.
+- Add a production frontend if the product moves beyond API-first.
+
+## Bottom Line
+
+The project already demonstrates a strong backend architecture foundation:
+
+- authentication and authorization
+- role and ownership enforcement
+- secure document upload/download flows
+- workspace-aware collaboration
+- notifications, audit logs, realtime events, background jobs, search, observability, CI, and tests
+
+The main remaining step is persistence maturity. Once the in-memory repositories are replaced with durable database-backed implementations, migrations are added, and deployment is wired to a real environment, the application will be much closer to a production-grade multi-tenant task and document platform.
