@@ -4,6 +4,7 @@ public sealed class UserProfile
 {
     public Guid Id { get; init; }
     public required string Email { get; init; }
+    public Guid WorkspaceId { get; init; }
     public string Role { get; init; } = "User";
     public bool IsActive { get; init; } = true;
 }
