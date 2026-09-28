@@ -2,10 +2,11 @@ namespace TaskAndDocumentManager.Domain.Documents;
 
 public class DocumentAccess
 {
-    public Guid Id { get; private set; }=Guid.NewGuid();
-   public Guid DocumentId { get; private set; }
+    public Guid Id { get; private set; } = Guid.NewGuid();
+    public Guid DocumentId { get; private set; }
     public Guid UserId { get; private set; }
     public Guid GrantedByUserId { get; private set; }
+    public Guid WorkspaceId { get; private set; }
     public DateTime GrantedAtUtc { get; private set; } = DateTime.UtcNow;
 
     protected DocumentAccess()
@@ -13,6 +14,11 @@ public class DocumentAccess
     }
 
     public DocumentAccess(Guid documentId, Guid userId, Guid grantedByUserId)
+        : this(documentId, userId, grantedByUserId, Guid.Empty)
+    {
+    }
+
+    public DocumentAccess(Guid documentId, Guid userId, Guid grantedByUserId, Guid workspaceId)
     {
         if (documentId == Guid.Empty)
         {
@@ -27,6 +33,11 @@ public class DocumentAccess
         if (grantedByUserId == Guid.Empty)
         {
             throw new ArgumentException("Granted by user ID is required.", nameof(grantedByUserId));
+        }
+
+        if (workspaceId != Guid.Empty)
+        {
+            WorkspaceId = workspaceId;
         }
 
         DocumentId = documentId;
