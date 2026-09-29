@@ -22,6 +22,8 @@ public class AuthController : ControllerBase
     private readonly CreateUserAsAdmin _createUserAsAdmin;
     private readonly ChangeUserRole _changeUserRole;
     private readonly DeleteUser _deleteUser;
+    private readonly RequestPasswordReset _requestPasswordReset;
+    private readonly ResetPassword _resetPassword;
 
     public AuthController(
         RegisterUser registerUser,
@@ -31,7 +33,9 @@ public class AuthController : ControllerBase
         ChangeUserRole changeUserRole,
         ListUsers listUsers,
         CreateUserAsAdmin createUserAsAdmin,
-        DeleteUser deleteUser
+        DeleteUser deleteUser,
+        RequestPasswordReset requestPasswordReset,
+        ResetPassword resetPassword
         )
     {
         _registerUser = registerUser;
@@ -42,6 +46,8 @@ public class AuthController : ControllerBase
         _listUsers = listUsers;
         _createUserAsAdmin = createUserAsAdmin;
         _deleteUser = deleteUser;
+        _requestPasswordReset = requestPasswordReset;
+        _resetPassword = resetPassword;
     }
 
     [AllowAnonymous]
@@ -181,31 +187,77 @@ public async Task<IActionResult> ChangeRole(Guid id, [FromBody] ChangeRoleReques
     }
 }
 
-[Authorize(Policy = AppPolicies.AdminOnly)]
-[HttpDelete("users/{id:guid}")]
-public IActionResult Delete(Guid id)
-{
-    try
+    [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicies.AuthSensitive)]
+    [HttpPost("forgot-password")]
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request, CancellationToken cancellationToken)
     {
-        _deleteUser.Execute(id, User.GetWorkspaceId());
-        return NoContent();
+        if (request is null || string.IsNullOrWhiteSpace(request.Email))
+        {
+            return BadRequest(new { message = "Email is required." });
+        }
+
+        try
+        {
+            await _requestPasswordReset.ExecuteAsync(request.Email, cancellationToken);
+            return Ok(new { message = "If an account with that email exists, a password reset link has been sent." });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
-    catch (KeyNotFoundException ex)
+
+    [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicies.AuthSensitive)]
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request, CancellationToken cancellationToken)
     {
-        return NotFound(new { message = ex.Message });
+        if (request is null || string.IsNullOrWhiteSpace(request.Token) || string.IsNullOrWhiteSpace(request.NewPassword))
+        {
+            return BadRequest(new { message = "Token and new password are required." });
+        }
+
+        try
+        {
+            var success = await _resetPassword.ExecuteAsync(request.Token, request.NewPassword, cancellationToken);
+            if (!success)
+            {
+                return BadRequest(new { message = "The reset token is invalid or has expired." });
+            }
+
+            return Ok(new { message = "Password reset successful." });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
-}
 
-public sealed class CreateUserByAdminRequest
-{
-    public required string Email { get; init; }
-    public required string Password { get; init; }
-    public Guid RoleId { get; init; }
-}
+    [Authorize(Policy = AppPolicies.AdminOnly)]
+    [HttpDelete("users/{id:guid}")]
+    public IActionResult Delete(Guid id)
+    {
+        try
+        {
+            _deleteUser.Execute(id, User.GetWorkspaceId());
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
 
-public sealed class ChangeRoleRequest
-{
-    public Guid RoleId { get; init; }
-}
+    public sealed class CreateUserByAdminRequest
+    {
+        public required string Email { get; init; }
+        public required string Password { get; init; }
+        public Guid RoleId { get; init; }
+    }
 
+    public sealed class ChangeRoleRequest
+    {
+        public Guid RoleId { get; init; }
+    }
 }
