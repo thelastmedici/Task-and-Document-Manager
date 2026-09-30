@@ -83,7 +83,17 @@ builder.Services.AddSingleton<ITeamRepository, InMemoryTeamRepository>();
 builder.Services.AddSingleton<IRoleCatalog, RoleCatalog>();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IEmailValidator, EmailValidator>();
-builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
+
+var smtpHost = builder.Configuration["Email:Smtp:Host"];
+if (string.IsNullOrWhiteSpace(smtpHost))
+{
+    builder.Services.AddScoped<IEmailSender, NoOpEmailSender>();
+}
+else
+{
+    builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
+}
+
 builder.Services.AddScoped<AuthenticateUser>();
 builder.Services.AddScoped<GetCurrentUser>();
 builder.Services.AddScoped<RegisterUser>();
