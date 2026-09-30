@@ -29,7 +29,7 @@ public class RequestPasswordReset
         var normalizedEmail = email.Trim();
         var user = _userRepository.GetByEmail(normalizedEmail);
 
-        if (user is null)
+        if (user is null || !user.IsActive)
         {
             return;
         }

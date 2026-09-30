@@ -47,6 +47,42 @@ public class PasswordResetTests
     }
 
     [Fact]
+    public async Task RequestPasswordReset_ShouldNotCreateTokenOrSendEmail_WhenUserIsInactive()
+    {
+        var user = new User
+        {
+            Id = Guid.NewGuid(),
+            Email = "inactive@example.com",
+            PasswordHash = "hash",
+            RoleId = Guid.NewGuid(),
+            IsActive = false
+        };
+
+        var userRepositoryMock = new Mock<IUserRepository>();
+        var resetTokenRepositoryMock = new Mock<IPasswordResetTokenRepository>();
+        var emailSenderMock = new Mock<IEmailSender>();
+
+        userRepositoryMock
+            .Setup(repository => repository.GetByEmail(user.Email))
+            .Returns(user);
+
+        var sut = new RequestPasswordReset(
+            userRepositoryMock.Object,
+            resetTokenRepositoryMock.Object,
+            emailSenderMock.Object);
+
+        await sut.ExecuteAsync(user.Email, CancellationToken.None);
+
+        resetTokenRepositoryMock.Verify(
+            repository => repository.Save(It.IsAny<PasswordResetToken>()),
+            Times.Never);
+
+        emailSenderMock.Verify(
+            sender => sender.SendPasswordResetAsync(user.Email, It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
     public async Task ResetPassword_ShouldUpdatePasswordAndInvalidateToken_WhenTokenIsValid()
     {
         var user = new User
