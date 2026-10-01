@@ -213,14 +213,16 @@ public async Task<IActionResult> ChangeRole(Guid id, [FromBody] ChangeRoleReques
     [HttpPost("reset-password")]
     public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request, CancellationToken cancellationToken)
     {
-        if (request is null || string.IsNullOrWhiteSpace(request.Token) || string.IsNullOrWhiteSpace(request.NewPassword))
+        if (request is null ||
+            (string.IsNullOrWhiteSpace(request.Token) && string.IsNullOrWhiteSpace(request.Email)) ||
+            string.IsNullOrWhiteSpace(request.NewPassword))
         {
-            return BadRequest(new { message = "Token and new password are required." });
+            return BadRequest(new { message = "A valid reset token or email and a new password are required." });
         }
 
         try
         {
-            var success = await _resetPassword.ExecuteAsync(request.Token, request.NewPassword, cancellationToken);
+            var success = await _resetPassword.ExecuteAsync(request.Token, request.Email, request.NewPassword, cancellationToken);
             if (!success)
             {
                 return BadRequest(new { message = "The reset token is invalid or has expired." });

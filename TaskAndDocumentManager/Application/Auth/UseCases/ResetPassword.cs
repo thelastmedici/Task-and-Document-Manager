@@ -1,4 +1,5 @@
 using TaskAndDocumentManager.Application.Auth.Interfaces;
+using TaskAndDocumentManager.Domain.Auth;
 
 namespace TaskAndDocumentManager.Application.Auth.UseCases;
 
@@ -22,10 +23,13 @@ public class ResetPassword
     }
 
     public Task<bool> ExecuteAsync(string token, string newPassword, CancellationToken cancellationToken = default)
+        => ExecuteAsync(token, null, newPassword, cancellationToken);
+
+    public Task<bool> ExecuteAsync(string? token, string? email, string newPassword, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(token))
+        if (string.IsNullOrWhiteSpace(token) && string.IsNullOrWhiteSpace(email))
         {
-            throw new ArgumentException("Reset token is required.", nameof(token));
+            throw new ArgumentException("A valid reset token or email is required.", nameof(token));
         }
 
         if (string.IsNullOrWhiteSpace(newPassword))
@@ -38,20 +42,36 @@ public class ResetPassword
             throw new ArgumentException("Password is not strong enough.", nameof(newPassword));
         }
 
-        var resetToken = _passwordResetTokenRepository.GetByToken(token);
+        PasswordResetToken? resetToken = null;
+
+        if (!string.IsNullOrWhiteSpace(token))
+        {
+            resetToken = _passwordResetTokenRepository.GetByToken(token);
+        }
+        else if (!string.IsNullOrWhiteSpace(email))
+        {
+            var user = _userRepository.GetByEmail(email.Trim());
+            if (user is null)
+            {
+                return Task.FromResult(false);
+            }
+
+            resetToken = _passwordResetTokenRepository.GetByUserId(user.Id);
+        }
+
         if (resetToken is null || resetToken.IsExpired || resetToken.IsUsed)
         {
             return Task.FromResult(false);
         }
 
-        var user = _userRepository.GetById(resetToken.UserId);
-        if (user is null)
+        var userByToken = _userRepository.GetById(resetToken.UserId);
+        if (userByToken is null)
         {
             return Task.FromResult(false);
         }
 
-        user.PasswordHash = _passwordHasher.HashPassword(newPassword);
-        _userRepository.Save(user);
+        userByToken.PasswordHash = _passwordHasher.HashPassword(newPassword);
+        _userRepository.Save(userByToken);
         _passwordResetTokenRepository.MarkUsed(resetToken.Id, DateTime.UtcNow);
 
         return Task.FromResult(true);

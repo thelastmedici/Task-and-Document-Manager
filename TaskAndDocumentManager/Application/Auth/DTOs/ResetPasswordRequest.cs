@@ -2,6 +2,7 @@ namespace TaskAndDocumentManager.Application.Auth.DTOs;
 
 public class ResetPasswordRequest
 {
-    public required string Token { get; set; }
+    public string? Token { get; set; }
+    public string? Email { get; set; }
     public required string NewPassword { get; set; }
 }
