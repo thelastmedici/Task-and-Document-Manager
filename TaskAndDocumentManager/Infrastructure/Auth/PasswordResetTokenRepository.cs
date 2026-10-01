@@ -43,6 +43,19 @@ public class PasswordResetTokenRepository : IPasswordResetTokenRepository
             string.Equals(existingToken.TokenHash, tokenHash, StringComparison.OrdinalIgnoreCase));
     }
 
+    public PasswordResetToken? GetByUserId(Guid userId)
+    {
+        if (userId == Guid.Empty)
+        {
+            return null;
+        }
+
+        return Tokens
+            .Where(existingToken => existingToken.UserId == userId)
+            .OrderByDescending(existingToken => existingToken.CreatedAtUtc)
+            .FirstOrDefault();
+    }
+
     public void MarkUsed(Guid id, DateTime usedAtUtc)
     {
         var token = GetById(id) ?? throw new KeyNotFoundException("Password reset token was not found.");
