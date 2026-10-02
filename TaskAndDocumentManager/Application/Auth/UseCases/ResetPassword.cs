@@ -37,11 +37,6 @@ public class ResetPassword
             throw new ArgumentException("New password is required.", nameof(newPassword));
         }
 
-        if (!_passwordValidator.IsPasswordStrong(newPassword))
-        {
-            throw new ArgumentException("Password is not strong enough.", nameof(newPassword));
-        }
-
         PasswordResetToken? resetToken = null;
 
         if (!string.IsNullOrWhiteSpace(token))
@@ -62,6 +57,11 @@ public class ResetPassword
         if (resetToken is null || resetToken.IsExpired || resetToken.IsUsed)
         {
             return Task.FromResult(false);
+        }
+
+        if (!_passwordValidator.IsPasswordStrong(newPassword))
+        {
+            throw new ArgumentException("Password is not strong enough.", nameof(newPassword));
         }
 
         var userByToken = _userRepository.GetById(resetToken.UserId);
