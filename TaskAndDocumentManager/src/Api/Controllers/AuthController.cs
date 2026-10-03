@@ -200,7 +200,7 @@ public async Task<IActionResult> ChangeRole(Guid id, [FromBody] ChangeRoleReques
         try
         {
             await _requestPasswordReset.ExecuteAsync(request.Email, cancellationToken);
-            return Ok(new { message = "If an account with that email exists, a password reset link has been sent." });
+            return Accepted(new { message = "If an account with that email exists, a password reset link has been sent." });
         }
         catch (ArgumentException ex)
         {
@@ -225,6 +225,16 @@ public async Task<IActionResult> ChangeRole(Guid id, [FromBody] ChangeRoleReques
             var success = await _resetPassword.ExecuteAsync(request.Token, request.Email, request.NewPassword, cancellationToken);
             if (!success)
             {
+                if (!string.IsNullOrWhiteSpace(request.Token))
+                {
+                    return Unauthorized(new { message = "The reset token is invalid or has expired." });
+                }
+
+                if (!string.IsNullOrWhiteSpace(request.Email))
+                {
+                    return NotFound(new { message = "No reset request was found for the provided email." });
+                }
+
                 return BadRequest(new { message = "The reset token is invalid or has expired." });
             }
 
