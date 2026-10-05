@@ -268,6 +268,9 @@ app.Use(async (context, next) =>
 
     await next();
 });
+builder.Services.AddDbContext<AppDbContext>(o =>
+    o.UseNpgsql(builder.Configuration.GetConnectionString("Default"),
+        npgsql => npgsql.EnableRetryOnFailure()));
 app.UseRateLimiter();
 app.UseAuthorization();
 app.MapGet("/health/live", () => Results.Ok(new { status = "Healthy" }));
