@@ -1,6 +1,6 @@
 # TaskAndDocumentManager
 
-TaskAndDocumentManager is an ASP.NET Core API for task and document management with workspace-aware access control, audit trails, notifications, and background processing.
+An ASP.NET Core API for task and document management, with workspace-aware access control, audit trails, notifications, and background processing.
 
 ## Current status
 
