@@ -9,6 +9,7 @@ public class Workspace
     public string Name { get; private set; } = string.Empty;
 
     public DateTime CreatedAtUtc { get; private set; } = DateTime.UtcNow;
+    public DateTime UpdatedAtUtc { get; private set; } = DateTime.UtcNow;
 
     public Guid CreatedByUserId { get; private set; }
 
@@ -35,5 +36,10 @@ public class Workspace
 
         Name = name.Trim();
         CreatedByUserId = createdByUserId;
+    }
+
+    public void UpdateTimestamp()
+    {
+        UpdatedAtUtc = DateTime.UtcNow();
     }
 }
