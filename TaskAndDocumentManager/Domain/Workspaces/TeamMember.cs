@@ -10,6 +10,11 @@ public class TeamMember
 
     public DateTime JoinedAtUtc { get; private set; } = DateTime.UtcNow;
 
+    public DateTime CreatedAtUtc { get; private set; } = DateTime.UtcNow;
+    
+    
+    public DateTime UpdatedAtUtc { get; private set; } = DateTime.UtcNow; 
+
     protected TeamMember()
     {
     }
@@ -28,5 +33,11 @@ public class TeamMember
 
         TeamId = teamId;
         UserId = userId;
+    }
+    
+    
+    public void UpdateTimestamp() 
+    {
+        UpdatedAtUtc = DateTime.UtcNow;
     }
 }
