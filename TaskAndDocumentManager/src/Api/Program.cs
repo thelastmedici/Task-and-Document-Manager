@@ -1,4 +1,5 @@
 using TaskAndDocumentManager.Application.Auth.Interfaces;
+using TaskAndDocumentManager.Infrastructure.Persistence;
 using TaskAndDocumentManager.Api.Extensions;
 using TaskAndDocumentManager.Api.BackgroundJobs;
 using TaskAndDocumentManager.Api.Health;
