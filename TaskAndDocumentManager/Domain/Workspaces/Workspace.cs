@@ -38,8 +38,24 @@ public class Workspace
         CreatedByUserId = createdByUserId;
     }
 
-    public void UpdateTimestamp()
+    public void UpdateTimestamp() //timestamp for database updates
     {
         UpdatedAtUtc = DateTime.UtcNow();
+    }
+ //allows safe updates to the workspace name and automatically updates the timestamp
+    public void UpdateName(string newName)
+    {
+      ValidateName(newName);
+      Name = newName.Trim();
+      UpdateTimestamp();
+    }
+
+ //helper validator to keep code dry
+    private void ValidateName(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            throw new ArgumentException("workspace name is required,", nameof(name)); 
+        if(name.Trim.Length > MaxNameLength)
+            throw new ArgumentException($"Workspace name cannot exceed {MaxNameLength} characters.", nameof(name));
     }
 }
