@@ -161,3 +161,5 @@ dotnet run
 ## Bottom line
 
 The project has a solid backend foundation and a working auth-reset implementation, but it is best described as a feature-rich application prototype with a clear path toward production readiness rather than a fully production-hardened system yet.
+
+Author: christian Joshua
