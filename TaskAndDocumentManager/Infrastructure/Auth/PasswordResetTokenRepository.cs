@@ -11,10 +11,6 @@ public class PasswordResetTokenRepository : IPasswordResetTokenRepository
     {
         ArgumentNullException.ThrowIfNull(token);
 
-        if (token.Id == Guid.Empty)
-        {
-            token.Id = Guid.NewGuid();
-        }
 
         var existing = Tokens.FirstOrDefault(existingToken => existingToken.Id == token.Id);
         if (existing is not null)
