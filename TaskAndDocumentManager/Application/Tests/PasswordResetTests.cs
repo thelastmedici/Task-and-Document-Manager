@@ -10,6 +10,14 @@ namespace TaskAndDocumentManager.Application.Tests.Auth.UseCases;
 
 public class PasswordResetTests
 {
+    private static PasswordResetToken BuildToken(
+        Guid userId,
+        string tokenHash,
+        DateTime expiresAtUtc,
+        DateTime? usedAtUtc = null) =>
+        PasswordResetTokenFactory.Create(
+            Guid.NewGuid(), userId, tokenHash, expiresAtUtc, usedAtUtc);
+
     [Fact]
     public async Task RequestPasswordReset_ShouldCreateTokenAndSendEmail_WhenUserExists()
     {
@@ -124,18 +132,8 @@ public class PasswordResetTests
             IsActive = true
         };
 
-        // var expiredToken = new PasswordResetToken
-        // {
-        //     Id = Guid.NewGuid(),
-        //     UserId = user.Id,
-        //     TokenHash = "expired-hash",
-        //     ExpiresAtUtc = DateTime.UtcNow.AddMinutes(-5),
-        //     UsedAtUtc = null
-        // };
-        var token = PasswordResetTokenFactory.Create(
-            id, userId, hash,
-            expiresAtUtc: DateTime.UtcNow.AddHours(-1),
-            usedAtUtc: null);
+        var expiredToken = BuildToken(
+            user.Id, "expired-hash", DateTime.UtcNow.AddMinutes(-5));
 
         var userRepositoryMock = new Mock<IUserRepository>();
         var resetTokenRepositoryMock = new Mock<IPasswordResetTokenRepository>();
@@ -176,14 +174,10 @@ public class PasswordResetTests
             IsActive = true
         };
 
-        var usedToken = new PasswordResetToken
-        {
-            Id = Guid.NewGuid(),
-            UserId = user.Id,
-            TokenHash = "used-hash",
-            ExpiresAtUtc = DateTime.UtcNow.AddMinutes(30),
-            UsedAtUtc = DateTime.UtcNow.AddMinutes(-1)
-        };
+        var usedToken = BuildToken(
+            user.Id, "used-hash",
+            expiresAtUtc: DateTime.UtcNow.AddMinutes(30),
+            usedAtUtc: DateTime.UtcNow.AddMinutes(-1));
 
         var userRepositoryMock = new Mock<IUserRepository>();
         var resetTokenRepositoryMock = new Mock<IPasswordResetTokenRepository>();
@@ -218,14 +212,8 @@ public class PasswordResetTests
 
         resetTokenRepositoryMock
             .Setup(repository => repository.GetByToken("valid-token"))
-            .Returns(new PasswordResetToken
-            {
-                Id = Guid.NewGuid(),
-                UserId = Guid.NewGuid(),
-                TokenHash = "valid-token-hash",
-                ExpiresAtUtc = DateTime.UtcNow.AddMinutes(30),
-                UsedAtUtc = null
-            });
+            .Returns(BuildToken(
+                Guid.NewGuid(), "valid-token-hash", DateTime.UtcNow.AddMinutes(30)));
 
         userRepositoryMock
             .Setup(repository => repository.GetById(It.IsAny<Guid>()))
@@ -266,14 +254,8 @@ public class PasswordResetTests
             IsActive = true
         };
 
-        var resetToken = new PasswordResetToken
-        {
-            Id = Guid.NewGuid(),
-            UserId = user.Id,
-            TokenHash = "valid-token-hash",
-            ExpiresAtUtc = DateTime.UtcNow.AddMinutes(30),
-            UsedAtUtc = null
-        };
+        var resetToken = BuildToken(
+            user.Id, "valid-token-hash", DateTime.UtcNow.AddMinutes(30));
 
         var userRepositoryMock = new Mock<IUserRepository>();
         var resetTokenRepositoryMock = new Mock<IPasswordResetTokenRepository>();
@@ -331,14 +313,8 @@ public class PasswordResetTests
             IsActive = true
         };
 
-        var resetToken = new PasswordResetToken
-        {
-            Id = Guid.NewGuid(),
-            UserId = user.Id,
-            TokenHash = "valid-token-hash",
-            ExpiresAtUtc = DateTime.UtcNow.AddMinutes(30),
-            UsedAtUtc = null
-        };
+        var resetToken = BuildToken(
+            user.Id, "valid-token-hash", DateTime.UtcNow.AddMinutes(30));
 
         var userRepositoryMock = new Mock<IUserRepository>();
         var resetTokenRepositoryMock = new Mock<IPasswordResetTokenRepository>();
@@ -481,14 +457,8 @@ public class PasswordResetTests
 
         resetTokenRepositoryMock
             .Setup(repository => repository.GetByToken("valid-token"))
-            .Returns(new PasswordResetToken
-            {
-                Id = Guid.NewGuid(),
-                UserId = user.Id,
-                TokenHash = "valid-token-hash",
-                ExpiresAtUtc = DateTime.UtcNow.AddMinutes(30),
-                UsedAtUtc = null
-            });
+            .Returns(BuildToken(
+                user.Id, "valid-token-hash", DateTime.UtcNow.AddMinutes(30)));
 
         userRepositoryMock
             .Setup(repository => repository.GetById(user.Id))
