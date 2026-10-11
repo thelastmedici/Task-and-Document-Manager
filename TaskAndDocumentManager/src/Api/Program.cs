@@ -26,7 +26,6 @@ using TaskAndDocumentManager.Infrastructure.Auth.Token;
 using TaskAndDocumentManager.Infrastructure.Documents;
 using TaskAndDocumentManager.Infrastructure.Notifications;
 using TaskAndDocumentManager.Infrastructure.Observability;
-using TaskAndDocumentManager.Infrastructure.Persistence;
 using TaskAndDocumentManager.Infrastructure.Storage;
 using TaskAndDocumentManager.Infrastructure.Tasks;
 using TaskAndDocumentManager.Infrastructure.Workspaces;
