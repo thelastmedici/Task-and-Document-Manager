@@ -124,14 +124,18 @@ public class PasswordResetTests
             IsActive = true
         };
 
-        var expiredToken = new PasswordResetToken
-        {
-            Id = Guid.NewGuid(),
-            UserId = user.Id,
-            TokenHash = "expired-hash",
-            ExpiresAtUtc = DateTime.UtcNow.AddMinutes(-5),
-            UsedAtUtc = null
-        };
+        // var expiredToken = new PasswordResetToken
+        // {
+        //     Id = Guid.NewGuid(),
+        //     UserId = user.Id,
+        //     TokenHash = "expired-hash",
+        //     ExpiresAtUtc = DateTime.UtcNow.AddMinutes(-5),
+        //     UsedAtUtc = null
+        // };
+        var token = PasswordResetTokenFactory.Create(
+            id, userId, hash,
+            expiresAtUtc: DateTime.UtcNow.AddHours(-1),
+            usedAtUtc: null);
 
         var userRepositoryMock = new Mock<IUserRepository>();
         var resetTokenRepositoryMock = new Mock<IPasswordResetTokenRepository>();
