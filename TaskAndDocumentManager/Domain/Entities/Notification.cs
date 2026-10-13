@@ -9,6 +9,7 @@ public class Notification
     public string Message { get; private set; } = string.Empty;
     public bool IsRead { get; private set; }
     public DateTime CreatedAtUtc { get; private set; } = DateTime.UtcNow;
+    public DateTime UpdatedAtUtc { get; private set; } = DateTime.UtcNow;
 
     protected Notification()
     {
@@ -45,10 +46,17 @@ public class Notification
         Title = title.Trim();
         Message = message.Trim();
         IsRead = false;
+        UpdatedAtUtc = DateTime.UtcNow;
     }
 
     public void MarkAsRead()
     {
         IsRead = true;
+        UpdatedAtUtc = DateTime.UtcNow;
+    }
+
+    public void UpdateTimestamp()
+    {
+        UpdatedAtUtc = DateTime.UtcNow;
     }
 }

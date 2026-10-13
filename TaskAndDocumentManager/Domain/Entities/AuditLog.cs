@@ -8,6 +8,8 @@ public class AuditLog
     public string Action { get; private set; } = string.Empty;
     public string EntityType { get; private set; } = string.Empty;
     public Guid EntityId { get; private set; }
+    public DateTime CreatedAtUtc { get; private set; } = DateTime.UtcNow;
+    public DateTime UpdatedAtUtc { get; private set; } = DateTime.UtcNow;
     public DateTime TimestampUtc { get; private set; } = DateTime.UtcNow;
 
     protected AuditLog()
@@ -56,5 +58,16 @@ public class AuditLog
         Action = action.Trim();
         EntityType = entityType.Trim();
         EntityId = entityId;
+        var now = DateTime.UtcNow;
+        CreatedAtUtc = now;
+        UpdatedAtUtc = now;
+        TimestampUtc = now;
+    }
+
+    public void UpdateTimestamp()
+    {
+        var now = DateTime.UtcNow;
+        UpdatedAtUtc = now;
+        TimestampUtc = now;
     }
 }

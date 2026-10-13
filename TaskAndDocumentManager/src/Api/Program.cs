@@ -77,7 +77,7 @@ builder.Services.AddScoped<IFileStorageMaintenanceService>(serviceProvider =>
     serviceProvider.GetRequiredService<FileStorageService>());
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 builder.Services.AddScoped<INotificationDispatcher, SignalRNotificationDispatcher>();
-builder.Services.AddSingleton<IWorkspaceRepository, InMemoryWorkspaceRepository>();
+builder.Services.AddScoped<IWorkspaceRepository, InMemoryWorkspaceRepository>();
 builder.Services.AddSingleton<IWorkspaceMemberRepository, InMemoryWorkspaceMemberRepository>();
 builder.Services.AddSingleton<ITeamRepository, InMemoryTeamRepository>();
 builder.Services.AddSingleton<IRoleCatalog, RoleCatalog>();

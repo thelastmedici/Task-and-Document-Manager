@@ -2,6 +2,8 @@ namespace TaskAndDocumentManager.Domain.Workspaces;
 
 public class TeamMember
 {
+    public Guid Id { get; private set; } = Guid.NewGuid();
+
     public Guid TeamId { get; private set; }
 
     public Guid UserId { get; private set; }
@@ -11,9 +13,8 @@ public class TeamMember
     public DateTime JoinedAtUtc { get; private set; } = DateTime.UtcNow;
 
     public DateTime CreatedAtUtc { get; private set; } = DateTime.UtcNow;
-    
-    
-    public DateTime UpdatedAtUtc { get; private set; } = DateTime.UtcNow; 
+
+    public DateTime UpdatedAtUtc { get; private set; } = DateTime.UtcNow;
 
     protected TeamMember()
     {
@@ -33,10 +34,12 @@ public class TeamMember
 
         TeamId = teamId;
         UserId = userId;
+        CreatedAtUtc = DateTime.UtcNow;
+        UpdatedAtUtc = CreatedAtUtc;
+        JoinedAtUtc = CreatedAtUtc;
     }
-    
-    
-    public void UpdateTimestamp() 
+
+    public void UpdateTimestamp()
     {
         UpdatedAtUtc = DateTime.UtcNow;
     }

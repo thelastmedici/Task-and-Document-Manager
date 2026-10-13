@@ -19,8 +19,18 @@ public class InMemoryWorkspaceRepository : IWorkspaceRepository
         return workspace;
     }
 
+    public Task<Workspace> AddAsync(Workspace workspace, CancellationToken ct = default)
+    {
+        return Task.FromResult(Add(workspace));
+    }
+
     public Workspace? GetById(Guid id)
     {
         return Workspaces.FirstOrDefault(workspace => workspace.Id == id);
+    }
+
+    public Task<Workspace?> GetByIdAsync(Guid id, CancellationToken ct = default)
+    {
+        return Task.FromResult(GetById(id));
     }
 }

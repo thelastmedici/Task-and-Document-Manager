@@ -5,21 +5,21 @@ namespace TaskAndDocumentManager.Domain.Auth;
 
 public class PasswordResetToken
 {
-    public Guid Id { get; private set; } = Guid.NewGuid();
+    public Guid Id { get; set; } = Guid.NewGuid();
 
-    public Guid UserId { get; private set; }
+    public Guid UserId { get; set; }
 
-    public string TokenHash { get; private set; } = string.Empty;
+    public string TokenHash { get; set; } = string.Empty;
 
-    public DateTime ExpiresAtUtc { get; private set; }
+    public DateTime ExpiresAtUtc { get; set; }
 
-    public DateTime? UsedAtUtc { get; private set; }
+    public DateTime? UsedAtUtc { get; set; }
 
-    public DateTime CreatedAtUtc { get; private set; } = DateTime.UtcNow;
+    public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
 
-    public DateTime UpdatedAtUtc { get; private set; } = DateTime.UtcNow;
+    public DateTime UpdatedAtUtc { get; set; } = DateTime.UtcNow;
 
-    protected PasswordResetToken(){}
+    public PasswordResetToken() { }
 
     public PasswordResetToken(Guid userId, string tokenHash, DateTime expiresAtUtc)
     {
@@ -57,7 +57,7 @@ public class PasswordResetToken
         UsedAtUtc = usedAtUtc;
         UpdateTimestamp();
     }
-   public void UpdateTimestamp() => UpdatedAtUtc = DateTime.UtcNow;
+    public void UpdateTimestamp() => UpdatedAtUtc = DateTime.UtcNow;
 
     public static string GenerateRawToken()
     {
