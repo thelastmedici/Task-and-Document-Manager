@@ -16,6 +16,10 @@ public class Document
 
     public Guid WorkspaceId { get; private set; }
 
+    public DateTime CreatedAtUtc { get; private set; } = DateTime.UtcNow;
+
+    public DateTime UpdatedAtUtc { get; private set; } = DateTime.UtcNow;
+
     public DateTime UploadedAtUtc { get; private set; } = DateTime.UtcNow;
 
     public Guid? LinkedTaskId { get; private set; }
@@ -78,6 +82,10 @@ public class Document
         StoragePath = storagePath.Trim();
         OwnerId = ownerId;
         WorkspaceId = workspaceId;
+        var now = DateTime.UtcNow;
+        CreatedAtUtc = now;
+        UpdatedAtUtc = now;
+        UploadedAtUtc = now;
     }
 
     public void LinkToTask(Guid taskId)
@@ -88,5 +96,11 @@ public class Document
         }
 
         LinkedTaskId = taskId;
+        UpdatedAtUtc = DateTime.UtcNow;
+    }
+
+    public void UpdateTimestamp()
+    {
+        UpdatedAtUtc = DateTime.UtcNow;
     }
 }

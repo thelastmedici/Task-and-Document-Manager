@@ -7,6 +7,8 @@ public class DocumentAccess
     public Guid UserId { get; private set; }
     public Guid GrantedByUserId { get; private set; }
     public Guid WorkspaceId { get; private set; }
+    public DateTime CreatedAtUtc { get; private set; } = DateTime.UtcNow;
+    public DateTime UpdatedAtUtc { get; private set; } = DateTime.UtcNow;
     public DateTime GrantedAtUtc { get; private set; } = DateTime.UtcNow;
 
     protected DocumentAccess()
@@ -43,5 +45,14 @@ public class DocumentAccess
         DocumentId = documentId;
         UserId = userId;
         GrantedByUserId = grantedByUserId;
+        var now = DateTime.UtcNow;
+        CreatedAtUtc = now;
+        UpdatedAtUtc = now;
+        GrantedAtUtc = now;
+    }
+
+    public void UpdateTimestamp()
+    {
+        UpdatedAtUtc = DateTime.UtcNow;
     }
 }
