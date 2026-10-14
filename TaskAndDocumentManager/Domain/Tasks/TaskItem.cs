@@ -5,31 +5,31 @@ public class TaskItem
     private const int MaxTitleLength = 200;
     private const int MaxDescriptionLength = 4000;
 
-    public Guid Id { get; private set; }
+    public Guid Id { get; set; }
 
-    public string Title { get; private set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
 
-    public string Description { get; private set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
 
-    public Guid? AssignedToUserId { get; private set; }
+    public Guid? AssignedToUserId { get; set; }
 
-    public Guid OwnerId { get; private set; }
+    public Guid OwnerId { get; set; }
 
-    public Guid WorkspaceId { get; private set; }
+    public Guid WorkspaceId { get; set; }
 
-    public DateTime CreatedAt { get; private set; }
+    public DateTime CreatedAt { get; set; }
 
-    public DateTime? UpdatedAt { get; private set; }
+    public DateTime? UpdatedAt { get; set; }
 
-    public DateTime? DueAtUtc { get; private set; }
+    public DateTime? DueAtUtc { get; set; }
 
-    public DateTime? DeadlineReminderSentAtUtc { get; private set; }
+    public DateTime? DeadlineReminderSentAtUtc { get; set; }
 
-    public TaskPriority Priority { get; private set; }
+    public TaskPriority Priority { get; set; }
 
-    public bool IsCompleted { get; private set; }
+    public bool IsCompleted { get; set; }
 
-    public DateTime? CompletedAt { get; private set; }
+    public DateTime? CompletedAt { get; set; }
 
     protected TaskItem() { }
 

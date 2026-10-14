@@ -2,19 +2,19 @@ namespace TaskAndDocumentManager.Domain.Workspaces;
 
 public class TeamMember
 {
-    public Guid Id { get; private set; } = Guid.NewGuid();
+    public Guid Id { get; set; } = Guid.NewGuid();
 
-    public Guid TeamId { get; private set; }
+    public Guid TeamId { get; set; }
 
-    public Guid UserId { get; private set; }
+    public Guid UserId { get; set; }
 
-    public Team? Team { get; private set; }
+    public Team? Team { get; set; }
 
-    public DateTime JoinedAtUtc { get; private set; } = DateTime.UtcNow;
+    public DateTime JoinedAtUtc { get; set; } = DateTime.UtcNow;
 
-    public DateTime CreatedAtUtc { get; private set; } = DateTime.UtcNow;
+    public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
 
-    public DateTime UpdatedAtUtc { get; private set; } = DateTime.UtcNow;
+    public DateTime UpdatedAtUtc { get; set; } = DateTime.UtcNow;
 
     protected TeamMember()
     {

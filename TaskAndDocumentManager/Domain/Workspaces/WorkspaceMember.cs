@@ -4,19 +4,19 @@ public class WorkspaceMember
 {
     public const int MaxRoleLength = 100;
 
-    public Guid Id { get; private set; } = Guid.NewGuid();
+    public Guid Id { get; set; } = Guid.NewGuid();
 
-    public Guid WorkspaceId { get; private set; }
+    public Guid WorkspaceId { get; set; }
 
-    public Guid UserId { get; private set; }
+    public Guid UserId { get; set; }
 
-    public string Role { get; private set; } = string.Empty;
+    public string Role { get; set; } = WorkspaceRoles.Member;
 
-    public DateTime CreatedAtUtc { get; private set; } = DateTime.UtcNow;
+    public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
 
-    public DateTime UpdatedAtUtc { get; private set; } = DateTime.UtcNow;
+    public DateTime UpdatedAtUtc { get; set; } = DateTime.UtcNow;
 
-    public DateTime JoinedAtUtc { get; private set; } = DateTime.UtcNow;
+    public DateTime JoinedAtUtc { get; set; } = DateTime.UtcNow;
 
     protected WorkspaceMember()
     {

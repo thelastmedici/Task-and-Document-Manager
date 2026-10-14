@@ -4,11 +4,11 @@ public class Workspace
 {
     public const int MaxNameLength = 200;
 
-    public Guid Id { get; private set; } = Guid.NewGuid();
-    public string Name { get; private set; } = string.Empty;
-    public DateTime CreatedAtUtc { get; private set; } = DateTime.UtcNow;
-    public DateTime UpdatedAtUtc { get; private set; } = DateTime.UtcNow;
-    public Guid CreatedByUserId { get; private set; }
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public string Name { get; set; } = string.Empty;
+    public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAtUtc { get; set; } = DateTime.UtcNow;
+    public Guid CreatedByUserId { get; set; }
 
     protected Workspace() { }
 

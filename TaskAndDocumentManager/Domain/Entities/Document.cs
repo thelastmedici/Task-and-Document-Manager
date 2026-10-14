@@ -2,27 +2,27 @@ namespace TaskAndDocumentManager.Domain.Entities;
 
 public class Document
 {
-    public Guid Id { get; private set; } = Guid.NewGuid();
+    public Guid Id { get; set; } = Guid.NewGuid();
 
-    public string OriginalFileName { get; private set; } = string.Empty;
+    public string OriginalFileName { get; set; } = string.Empty;
 
-    public string ContentType { get; private set; } = string.Empty;
+    public string ContentType { get; set; } = string.Empty;
 
-    public long SizeInBytes { get; private set; }
+    public long SizeInBytes { get; set; }
 
-    public string StoragePath { get; private set; } = string.Empty;
+    public string StoragePath { get; set; } = string.Empty;
 
-    public Guid OwnerId { get; private set; }
+    public Guid OwnerId { get; set; }
 
-    public Guid WorkspaceId { get; private set; }
+    public Guid WorkspaceId { get; set; }
 
-    public DateTime CreatedAtUtc { get; private set; } = DateTime.UtcNow;
+    public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
 
-    public DateTime UpdatedAtUtc { get; private set; } = DateTime.UtcNow;
+    public DateTime UpdatedAtUtc { get; set; } = DateTime.UtcNow;
 
-    public DateTime UploadedAtUtc { get; private set; } = DateTime.UtcNow;
+    public DateTime UploadedAtUtc { get; set; } = DateTime.UtcNow;
 
-    public Guid? LinkedTaskId { get; private set; }
+    public Guid? LinkedTaskId { get; set; }
 
     protected Document()
     {

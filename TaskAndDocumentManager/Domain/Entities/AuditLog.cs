@@ -2,15 +2,15 @@ namespace TaskAndDocumentManager.Domain.Entities;
 
 public class AuditLog
 {
-    public Guid Id { get; private set; } = Guid.NewGuid();
-    public Guid UserId { get; private set; }
-    public Guid WorkspaceId { get; private set; }
-    public string Action { get; private set; } = string.Empty;
-    public string EntityType { get; private set; } = string.Empty;
-    public Guid EntityId { get; private set; }
-    public DateTime CreatedAtUtc { get; private set; } = DateTime.UtcNow;
-    public DateTime UpdatedAtUtc { get; private set; } = DateTime.UtcNow;
-    public DateTime TimestampUtc { get; private set; } = DateTime.UtcNow;
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid UserId { get; set; }
+    public Guid WorkspaceId { get; set; }
+    public string Action { get; set; } = string.Empty;
+    public string EntityType { get; set; } = string.Empty;
+    public Guid EntityId { get; set; }
+    public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAtUtc { get; set; } = DateTime.UtcNow;
+    public DateTime TimestampUtc { get; set; } = DateTime.UtcNow;
 
     protected AuditLog()
     {

@@ -2,14 +2,14 @@ namespace TaskAndDocumentManager.Domain.Entities;
 
 public class Notification
 {
-    public Guid Id { get; private set; } = Guid.NewGuid();
-    public Guid UserId { get; private set; }
-    public Guid WorkspaceId { get; private set; }
-    public string Title { get; private set; } = string.Empty;
-    public string Message { get; private set; } = string.Empty;
-    public bool IsRead { get; private set; }
-    public DateTime CreatedAtUtc { get; private set; } = DateTime.UtcNow;
-    public DateTime UpdatedAtUtc { get; private set; } = DateTime.UtcNow;
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid UserId { get; set; }
+    public Guid WorkspaceId { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string Message { get; set; } = string.Empty;
+    public bool IsRead { get; set; }
+    public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAtUtc { get; set; } = DateTime.UtcNow;
 
     protected Notification()
     {
