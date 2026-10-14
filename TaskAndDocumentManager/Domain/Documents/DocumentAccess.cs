@@ -2,14 +2,14 @@ namespace TaskAndDocumentManager.Domain.Documents;
 
 public class DocumentAccess
 {
-    public Guid Id { get; private set; } = Guid.NewGuid();
-    public Guid DocumentId { get; private set; }
-    public Guid UserId { get; private set; }
-    public Guid GrantedByUserId { get; private set; }
-    public Guid WorkspaceId { get; private set; }
-    public DateTime CreatedAtUtc { get; private set; } = DateTime.UtcNow;
-    public DateTime UpdatedAtUtc { get; private set; } = DateTime.UtcNow;
-    public DateTime GrantedAtUtc { get; private set; } = DateTime.UtcNow;
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid DocumentId { get; set; }
+    public Guid UserId { get; set; }
+    public Guid GrantedByUserId { get; set; }
+    public Guid WorkspaceId { get; set; }
+    public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAtUtc { get; set; } = DateTime.UtcNow;
+    public DateTime GrantedAtUtc { get; set; } = DateTime.UtcNow;
 
     protected DocumentAccess()
     {
