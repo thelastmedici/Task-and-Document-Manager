@@ -64,7 +64,7 @@ builder.Services.Configure<FileStorageOptions>(builder.Configuration.GetSection(
 builder.Services.Configure<RealtimeDispatchOptions>(builder.Configuration.GetSection("RealtimeDispatch"));
 builder.Services.AddSingleton<IApplicationMetrics, ApplicationMetrics>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
-builder.Services.AddScoped<IPasswordResetTokenRepository, PasswordResetTokenRepository>();
+builder.Services.AddScoped<IPasswordResetTokenRepository, EfPasswordResetTokenRepository>();
 builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 builder.Services.AddScoped<ITaskRepository, TaskRepository>();
 builder.Services.AddScoped<IDocumentRepository, DocumentRepository>();
@@ -77,7 +77,7 @@ builder.Services.AddScoped<IFileStorageMaintenanceService>(serviceProvider =>
     serviceProvider.GetRequiredService<FileStorageService>());
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 builder.Services.AddScoped<INotificationDispatcher, SignalRNotificationDispatcher>();
-builder.Services.AddScoped<IWorkspaceRepository, InMemoryWorkspaceRepository>();
+builder.Services.AddScoped<IWorkspaceRepository, EfWorkspaceRepository>();
 builder.Services.AddSingleton<IWorkspaceMemberRepository, InMemoryWorkspaceMemberRepository>();
 builder.Services.AddSingleton<ITeamRepository, InMemoryTeamRepository>();
 builder.Services.AddSingleton<IRoleCatalog, RoleCatalog>();
