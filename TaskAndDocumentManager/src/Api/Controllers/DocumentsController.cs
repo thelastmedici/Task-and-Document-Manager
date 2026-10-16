@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.EntityFrameworkCore;
 using TaskAndDocumentManager.Api.Authorization;
 using TaskAndDocumentManager.Api.Extensions;
 using TaskAndDocumentManager.Api.Routing;
@@ -234,6 +235,10 @@ public class DocumentsController : ControllerBase
         {
             return BadRequest(new { message = ex.Message });
         }
+        catch (DbUpdateConcurrencyException)
+        {
+            return Conflict(new { message = "The document was modified by another user. Please reload it and try again." });
+        }
         catch (Exception)
         {
             return StatusCode(
@@ -277,6 +282,10 @@ public class DocumentsController : ControllerBase
         catch (InvalidOperationException ex)
         {
             return Conflict(new { message = ex.Message });
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return Conflict(new { message = "The document was modified by another user. Please reload it and try again." });
         }
         catch (ArgumentException ex)
         {
@@ -329,6 +338,10 @@ public class DocumentsController : ControllerBase
         {
             return Conflict(new { message = ex.Message });
         }
+        catch (DbUpdateConcurrencyException)
+        {
+            return Conflict(new { message = "The document was modified by another user. Please reload it and try again." });
+        }
         catch (ArgumentException ex)
         {
             return BadRequest(new { message = ex.Message });
@@ -373,6 +386,10 @@ public class DocumentsController : ControllerBase
         catch (InvalidOperationException ex)
         {
             return Conflict(new { message = ex.Message });
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return Conflict(new { message = "The document was modified by another user. Please reload it and try again." });
         }
         catch (ArgumentException ex)
         {

@@ -24,6 +24,8 @@ public class Document
 
     public Guid? LinkedTaskId { get; set; }
 
+    public uint Version { get; set; }
+
     protected Document()
     {
     }
