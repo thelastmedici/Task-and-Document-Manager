@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using TaskAndDocumentManager.Domain.Auth;
+using TaskAndDocumentManager.Domain.Entities;
 using TaskAndDocumentManager.Domain.Workspaces;
 
 namespace TaskAndDocumentManager.Infrastructure.Persistence;
@@ -8,6 +9,7 @@ public class AppDbContext : DbContext
 {
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
+    public DbSet<Document> Documents => Set<Document>();
     public DbSet<Workspace> Workspaces => Set<Workspace>();
     public DbSet<WorkspaceMember> WorkspaceMembers => Set<WorkspaceMember>();
     public DbSet<Team> Teams => Set<Team>();
@@ -15,6 +17,13 @@ public class AppDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder b)
     {
+        b.Entity<Document>(e =>
+        {
+            e.HasKey(d => d.Id);
+            e.Property(d => d.Id).ValueGeneratedNever();
+            e.Property(d => d.Version).IsRowVersion();
+        });
+
         b.Entity<Workspace>(e =>
         {
             e.HasKey(w => w.Id);
