@@ -1,81 +1,90 @@
 # TaskAndDocumentManager
 
-An ASP.NET Core API for task and document management, with workspace-aware access control, audit trails, notifications, and background processing.
+A workspace-aware ASP.NET Core application for task, document, and user management.
 
-## Current status
+## Current project status
 
-This project is in a feature-rich backend development phase. The core application architecture is in place, the authentication flow is working, and the password reset flow has been implemented and validated. The solution is not yet production-ready because several repository layers still use in-memory storage and deployment hardening is still incomplete.
+The project is in an active development phase and is functionally close to a complete backend feature set, but it is not yet production-ready. The solution builds successfully and the test suite is mostly green, with one failing regression that still needs to be resolved.
 
-| Area | Status |
-|---|---|
-| Runtime | ASP.NET Core on .NET 10 preview |
-| API style | REST API with versioned routes under `/api/v1` |
-| Auth | Implemented: register, login, current-user, roles, policy checks |
-| Password reset | Implemented: forgot-password and reset-password flow with secure token handling |
-| Workspace model | Implemented in app logic and routes |
-| Tasks | Implemented task create/list/update/delete and assignment flows |
-| Documents | Implemented upload, validation, access checks, and secure download flow |
-| Notifications | Implemented workspace-aware notifications and read/unread handling |
-| Audit logs | Implemented structured audit actions |
-| Search | Implemented query/search patterns for tasks and documents |
-| Background jobs | Implemented host-based reminder and cleanup jobs |
-| SignalR | Implemented notification and presence delivery hooks |
-| Test status | Targeted auth/reset regression tests are passing |
-| Persistence | Partially in-memory; production persistence remains the main blocker |
-| Deployment | Not yet hardened for production hosting |
+### Verified status
 
-## What is implemented
+The current project status was validated with:
 
-- Authentication and authorization
-  - register
-  - login
-  - current-user lookup
-  - role-based and policy-based authorization
-- Password reset flow
-  - forgot-password request
-  - secure reset token generation and hashing
-  - expiry and single-use enforcement
-  - inactive-user protection
-  - weak-password validation
-  - explicit HTTP semantics for invalid-token and missing-email cases
-- Task management
-  - create, list, update, delete
-  - ownership checks and workspace filtering
-  - assignment and completion patterns
-- Document management
-  - upload validation
-  - metadata flow and security checks
-  - secure streaming download
-  - document sharing and revocation
-- Notifications and presence
-  - notification records
-  - read/unread tracking
-  - realtime event dispatch support
-- Operational foundation
-  - health checks
-  - rate limiting
-  - structured logging
-  - middleware and resilience patterns
+```bash
+dotnet test TaskAndDocumentManager.sln --nologo --verbosity minimal
+```
+
+Result: 166 tests total, 165 passed, 1 failed.
+
+The failing test is:
+
+- `DocumentConcurrencyTests.LinkToTask_ShouldReturnConflict_WhenSaveHitsConcurrencyError`
+
+Failure cause:
+
+- `UploadDocument` cannot be proxied in a mock because it does not expose a parameterless constructor.
+- This is a real blocking issue in the test setup and indicates a test or class-construction issue that still needs to be fixed before the suite can be considered clean.
+
+## Implemented areas
+
+### Authentication and authorization
+- user registration
+- login and authentication
+- current-user lookup
+- role-based and policy-based authorization
+- admin-only and workspace-scoped access checks
+
+### Password management
+- forgot-password request flow
+- reset-password flow
+- hashing and token validation
+- password strength validation
+- inactive-user protection
+
+### Workspace-aware feature set
+- user management by workspace
+- workspace membership checks
+- role changes across workspace boundaries
+- access restrictions based on workspace membership
+
+### Task management
+- create tasks
+- list tasks by context
+- update task state
+- delete tasks
+- assignment and ownership tracking
+
+### Document management
+- document upload
+- validation and document metadata handling
+- secure download flow
+- access checks tied to workspace/user permissions
+- concurrency-sensitive document linking
+
+### Notifications and audit trail
+- notification records
+- read/unread tracking
+- audit event logging for key user actions
+- audit actions for role and user changes
+
+### Operational features
+- health endpoints
+- rate limiting on sensitive auth routes
+- structured logging support
+- middleware and API conventions
+- background job infrastructure for reminders and cleanup
 
 ## Architecture
 
-The solution follows a layered design:
+The project follows a layered architecture with a .NET web API front end and application/domain separation.
 
 ```text
-API
-  -> Application
-      -> Domain
+src/Api/
+  Controllers/
+  Authorization/
+  Security/
+  Routing/
 
-API
-  -> Infrastructure
-
-Infrastructure
-  -> Application abstractions
-```
-
-Key folders:
-
-```text
 Application/
   Auth/
   Tasks/
@@ -96,70 +105,40 @@ Infrastructure/
   Notifications/
   Persistence/
   Storage/
-
-src/Api/
-  Controllers/
-  Authorization/
-  Security/
-  Routing/
-  Health/
 ```
 
-## API surface
+## Stack
 
-The app exposes REST routes under:
-
-```text
-/api/v1
-```
-
-Examples:
-
-- `/api/v1/auth/register`
-- `/api/v1/auth/login`
-- `/api/v1/auth/me`
-- `/api/v1/auth/forgot-password`
-- `/api/v1/auth/reset-password`
-- `/api/v1/tasks`
-- `/api/v1/documents`
-- `/api/v1/notifications`
-- `/api/v1/search`
-- `/health/live`
-- `/health/ready`
-
-## Security and quality notes
-
-The app already includes several security-oriented patterns:
-
+- ASP.NET Core
+- .NET 10 preview
+- PostgreSQL via EF Core provider
 - JWT-based authentication
-- policy-based authorization
-- workspace-bound access checks
-- password reset hashing and expiry validation
-- rate limiting on sensitive auth endpoints
-- validation for uploaded files and secure storage paths
-- generic forgot-password responses to reduce user enumeration risk
+- custom authorization policies
+- REST API patterns
+- test project using xUnit
 
-## Current blockers before production
+## Current blockers
 
-The main gaps are not in the feature core; they are in production readiness:
+The project is close to feature-complete, but several items still need attention before it can be treated as a stable application:
 
-- several repositories still use in-memory storage instead of durable persistence
-- document metadata and user/workspace state are not safely persisted across restarts
-- EF migrations and durable persistence setup are incomplete
-- deployment, secrets management, and operational hardening are still unfinished
-- a real production data store and deployment target should be introduced before treating the app as production-grade
+- one failing unit test in the document concurrency area
+- some repository and persistence behavior still needs to be confirmed for durable production usage
+- deployment and infrastructure hardening are not fully prepared yet
+- production-grade security and operational configuration still need a final pass
 
 ## Local development
 
 ```bash
 dotnet restore
 dotnet build TaskAndDocumentManager.sln
-dotnet test Application/Tests/Tests.csproj
+dotnet test TaskAndDocumentManager.sln --nologo --verbosity minimal
 dotnet run
 ```
 
-## Bottom line
+## Summary
 
-The project has a solid backend foundation and a working auth-reset implementation, but it is best described as a feature-rich application prototype with a clear path toward production readiness rather than a fully production-hardened system yet.
+This project is a substantial backend application with a broad set of implemented features and a mostly passing test suite, but it should currently be considered a feature-rich in-progress project rather than a fully completed or production-hardened system.
+
+The main focus now is resolving the remaining failing concurrency-related document test and then doing a final validation pass for stability, persistence, and deployment readiness.
 
 Author: christian Joshua
