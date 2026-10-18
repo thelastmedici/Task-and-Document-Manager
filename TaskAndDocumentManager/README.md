@@ -142,3 +142,4 @@ This project is a substantial backend application with a broad set of implemente
 The main focus now is resolving the remaining failing concurrency-related document test and then doing a final validation pass for stability, persistence, and deployment readiness.
 
 Author: christian Joshua
+license:MIT license
