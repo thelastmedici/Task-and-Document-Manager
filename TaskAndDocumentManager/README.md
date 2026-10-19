@@ -4,7 +4,7 @@ A workspace-aware ASP.NET Core application for task, document, and user manageme
 
 ## Current project status
 
-The project is in an active development phase and is functionally close to a complete backend feature set, but it is not yet production-ready. The solution builds successfully and the test suite is mostly green, with one failing regression that still needs to be resolved.
+The project is in an active development phase and is functionally close to a complete backend feature set, but it is not yet production-ready. The solution builds successfully and the test suite is mostly green.
 
 ### Verified status
 
