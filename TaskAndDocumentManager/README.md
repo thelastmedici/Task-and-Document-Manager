@@ -128,6 +128,18 @@ The project is close to feature-complete, but several items still need attention
 
 ## Local development
 
+Create your local settings file and store credentials with .NET User Secrets:
+
+```bash
+cp appsettings.example.json appsettings.json
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "<your-local-postgres-connection-string>"
+dotnet user-secrets set "Jwt:Key" "<a-long-random-signing-key>"
+```
+
+Replace the angle-bracketed values with your local database connection string and a randomly generated signing key. User Secrets are stored outside the repository. For deployment, provide these settings through the hosting platform's secret configuration.
+
+Then run:
+
 ```bash
 dotnet restore
 dotnet build TaskAndDocumentManager.sln
