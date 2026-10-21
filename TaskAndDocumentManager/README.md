@@ -132,7 +132,7 @@ Create your local settings file and store credentials with .NET User Secrets:
 
 ```bash
 cp appsettings.example.json appsettings.json
-dotnet user-secrets set "ConnectionStrings:DefaultConnection" "<your-local-postgres-connection-string>"
+dotnet user-secrets set "ConnectionStrings:Default" "<your-local-postgres-connection-string>"
 dotnet user-secrets set "Jwt:Key" "<a-long-random-signing-key>"
 ```
 

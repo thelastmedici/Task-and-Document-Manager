@@ -49,16 +49,19 @@ builder.WebHost.ConfigureKestrel(options =>
     options.AddServerHeader = false;
 });
 
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+var connectionString = builder.Configuration.GetConnectionString("Default")
+    ?? builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException(
-        "Connection string 'DefaultConnection' is missing. Configure it before starting the API.");
+        "Connection string 'Default' is missing. Configure it before starting the API.");
 var jwtSection = builder.Configuration.GetSection("Jwt");
 var key = jwtSection["Key"] ?? throw new InvalidOperationException("JWT signing key is missing. Configure Jwt:Key.");
 var issuer = jwtSection["Issuer"] ?? "TaskAndDocumentManager";
 var audience = jwtSection["Audience"] ?? "TaskAndDocumentManager.Client";
 //register service here IUserRepository, IPasswordHasher, IEmailValidator
 builder.Services.AddDbContext<TaskDbContext>(options =>
-    options.UseNpgsql(connectionString));
+    options.UseNpgsql(connectionString, npgsql => npgsql.EnableRetryOnFailure()));
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseNpgsql(connectionString, npgsql => npgsql.EnableRetryOnFailure()));
 builder.Services.AddMemoryCache();
 builder.Services.Configure<FileStorageOptions>(builder.Configuration.GetSection("FileStorage"));
 builder.Services.Configure<RealtimeDispatchOptions>(builder.Configuration.GetSection("RealtimeDispatch"));
@@ -176,7 +179,8 @@ builder.Services.AddControllers();
 builder.Services.AddSignalR();
 builder.Services.AddHealthChecks()
     .AddCheck<DatabaseHealthCheck>("database")
-    .AddCheck<FileStorageHealthCheck>("file-storage");
+    .AddCheck<FileStorageHealthCheck>("file-storage")
+    .AddDbContextCheck<AppDbContext>();
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -268,12 +272,10 @@ app.Use(async (context, next) =>
 
     await next();
 });
-builder.Services.AddDbContext<AppDbContext>(o =>
-    o.UseNpgsql(builder.Configuration.GetConnectionString("Default"),
-        npgsql => npgsql.EnableRetryOnFailure()));
 app.UseRateLimiter();
 app.UseAuthorization();
 app.MapGet("/health/live", () => Results.Ok(new { status = "Healthy" }));
+app.MapHealthChecks("/health");
 app.MapHealthChecks("/health/ready");
 app.MapControllers();
 app.MapHub<NotificationHub>("/hubs/notifications");
