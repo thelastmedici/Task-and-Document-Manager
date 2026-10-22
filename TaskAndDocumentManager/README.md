@@ -1,144 +1,113 @@
-# TaskAndDocumentManager
+# Task and Document Manager
 
-A workspace-aware ASP.NET Core application for task, document, and user management.
+A workspace-aware ASP.NET Core application for task, document, authentication, and audit management.
 
 ## Current project status
 
-The project is in an active development phase and is functionally close to a complete backend feature set, but it is not yet production-ready. The solution builds successfully and the test suite is mostly green.
+This project is in an active but incomplete state. The solution builds successfully, and the test suite is largely healthy, but there is still one confirmed failing test in the document concurrency area.
 
 ### Verified status
 
-The current project status was validated with:
+I verified the current state with:
 
 ```bash
 dotnet test TaskAndDocumentManager.sln --nologo --verbosity minimal
 ```
 
-Result: 166 tests total, 165 passed, 1 failed.
+Current result from the repository as checked:
 
-The failing test is:
+- Build: succeeded
+- Tests: 166 total
+- Passed: 165
+- Failed: 1
+- Failed test: `DocumentConcurrencyTests.LinkToTask_ShouldReturnConflict_WhenSaveHitsConcurrencyError`
 
-- `DocumentConcurrencyTests.LinkToTask_ShouldReturnConflict_WhenSaveHitsConcurrencyError`
+The failure is a real test setup issue, not a compile-time problem. The current error is:
 
-Failure cause:
+- `Can not instantiate proxy of class: TaskAndDocumentManager.Application.Documents.UseCases.UploadDocument`
+- `Could not find a parameterless constructor.`
 
-- `UploadDocument` cannot be proxied in a mock because it does not expose a parameterless constructor.
-- This is a real blocking issue in the test setup and indicates a test or class-construction issue that still needs to be fixed before the suite can be considered clean.
+This means the document-upload concurrency path still needs a focused fix in the test or implementation setup before the suite can be considered fully green.
 
-## Implemented areas
+## What is implemented
 
 ### Authentication and authorization
-- user registration
-- login and authentication
-- current-user lookup
+- user registration and login
+- JWT-based authentication
+- current-user retrieval
 - role-based and policy-based authorization
 - admin-only and workspace-scoped access checks
+- password reset and forgot-password flows
 
-### Password management
-- forgot-password request flow
-- reset-password flow
-- hashing and token validation
-- password strength validation
-- inactive-user protection
-
-### Workspace-aware feature set
-- user management by workspace
+### Workspace management
+- workspace-aware user access
 - workspace membership checks
 - role changes across workspace boundaries
-- access restrictions based on workspace membership
+- access restrictions tied to workspace context
 
 ### Task management
-- create tasks
-- list tasks by context
-- update task state
-- delete tasks
-- assignment and ownership tracking
+- create, update, list, and delete tasks
+- task ownership and assignment handling
+- task operations scoped to the active workspace or user context
 
 ### Document management
-- document upload
-- validation and document metadata handling
+- document upload and validation
+- document metadata handling
 - secure download flow
-- access checks tied to workspace/user permissions
+- access checks for users and workspaces
 - concurrency-sensitive document linking
 
-### Notifications and audit trail
-- notification records
-- read/unread tracking
-- audit event logging for key user actions
-- audit actions for role and user changes
+### Notifications and auditing
+- notification records and read state tracking
+- audit logs for key operations
+- user and role change auditing
+- operational logging and API middleware support
 
-### Operational features
-- health endpoints
-- rate limiting on sensitive auth routes
-- structured logging support
+### Supporting platform features
+- health checks
+- Swagger/OpenAPI support
+- background job structure
 - middleware and API conventions
-- background job infrastructure for reminders and cleanup
+- rate limiting on sensitive auth routes
 
-## Architecture
-
-The project follows a layered architecture with a .NET web API front end and application/domain separation.
+## Project structure
 
 ```text
-src/Api/
-  Controllers/
-  Authorization/
-  Security/
-  Routing/
-
-Application/
-  Auth/
-  Tasks/
-  Documents/
-  Notifications/
-  Search/
-  Tests/
-
-Domain/
-  Auth/
-  Tasks/
-  Documents/
-  Workspaces/
-
-Infrastructure/
-  Auth/
-  Documents/
-  Notifications/
-  Persistence/
-  Storage/
+TaskAndDocumentManager/
+├── Application/
+│   ├── Auth/
+│   ├── Documents/
+│   ├── Notifications/
+│   ├── Tasks/
+│   ├── Workspaces/
+│   └── Tests/
+├── Domain/
+├── Infrastructure/
+├── src/
+│   └── Api/
+├── Models/
+├── Views/
+├── wwwroot/
+├── TaskAndDocumentManager.csproj
+├── TaskAndDocumentManager.sln
+├── appsettings.json
+├── appsettings.Development.json
+├── appsettings.example.json
+├── README.md
+└── global.json
 ```
 
-## Stack
+## Technology stack
 
 - ASP.NET Core
 - .NET 10 preview
-- PostgreSQL via EF Core provider
-- JWT-based authentication
-- custom authorization policies
-- REST API patterns
-- test project using xUnit
+- Entity Framework Core
+- PostgreSQL provider for EF Core
+- JWT authentication
+- Swagger / OpenAPI
+- xUnit test project
 
-## Current blockers
-
-The project is close to feature-complete, but several items still need attention before it can be treated as a stable application:
-
-- one failing unit test in the document concurrency area
-- some repository and persistence behavior still needs to be confirmed for durable production usage
-- deployment and infrastructure hardening are not fully prepared yet
-- production-grade security and operational configuration still need a final pass
-
-## Local development
-
-Create your local settings file and store credentials with .NET User Secrets:
-
-```bash
-cp appsettings.example.json appsettings.json
-dotnet user-secrets set "ConnectionStrings:Default" "<your-local-postgres-connection-string>"
-dotnet user-secrets set "Jwt:Key" "<a-long-random-signing-key>"
-```
-
-Replace the angle-bracketed values with your local database connection string and a randomly generated signing key. User Secrets are stored outside the repository. For deployment, provide these settings through the hosting platform's secret configuration.
-
-Then run:
+## Local setup
 
 ```bash
 dotnet restore
@@ -147,11 +116,21 @@ dotnet test TaskAndDocumentManager.sln --nologo --verbosity minimal
 dotnet run
 ```
 
-## Summary
+## Current priorities
 
-This project is a substantial backend application with a broad set of implemented features and a mostly passing test suite, but it should currently be considered a feature-rich in-progress project rather than a fully completed or production-hardened system.
+1. Fix the remaining failing document concurrency test.
+2. Validate the upload/link workflow under realistic persistence and concurrency conditions.
+3. Harden the project for production readiness and deployment confidence.
+4. Finalize a broader regression pass once the outstanding failure is resolved.
 
-The main focus now is resolving the remaining failing concurrency-related document test and then doing a final validation pass for stability, persistence, and deployment readiness.
+## Overall assessment
 
-Author: christian Joshua
-license:MIT license
+This is a substantial backend project with a broad set of implemented features and a mostly passing suite. It is best described as a feature-rich in-progress application rather than a production-ready system.
+
+The main blocker today is the single failing concurrency-related document test, and addressing that will bring the project much closer to a stable, releasable state.
+
+## Notes
+
+- The repository is currently using a preview .NET SDK version.
+- The project is suitable for continued development and feature work.
+- It is not yet considered production-hardened or deployment-complete.
