@@ -65,9 +65,15 @@ public class TaskDbContext(DbContextOptions<TaskDbContext> options) : DbContext(
         modelBuilder.Entity<User>(entity =>
         {
             entity.HasKey(user => user.Id);
+            entity.Property(user => user.Id)
+                .ValueGeneratedNever();
 
             entity.Property(user => user.Email)
+                .HasMaxLength(320)
                 .IsRequired();
+
+            entity.HasIndex(user => user.Email)
+                .IsUnique();
 
             entity.Property(user => user.PasswordHash)
                 .IsRequired();
