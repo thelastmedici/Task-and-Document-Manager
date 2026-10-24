@@ -1,136 +1,124 @@
 # Task and Document Manager
 
-A workspace-aware ASP.NET Core application for task, document, authentication, and audit management.
+An ASP.NET Core API for workspace-scoped task and document workflows. It includes authentication, team membership, document sharing, notifications, audit queries, and real-time updates.
 
-## Current project status
+> **Development status:** This project is under active development and is not production-ready. Several repositories still use in-memory storage, so their data is lost when the process restarts. See [Persistence status](#persistence-status).
 
-This project is in an active but incomplete state. The solution builds successfully, and the test suite is largely healthy, but there is still one confirmed failing test in the document concurrency area.
+## Features
 
-### Verified status
+- User registration, login, JWT authentication, role-based access, and password reset
+- Workspace-aware tasks, teams, and membership operations
+- Document upload, metadata, sharing, access revocation, download, and task linking
+- Notifications, audit queries, and global search
+- SignalR notification and presence hubs
+- Rate limiting, request metrics, security headers, and health checks
+- Swagger/OpenAPI documentation in the Development environment
 
-I verified the current state with:
+## Technology
 
-```bash
-dotnet test TaskAndDocumentManager.sln --nologo --verbosity minimal
-```
+- ASP.NET Core and .NET SDK version pinned in [`global.json`](global.json)
+- Entity Framework Core with PostgreSQL through Npgsql
+- JWT bearer authentication
+- xUnit tests
 
-Current result from the repository as checked:
-
-- Build: succeeded
-- Tests: 166 total
-- Passed: 165
-- Failed: 1
-- Failed test: `DocumentConcurrencyTests.LinkToTask_ShouldReturnConflict_WhenSaveHitsConcurrencyError`
-
-The failure is a real test setup issue, not a compile-time problem. The current error is:
-
-- `Can not instantiate proxy of class: TaskAndDocumentManager.Application.Documents.UseCases.UploadDocument`
-- `Could not find a parameterless constructor.`
-
-This means the document-upload concurrency path still needs a focused fix in the test or implementation setup before the suite can be considered fully green.
-
-## What is implemented
-
-### Authentication and authorization
-- user registration and login
-- JWT-based authentication
-- current-user retrieval
-- role-based and policy-based authorization
-- admin-only and workspace-scoped access checks
-- password reset and forgot-password flows
-
-### Workspace management
-- workspace-aware user access
-- workspace membership checks
-- role changes across workspace boundaries
-- access restrictions tied to workspace context
-
-### Task management
-- create, update, list, and delete tasks
-- task ownership and assignment handling
-- task operations scoped to the active workspace or user context
-
-### Document management
-- document upload and validation
-- document metadata handling
-- secure download flow
-- access checks for users and workspaces
-- concurrency-sensitive document linking
-
-### Notifications and auditing
-- notification records and read state tracking
-- audit logs for key operations
-- user and role change auditing
-- operational logging and API middleware support
-
-### Supporting platform features
-- health checks
-- Swagger/OpenAPI support
-- background job structure
-- middleware and API conventions
-- rate limiting on sensitive auth routes
-
-## Project structure
+## Repository layout
 
 ```text
-TaskAndDocumentManager/
-├── Application/
-│   ├── Auth/
-│   ├── Documents/
-│   ├── Notifications/
-│   ├── Tasks/
-│   ├── Workspaces/
-│   └── Tests/
-├── Domain/
-├── Infrastructure/
-├── src/
-│   └── Api/
-├── Models/
-├── Views/
-├── wwwroot/
-├── TaskAndDocumentManager.csproj
-├── TaskAndDocumentManager.sln
-├── appsettings.json
-├── appsettings.Development.json
-├── appsettings.example.json
-├── README.md
-└── global.json
+Application/       Use cases, interfaces, DTOs, and tests
+Domain/            Domain entities and business rules
+Infrastructure/    Persistence, repositories, storage, and integrations
+src/Api/           ASP.NET Core API, controllers, middleware, and hubs
+docs/              Development and testing documentation
 ```
 
-## Technology stack
+## Prerequisites
 
-- ASP.NET Core
-- .NET 10 preview
-- Entity Framework Core
-- PostgreSQL provider for EF Core
-- JWT authentication
-- Swagger / OpenAPI
-- xUnit test project
+- The .NET SDK version specified in `global.json` (currently .NET 10.0.100-rc.2)
+- PostgreSQL for the EF Core-backed features
+- OpenSSL, if you want to generate a local JWT signing key from the command line
 
 ## Local setup
 
+Clone the repository, change to its root directory, and restore dependencies:
+
 ```bash
 dotnet restore
-dotnet build TaskAndDocumentManager.sln
-dotnet test TaskAndDocumentManager.sln --nologo --verbosity minimal
-dotnet run
 ```
 
-## Current priorities
+Create a local settings file from the safe template:
 
-1. Fix the remaining failing document concurrency test.
-2. Validate the upload/link workflow under realistic persistence and concurrency conditions.
-3. Harden the project for production readiness and deployment confidence.
-4. Finalize a broader regression pass once the outstanding failure is resolved.
+```bash
+cp appsettings.example.json appsettings.json
+```
 
-## Overall assessment
+Configure the database connection and JWT signing key with .NET User Secrets. Replace the database connection string with credentials for your local PostgreSQL instance.
 
-This is a substantial backend project with a broad set of implemented features and a mostly passing suite. It is best described as a feature-rich in-progress application rather than a production-ready system.
+```bash
+dotnet user-secrets set "ConnectionStrings:Default" "Host=localhost;Port=5432;Database=taskdocs;Username=<your-user>;Password=<your-password>"
+dotnet user-secrets set "Jwt:Key" "$(openssl rand -base64 48)"
+```
 
-The main blocker today is the single failing concurrency-related document test, and addressing that will bring the project much closer to a stable, releasable state.
+The API also accepts the legacy `ConnectionStrings:DefaultConnection` setting. SMTP settings are optional; configure `Email:Smtp:Host`, `Email:Smtp:Port`, `Email:Smtp:Username`, and `Email:Smtp:Password` through User Secrets or environment variables when using a mail server.
 
-## Notes
+Build and run the API:
 
-- The repository is currently using a preview .NET SDK version.
-- The project is suitable for continued development and feature work.
-- It is not yet considered production-hardened or deployment-complete.
+```bash
+dotnet build TaskAndDocumentManager.csproj
+dotnet run --project TaskAndDocumentManager.csproj
+```
+
+The checked-in launch profiles use `http://localhost:5121` and `https://localhost:7216`. In Development, Swagger UI is available at `/swagger`.
+
+## API areas
+
+Version 1 routes use the `/api/v1` prefix:
+
+| Area | Route |
+| --- | --- |
+| Authentication and user administration | `/api/v1/auth` |
+| Tasks | `/api/v1/tasks` |
+| Documents | `/api/v1/documents` |
+| Teams | `/api/v1/teams` |
+| Notifications | `/api/v1/notifications` |
+| Search | `/api/v1/search` |
+| Audit logs | `/api/v1/audit-logs` |
+
+Most routes require a bearer token. Authentication, user-management, and other endpoint-specific policies determine which operations are public or restricted by role.
+
+## Health checks
+
+- `GET /health/live` reports whether the API process is running.
+- `GET /health` and `GET /health/ready` report database and file-storage health.
+
+## Persistence status
+
+PostgreSQL and EF Core are configured, but persistence is not implemented uniformly across the application.
+
+| Data | Current storage |
+| --- | --- |
+| Tasks | PostgreSQL through EF Core |
+| Workspaces | PostgreSQL through EF Core |
+| Password-reset tokens | PostgreSQL through EF Core |
+| Users, teams, workspace memberships, documents, document access, notifications, and audit logs | In-memory repositories |
+| Uploaded file contents | Local filesystem under the application output directory's `storage/uploads` folder |
+
+In-memory data is cleared when the application process restarts. Local file storage is not a substitute for durable, shared production storage. Plan a persistence and storage strategy before deploying or running multiple API instances.
+
+## Tests
+
+Run the xUnit suite with:
+
+```bash
+dotnet test Application/Tests/Tests.csproj
+```
+
+The repository's GitHub Actions workflow restores, builds, tests, and publishes the API on pushes and pull requests to `main` or `master`.
+
+## Configuration and secrets
+
+`appsettings.example.json` is a template. Local `appsettings*.json` files, User Secrets, and credentials should not be committed. Use a managed secret store or environment variables for deployed environments.
+
+## Further documentation
+
+- [Testing strategy](docs/testing-strategy.md)
+- [CI workflow](.github/workflows/dotnet-ci.yml)
