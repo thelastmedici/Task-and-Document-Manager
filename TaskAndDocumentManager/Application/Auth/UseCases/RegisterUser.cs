@@ -42,7 +42,7 @@ namespace TaskAndDocumentManager.Application.Auth.UseCases
             _metrics = metrics;
         }
 
-        public void Execute(string email, string password)
+        public async Task ExecuteAsync(string email, string password, CancellationToken ct = default)
         {
             if (!_emailValidator.IsValidEmail(email))
             {
@@ -74,7 +74,7 @@ namespace TaskAndDocumentManager.Application.Auth.UseCases
             };
 
             _userRepository.Save(user);
-            _workspaceRepository.Add(workspace);
+            await _workspaceRepository.AddAsync(workspace, ct);
             _workspaceMemberRepository.Add(new WorkspaceMember(workspace.Id, user.Id, WorkspaceRoles.Owner));
 
             _logger.LogInformation(
