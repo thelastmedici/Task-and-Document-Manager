@@ -53,11 +53,11 @@ public class AuthController : ControllerBase
     [AllowAnonymous]
     [EnableRateLimiting(RateLimitPolicies.AuthSensitive)]
     [HttpPost("register")]
-    public IActionResult Register([FromBody] RegisterRequest request)
+    public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {
         try
         {
-            _registerUser.Execute(request.Email, request.Password);
+            await _registerUser.ExecuteAsync(request.Email, request.Password);
             return Ok(new { message = "User registered successfully" });
         }
         catch (InvalidOperationException ex)

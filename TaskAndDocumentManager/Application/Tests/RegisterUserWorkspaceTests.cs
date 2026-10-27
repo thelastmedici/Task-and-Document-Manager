@@ -12,7 +12,7 @@ namespace Tests;
 public class RegisterUserWorkspaceTests
 {
     [Fact]
-    public void Execute_ShouldCreateWorkspaceAndOwnerMembership()
+    public async Task ExecuteAsync_ShouldCreateWorkspaceAndOwnerMembership()
     {
         var userRepositoryMock = new Mock<IUserRepository>();
         var passwordHasherMock = new Mock<IPasswordHasher>();
@@ -38,6 +38,9 @@ public class RegisterUserWorkspaceTests
         userRepositoryMock
             .Setup(repository => repository.Save(It.IsAny<User>()))
             .Returns((User user) => user);
+        workspaceRepositoryMock
+            .Setup(repository => repository.AddAsync(It.IsAny<Workspace>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Workspace workspace, CancellationToken _) => workspace);
 
         var sut = new RegisterUser(
             userRepositoryMock.Object,
@@ -50,17 +53,18 @@ public class RegisterUserWorkspaceTests
             NullLogger<RegisterUser>.Instance,
             new NoOpApplicationMetrics());
 
-        sut.Execute("owner@example.com", "Password1");
+        await sut.ExecuteAsync("owner@example.com", "Password1");
 
         userRepositoryMock.Verify(repository => repository.Save(
             It.Is<User>(user =>
                 user.Id != Guid.Empty &&
                 user.Email == "owner@example.com" &&
                 user.RoleId == userRoleId)), Times.Once);
-        workspaceRepositoryMock.Verify(repository => repository.Add(
+        workspaceRepositoryMock.Verify(repository => repository.AddAsync(
             It.Is<Workspace>(workspace =>
                 workspace.Name == "owner's Workspace" &&
-                workspace.CreatedByUserId != Guid.Empty)), Times.Once);
+                workspace.CreatedByUserId != Guid.Empty),
+            It.IsAny<CancellationToken>()), Times.Once);
         workspaceMemberRepositoryMock.Verify(repository => repository.Add(
             It.Is<WorkspaceMember>(member =>
                 member.WorkspaceId != Guid.Empty &&
