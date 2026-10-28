@@ -4,8 +4,9 @@ using TaskAndDocumentManager.Domain.Entities;
 using TaskAndDocumentManager.Domain.Tasks;
 using TaskAndDocumentManager.Domain.Workspaces;
 using TaskAndDocumentManager.Infrastructure.Persistence;
-
+using TaskAndDocumentManager.Domain.Documents;
 namespace TaskAndDocumentManager.Infrastructure.Tasks;
+
 
 public class TaskDbContext(DbContextOptions<TaskDbContext> options) : DbContext(options)
 {
@@ -13,6 +14,10 @@ public class TaskDbContext(DbContextOptions<TaskDbContext> options) : DbContext(
     public Guid CurrentWorkspaceId { get; set; } = Guid.Empty;
 
     public DbSet<TaskItem> Tasks => Set<TaskItem>();
+    public DbSet<Document> Documents => Set<Document>();
+    public DbSet<DocumentAccess> DocumentAccesses => Set<DocumentAccess>();
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
     public DbSet<User> Users => Set<User>();
     public DbSet<Role> Roles => Set<Role>();
     public DbSet<Notification> Notifications => Set<Notification>();
@@ -210,5 +215,50 @@ public class TaskDbContext(DbContextOptions<TaskDbContext> options) : DbContext(
             // Team members inherit their tenant boundary from the team.
             entity.HasQueryFilter(member => member.Team!.WorkspaceId == CurrentWorkspaceId);
         });
+
+        modelBuilder.Entity<Document>(e =>
+        {
+            e.HasKey(d => d.Id);
+            e.Property(d => d.Id).ValueGeneratedNever();
+            e.Property(d => d.Version).IsRowVersion();
+            e.HasOne<Workspace>().WithMany().HasForeignKey(d => d.WorkspaceId)
+               .OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<User>().WithMany().HasForeignKey(d => d.OwnerId)
+            .OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(d => d.WorkspaceId);
+        });
+
+        modelBuilder.Entity<DocumentAccess>(e =>
+            {
+                e.HasKey(a => a.Id);
+                e.Property(a => a.Id).ValueGeneratedNever();
+                e.HasOne<Document>().WithMany().HasForeignKey(a => a.DocumentId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                e.HasOne<User>().WithMany().HasForeignKey(a => a.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                e.HasOne<User>().WithMany().HasForeignKey(a => a.GrantedByUserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+                e.HasOne<Workspace>().WithMany().HasForeignKey(a => a.WorkspaceId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                e.HasIndex(a => new { a.DocumentId, a.UserId }).IsUnique();
+            });
+
+            modelBuilder.Entity<AuditLog>(e =>
+            {
+                e.HasKey(a => a.Id);
+                e.Property(a => a.Id).ValueGeneratedNever();
+                e.HasIndex(a => a.CreatedAtUtc);
+                e.HasIndex(a => new { a.WorkspaceId, a.CreatedAtUtc });
+            });
+            modelBuilder.Entity<PasswordResetToken>(e =>
+            {
+                e.HasKey(t => t.Id);
+                e.Property(t => t.Id).ValueGeneratedNever();
+                e.Property(t => t.TokenHash).IsRequired().HasMaxLength(64);
+                e.HasIndex(t => t.TokenHash).IsUnique();
+                e.HasIndex(t => t.ExpiresAtUtc);
+                e.HasOne<User>().WithMany().HasForeignKey(t => t.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
     }
 }
