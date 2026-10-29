@@ -1,3 +1,5 @@
+using System.Dynamic;
+using System.Reflection.Metadata;
 using Microsoft.EntityFrameworkCore;
 using TaskAndDocumentManager.Domain.Auth;
 using TaskAndDocumentManager.Domain.Documents;
@@ -11,6 +13,7 @@ public class AppDbContext : DbContext
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
     public DbSet<Document> Documents => Set<Document>();
+    public DbSet<User> Users => Set<User>();
     public DbSet<Workspace> Workspaces => Set<Workspace>();
     public DbSet<WorkspaceMember> WorkspaceMembers => Set<WorkspaceMember>();
     public DbSet<Team> Teams => Set<Team>();
