@@ -13,7 +13,7 @@ public class AppDbContext : DbContext
 
     public DbSet<Document> Documents => Set<Document>();
     public DbSet<User> Users => Set<User>();
-    public Dbset<Role> Roles => Set<Roles>();
+    public DbSet<Role> Roles => Set<Role>();
     public DbSet<Workspace> Workspaces => Set<Workspace>();
     public DbSet<WorkspaceMember> WorkspaceMembers => Set<WorkspaceMember>();
     public DbSet<Team> Teams => Set<Team>();
