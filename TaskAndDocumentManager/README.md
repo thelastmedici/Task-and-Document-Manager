@@ -1,133 +1,102 @@
-# Task and Document Manager API
+# Task and Document Manager
 
-This project is a workspace-aware ASP.NET Core backend for managing users, tasks, documents, notifications, audit records, and team-level collaboration. The API is designed as a modular monolith with a clear separation between HTTP handlers, application use cases, and persistence concerns.
+A workspace-aware ASP.NET Core application for managing users, tasks, documents, notifications, audit logs, and collaboration within a multi-tenant workspace model.
 
-## API approach
+## Overview
 
-The application follows a layered, domain-driven service approach:
+This solution is designed as a modular backend with a clear separation between:
 
-- Controllers expose the HTTP contract and map requests to application operations.
-- Use cases encapsulate business logic and validation in the Application layer.
-- Domain entities define the business rules and invariants.
-- Repositories and infrastructure services handle persistence, storage, notifications, and integration concerns.
+- API controllers
+- application use cases
+- domain rules and entities
+- infrastructure services and persistence
 
-This keeps the API surface thin and makes it easier to enforce security, authorization, and workspace context in one place.
+The system is centered on the concept of a workspace. Most actions are scoped to the identity and workspace of the current user, which helps enforce isolation between users, teams, documents, and tasks.
 
-## Architecture overview
+## What the app does
+
+- user registration, login, and profile access
+- JWT-based authentication and role-aware authorization
+- workspace creation and membership tracking
+- task creation, assignment, listing, and updates
+- document upload, metadata access, sharing, and linking to tasks
+- audit logging and notification workflows
+- background jobs for recurring operational tasks
+- health checks and API monitoring support
+
+## Architecture
+
+The project follows a layered architecture:
 
 ```text
-HTTP Layer
-  Controllers / MVC endpoints
+API Layer
+  Controllers and routing
     ↓
 Application Layer
-  Use Cases + DTOs + interfaces
+  Use cases, DTOs, interfaces, validation
     ↓
 Domain Layer
-  Entities, enums, rules, access logic
+  Entities, enums, business rules
     ↓
 Infrastructure Layer
   EF Core, PostgreSQL, file storage, JWT, SignalR, auditing, background jobs
 ```
 
-## Core design decisions
+### API layer
 
-### 1. Workspace-centric access control
+Controllers live under the API project and expose the HTTP contract for the application. They are responsible for request binding, status codes, validation, and translating business results to responses.
 
-The system is built around the concept of a workspace. Most operations are not global; they are evaluated in the context of the current user’s workspace.
+### Application layer
 
-This is enforced by:
+Use-case classes encapsulate business workflows such as:
 
-- JWT claims that carry user identity and workspace context
-- middleware that sets the active workspace before authorization
-- authorization policies such as authenticated user, admin-only, and manager-or-admin
-- repository queries filtered to the current workspace context
+- registration and authentication
+- task lifecycle management
+- document access and sharing
+- workspace membership operations
+- audit and notification queries
 
-This approach helps prevent cross-workspace leakage and keeps access logic consistent across tasks, documents, and notifications.
+This keeps controllers thin and makes business logic easier to test.
 
-### 2. Use-case driven business logic
+### Domain layer
 
-The App layer intentionally avoids putting business logic directly in controllers. Instead, classes such as:
+Domain entities define the operational model of the product, including workspaces, users, tasks, documents, and access rules. This layer expresses the core business concepts and invariants rather than HTTP concerns.
 
-- RegisterUser
-- AuthenticateUser
-- CreateTask
-- UploadDocument
-- ShareDocument
-- LinkDocumentToTask
-- ListAccessibleDocuments
+### Infrastructure layer
 
-handle orchestration, validation, and side effects. This keeps controllers focused on HTTP concerns such as model binding, status codes, and response shaping.
+Infrastructure handles persistence, security, storage, and platform services.
 
-### 3. Thin API controllers with strong DTO contracts
+Common responsibilities include:
 
-Controllers perform validation for request shape and return consistent HTTP responses, while the heavier logic is delegated to application use cases. For example:
+- PostgreSQL access via Entity Framework Core
+- JWT token generation and validation
+- file storage for uploaded documents
+- audit log persistence
+- notification delivery over SignalR
+- hosted background jobs
 
-- auth endpoints handle login/registration/password reset flows
-- task endpoints manage create/update/delete/assignment logic
-- document endpoints manage upload, listing, metadata, sharing, and task-linking
-- notification and audit endpoints expose read-only operational data
+## Authentication and authorization
 
-### 4. Persistence with EF Core and PostgreSQL
+The API uses JWT bearer authentication and role-based authorization policies. The auth model includes:
 
-The API uses PostgreSQL through Entity Framework Core for structured data. The design assumes explicit, well-scoped persistence boundaries:
+- user registration
+- login
+- current-user retrieval
+- password reset and forgot-password flows
+- role checks for admin and manager access
+- workspace-aware identity resolution
 
-- users and workspaces
-- tasks and assignments
-- documents and document access
-- notifications and audit history
-- team membership and authorization metadata
+Authorization policies are defined for:
 
-This allows for transaction-safe writes and the use of database-level checks around concurrency and referential integrity.
+- authenticated users
+- admin-only actions
+- manager-or-admin access
 
-## Request flow
+The app also sets the active workspace for each request from the authenticated user context before authorization and endpoint execution.
 
-A typical authenticated request follows this path:
+## API route structure
 
-1. Client authenticates and receives a JWT.
-2. Middleware validates the token and sets the current user context.
-3. The workspace id is derived from the authenticated identity and attached to the request.
-4. Authorization policy checks the user’s role and workspace permissions.
-5. The controller resolves the matching action.
-6. The action invokes a use case with the actor id and workspace id.
-7. The use case validates inputs, calls repositories, and persist changes.
-8. The infrastructure layer performs database/file operations and returns a result.
-9. The controller translates the outcome into the correct HTTP response.
-
-## Authentication and authorization model
-
-### Authentication
-
-Authentication is implemented with JWT bearer tokens based on configuration values from appsettings and environment settings.
-
-Key characteristics:
-
-- token validation against issuer and audience
-- symmetric signing key validation
-- expiration checks with zero clock skew
-- support for realtime hubs through token extraction from the query string
-
-### Authorization policies
-
-Authorization is policy-based and role-driven. Policies include:
-
-- Authenticated users
-- Admin-only access
-- Manager or admin access
-
-This pattern gives the app a consistent model for role checks without hard-coding permission logic into every action.
-
-### Workspace-aware identity
-
-The application expects the user to operate within a workspace context. The current workspace is set in middleware before downstream controllers and services run. This is important for functions like:
-
-- document visibility
-- task access
-- workspace member checks
-- audit log scoping
-
-## Main API surface
-
-The API is versioned under the route prefix `api/v1`.
+The application is versioned under `api/v1` and includes the following route groups:
 
 ### Authentication
 
@@ -136,10 +105,10 @@ The API is versioned under the route prefix `api/v1`.
 - `GET /api/v1/auth/me`
 - `POST /api/v1/auth/forgot-password`
 - `POST /api/v1/auth/reset-password`
-- `PUT /api/v1/auth/users/{id}/deactivate`
 - `GET /api/v1/auth/users`
 - `POST /api/v1/auth/users`
 - `PUT /api/v1/auth/users/{id}/role`
+- `PUT /api/v1/auth/users/{id}/deactivate`
 
 ### Tasks
 
@@ -155,11 +124,11 @@ The API is versioned under the route prefix `api/v1`.
 - `POST /api/v1/documents`
 - `GET /api/v1/documents`
 - `GET /api/v1/documents/shared-with-me`
+- `GET /api/v1/documents/{id}`
 - `GET /api/v1/documents/{id}/metadata`
 - `POST /api/v1/documents/{id}/link-task`
 - `POST /api/v1/documents/{id}/share`
 - `POST /api/v1/documents/{id}/revoke-access`
-- `GET /api/v1/documents/{id}`
 - `DELETE /api/v1/documents/{id}`
 
 ### Notifications
@@ -182,111 +151,145 @@ The API is versioned under the route prefix `api/v1`.
 - `POST /api/v1/teams/{id}/members`
 - `DELETE /api/v1/teams/{id}/members/{userId}`
 
-## Document management approach
+## Document workflow
 
-The document subsystem is designed around safe upload, controlled visibility, and task linkage.
+The document subsystem is built around safe handling of uploads and controlled visibility across workspace members.
 
-### Upload workflow
+Key behaviors include:
 
-The upload flow includes:
+- file upload validation
+- size and file-type checks
+- document metadata persistence
+- document access rules
+- sharing with users or tasks
+- task-to-document linking
+- secure retrieval and deletion flows
 
-- file size and type validation
-- content-type normalization
-- storage through a file storage service
-- metadata persistence in the database
-- association with the uploading user and workspace
+This is intentionally enforced through application use cases instead of placing file logic directly in the API layer.
 
-This reduces the risk of invalid or orphaned document records while keeping the API fast and predictable.
+## Notification and real-time model
 
-### Access and sharing model
+The project includes SignalR-based infrastructure for live notifications and realtime updates. This supports collaborative usage patterns such as:
 
-Document visibility is controlled by explicit access logic rather than by simple file permissions alone. The project includes mechanisms for:
+- notification delivery
+- live workspace updates
+- presence awareness
+- operational event monitoring
 
-- listing documents accessible to a user
-- listing shared documents
-- sharing by user or task context
-- revoking access
-- validating ownership and workspace boundaries
+## Background jobs
 
-This gives a more realistic collaboration model for workspace-based document workflows.
+The app contains a hosted background service and reusable job abstractions for scheduled tasks such as:
 
-### Task-document linking
+- task reminder delivery
+- orphaned file cleanup
 
-Documents can be linked to tasks so that the relationship between work products and assignments stays explicit. The application treats this as a concurrency-sensitive operation and handles conflicts explicitly with `DbUpdateConcurrencyException` responses.
+This keeps operational maintenance isolated from request processing.
 
-## Real-time and notification approach
+## Security and resilience
 
-The API includes SignalR hubs and notification infrastructure for live updates. This is intended to push events such as:
+The solution includes several hardening patterns:
 
-- task updates
-- notifications
-- presence tracking
-- realtime user state changes
-
-This is useful for collaborative workflows in which multiple users are working within the same workspace and need immediate feedback.
-
-## Background jobs and operational services
-
-The application includes a background job infrastructure to support operational tasks such as:
-
-- reminder dispatch for deadline-sensitive tasks
-- cleanup of orphaned document files
-- scheduled processing through hosted services
-
-This gives the system a foundation for asynchronous operations without forcing these concerns into request handlers.
-
-## Security and resilience controls
-
-The project includes several protective patterns:
-
-- JWT-based authentication
-- role and policy checks
+- JWT validation
+- policy-based authorization
 - rate limiting for sensitive auth and upload endpoints
-- request metrics middleware
-- API exception handling middleware
-- security headers middleware
-- health checks for database and file storage
-- explicit handling of concurrency conflicts and validation failures
+- middleware for error handling and request metrics
+- security headers
+- database and file-storage health checks
+- conflict handling for concurrency-sensitive operations
 
-## Data and storage patterns
+## Tech stack
 
-### Relational data
+- ASP.NET Core
+- .NET 10 preview
+- Entity Framework Core
+- PostgreSQL
+- JWT authentication
+- SignalR
+- OpenAPI / Swagger
+- xUnit test project
 
-The data layer is centered on PostgreSQL with EF Core and uses patterns such as:
+## Project structure
 
-- workspaces as primary tenant boundaries
-- soft-delete behavior for documents
-- unique indexes for user emails and document sharing rules
-- audit log records for operational traceability
+```text
+TaskAndDocumentManager/
+├── Application/
+│   ├── Auth/
+│   ├── Documents/
+│   ├── Notifications/
+│   ├── Search/
+│   ├── Tasks/
+│   ├── Tests/
+│   └── Workspaces/
+├── Domain/
+│   ├── Auth/
+│   ├── Documents/
+│   ├── Tasks/
+│   └── Workspaces/
+├── Infrastructure/
+│   ├── Audit/
+│   ├── Auth/
+│   ├── Documents/
+│   ├── Notifications/
+│   ├── Observability/
+│   ├── Persistence/
+│   ├── Storage/
+│   ├── Tasks/
+│   └── Workspaces/
+├── src/
+│   └── Api/
+├── appsettings.json
+├── appsettings.Development.json
+├── appsettings.example.json
+├── global.json
+├── TaskAndDocumentManager.csproj
+├── TaskAndDocumentManager.sln
+├── README.md
+└── .gitignore
+```
 
-### File storage
+## Local setup
 
-Document content is stored outside the relational record itself using the file storage service abstraction. This is a practical approach for large or binary-heavy content and keeps the database focused on metadata and access rules.
+### Prerequisites
 
-## Local development setup
+- .NET SDK 10 preview
+- PostgreSQL instance
+- access to JWT configuration values
+
+### Restore and build
 
 ```bash
 dotnet restore
 dotnet build TaskAndDocumentManager.sln
-dotnet test TaskAndDocumentManager.sln --nologo --verbosity minimal
+```
+
+### Run the app
+
+```bash
 dotnet run
 ```
 
-For local development, ensure your connection string and JWT configuration are set in `appsettings.Development.json` or user secrets.
+### Run tests
 
-## Current project status
+```bash
+dotnet test TaskAndDocumentManager.sln --nologo --verbosity minimal
+```
 
-This solution is feature-rich and mostly healthy, but it is not yet considered fully production-hardened.
+## Configuration
 
-Verified status from the current repo state:
+The application expects configuration values for:
 
-- build: successful
-- test suite: mostly passing
-- known issue: one concurrency-related document test remains failing and requires additional validation
+- database connection strings
+- JWT issuer / audience / signing key
+- optional file-storage settings
+- optional email settings
 
-The current API architecture is solid for a modular backend, and the primary remaining work is around stabilizing the document linking and concurrency path before broad production confidence is reached.
+Use the appsettings files and local user secrets for environment-specific configuration.
+
+## Current status
+
+This project is a functional ASP.NET Core backend with a broad set of features and a largely healthy build/test baseline. It is not treated as a fully production-hardened system yet, but it is structurally solid and suitable for further feature work, validation, and hardening.
 
 ## Summary
 
-The API approach for this project is a secure, workspace-oriented, modular ASP.NET Core backend built around use cases, role policies, and repository-based persistence. It balances business logic clarity with operational concerns such as auditing, realtime notifications, background jobs, and file storage. The result is a backend well-suited to a collaborative document-and-task platform, with further hardening needed before full production readiness.
+Task and Document Manager is a workspace-centric business application backend that combines authentication, task management, document workflows, notifications, and auditability in a single modular service. It is built around a clean layering strategy and is designed to support real collaboration within a secure workspace model.
 
