@@ -12,7 +12,7 @@ using TaskAndDocumentManager.Infrastructure.Tasks;
 namespace TaskAndDocumentManager.Infrastructure.Migrations
 {
     [DbContext(typeof(TaskDbContext))]
-    [Migration("20261031155545_InitialCreate")]
+    [Migration("20261101180559_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -297,23 +297,23 @@ namespace TaskAndDocumentManager.Infrastructure.Migrations
                         new
                         {
                             Id = new Guid("11111111-1111-1111-1111-111111111111"),
-                            CreatedAtUtc = new DateTime(2026, 10, 31, 15, 55, 44, 100, DateTimeKind.Utc).AddTicks(1932),
+                            CreatedAtUtc = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Name = "Admin",
-                            UpdatedAtUtc = new DateTime(2026, 10, 31, 15, 55, 44, 100, DateTimeKind.Utc).AddTicks(1932)
+                            UpdatedAtUtc = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = new Guid("22222222-2222-2222-2222-222222222222"),
-                            CreatedAtUtc = new DateTime(2026, 10, 31, 15, 55, 44, 100, DateTimeKind.Utc).AddTicks(3605),
+                            CreatedAtUtc = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Name = "Manager",
-                            UpdatedAtUtc = new DateTime(2026, 10, 31, 15, 55, 44, 100, DateTimeKind.Utc).AddTicks(3605)
+                            UpdatedAtUtc = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = new Guid("33333333-3333-3333-3333-333333333333"),
-                            CreatedAtUtc = new DateTime(2026, 10, 31, 15, 55, 44, 100, DateTimeKind.Utc).AddTicks(3613),
+                            CreatedAtUtc = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Name = "User",
-                            UpdatedAtUtc = new DateTime(2026, 10, 31, 15, 55, 44, 100, DateTimeKind.Utc).AddTicks(3614)
+                            UpdatedAtUtc = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         });
                 });
 

@@ -12,6 +12,7 @@ public static class BuiltInRoles
     public static readonly Guid ManagerId = Guid.Parse("22222222-2222-2222-2222-222222222222");
     public static readonly Guid UserId = Guid.Parse("33333333-3333-3333-3333-333333333333");
 
+    private static readonly DateTime SeedTimestamp = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
     public static Role[] CreateSeedData()
     {
         return
@@ -19,17 +20,24 @@ public static class BuiltInRoles
             new Role
             {
                 Id = AdminId,
-                Name = AdminName
+                Name = AdminName,
+                CreatedAtUtc = SeedTimestamp,
+                UpdatedAtUtc = SeedTimestamp
+                
             },
             new Role
             {
                 Id = ManagerId,
-                Name = ManagerName
+                Name = ManagerName,
+                CreatedAtUtc = SeedTimestamp,
+                UpdatedAtUtc = SeedTimestamp
             },
             new Role
             {
                 Id = UserId,
-                Name = UserName
+                Name = UserName, 
+                CreatedAtUtc = SeedTimestamp,
+                UpdatedAtUtc = SeedTimestamp
             }
         ];
     }

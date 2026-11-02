@@ -95,6 +95,7 @@ public class AppDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
             e.HasIndex(m => m.UserId);
         });
+        
 
         b.Entity<Team>(e =>
         {
@@ -105,6 +106,7 @@ public class AppDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
             e.HasIndex(t => new { t.WorkspaceId, t.Name }).IsUnique();
         });
+        
 
         b.Entity<PasswordResetToken>(e =>
         {
@@ -118,5 +120,6 @@ public class AppDbContext : DbContext
                 .HasForeignKey(t => t.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
+        
     }
 }

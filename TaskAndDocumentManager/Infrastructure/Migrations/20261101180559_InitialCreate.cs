@@ -313,9 +313,9 @@ namespace TaskAndDocumentManager.Infrastructure.Migrations
                 columns: new[] { "Id", "CreatedAtUtc", "Name", "UpdatedAtUtc" },
                 values: new object[,]
                 {
-                    { new Guid("11111111-1111-1111-1111-111111111111"), new DateTime(2026, 10, 31, 15, 55, 44, 100, DateTimeKind.Utc).AddTicks(1932), "Admin", new DateTime(2026, 10, 31, 15, 55, 44, 100, DateTimeKind.Utc).AddTicks(1932) },
-                    { new Guid("22222222-2222-2222-2222-222222222222"), new DateTime(2026, 10, 31, 15, 55, 44, 100, DateTimeKind.Utc).AddTicks(3605), "Manager", new DateTime(2026, 10, 31, 15, 55, 44, 100, DateTimeKind.Utc).AddTicks(3605) },
-                    { new Guid("33333333-3333-3333-3333-333333333333"), new DateTime(2026, 10, 31, 15, 55, 44, 100, DateTimeKind.Utc).AddTicks(3613), "User", new DateTime(2026, 10, 31, 15, 55, 44, 100, DateTimeKind.Utc).AddTicks(3614) }
+                    { new Guid("11111111-1111-1111-1111-111111111111"), new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "Admin", new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc) },
+                    { new Guid("22222222-2222-2222-2222-222222222222"), new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "Manager", new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc) },
+                    { new Guid("33333333-3333-3333-3333-333333333333"), new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "User", new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc) }
                 });
 
             migrationBuilder.CreateIndex(
