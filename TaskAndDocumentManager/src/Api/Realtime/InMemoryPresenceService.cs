@@ -47,7 +47,7 @@ public class InMemoryPresenceService : IPresenceService
 
         return dto;
     }
-
+    
     public PresenceDto? SetEditing(Guid userId, Guid? documentId, bool isEditing)
     {
         if (userId == Guid.Empty)
