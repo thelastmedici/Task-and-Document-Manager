@@ -302,7 +302,3 @@ Use the appsettings files and local user secrets for environment-specific config
 ## Current status
 
 This project is a functional ASP.NET Core backend with a broad set of features and a largely healthy build/test baseline. It is not treated as a fully production-hardened system yet, but it is structurally solid and suitable for further feature work, validation, and hardening.
-
-## Summary
-
-Task and Document Manager is a workspace-centric business application backend that combines authentication, task management, document workflows, notifications, and auditability in a single modular service. It is built around a clean layering strategy and is designed to support real collaboration within a secure workspace model.
