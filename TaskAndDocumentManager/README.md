@@ -1,6 +1,8 @@
 # Task and Document Manager
 
-A workspace-aware ASP.NET Core application for managing users, tasks, documents, notifications, audit logs, and collaboration within a multi-tenant workspace model.
+Author: Asiwaju
+
+A workspace-aware ASP.NET Core backend for managing users, tasks, documents, notifications, audit logs, and collaboration inside a multi-workspace system.
 
 ## Overview
 
@@ -12,20 +14,6 @@ This solution is designed as a modular backend with a clear separation between:
 - infrastructure services and persistence
 
 The system is centered on the concept of a workspace. Most actions are scoped to the identity and workspace of the current user, which helps enforce isolation between users, teams, documents, and tasks.
-
-## Authors
-
-This project is authored and maintained by Christian Joshua and its contributors. Contributions from the wider project community are welcome and are credited through the repository history and pull requests.
-
-## Contributing
-
-Contributions are welcome. Please keep changes focused, document significant behavior changes, and add or update tests where appropriate.
-
-By contributing to this repository, you agree that your contributions will be licensed under the project's MIT License unless a separate written agreement is reached with the maintainers.
-
-## License
-
-This project is licensed under the MIT License. See the LICENSE file for the full text of the license.
 
 ## What the app does
 
@@ -301,4 +289,8 @@ Use the appsettings files and local user secrets for environment-specific config
 
 ## Current status
 
-This project is a functional ASP.NET Core backend with a broad set of features and a largely healthy build/test baseline. It is not treated as a fully production-hardened system yet, but it is structurally solid and suitable for further feature work, validation, and hardening.
+This project is a functional ASP.NET Core backend with a broad set of features and a healthy build/test baseline. It is not yet fully production-hardened, but it is structurally solid and suitable for further feature work, validation, and hardening.
+
+## Summary
+
+Task and Document Manager is a workspace-centric business backend that combines authentication, task management, document operations, messaging, and auditing into one modular system. It is built to support collaborative workflows in a secure, scoped workspace model.
