@@ -16,6 +16,10 @@ public class User
 
     public bool IsActive { get; set; } = true;
 
+    public int FailedLoginAttempts { get; set; }
+
+    public DateTime? LockedUntilUtc { get; set; }
+
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
 
     public DateTime UpdatedAtUtc { get; set; } = DateTime.UtcNow;

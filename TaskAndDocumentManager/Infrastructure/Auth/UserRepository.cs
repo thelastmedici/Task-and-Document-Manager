@@ -97,7 +97,11 @@ namespace TaskAndDocumentManager.Infrastructure.Auth
                     Id = user.Role?.Id ?? user.RoleId,
                     Name = user.Role?.Name ?? BuiltInRoles.ResolveName(user.RoleId)
                 },
-                IsActive = user.IsActive
+                IsActive = user.IsActive,
+                FailedLoginAttempts = user.FailedLoginAttempts,
+                LockedUntilUtc = user.LockedUntilUtc,
+                CreatedAtUtc = user.CreatedAtUtc,
+                UpdatedAtUtc = user.UpdatedAtUtc
             };
         }
     }

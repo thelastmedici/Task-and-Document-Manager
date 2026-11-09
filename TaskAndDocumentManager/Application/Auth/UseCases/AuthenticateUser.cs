@@ -11,6 +11,9 @@ namespace TaskAndDocumentManager.Application.Auth.UseCases;
 
 public class AuthenticateUser
 {
+    private const int MaxFailedLoginAttempts = 3;
+    private static readonly TimeSpan LockoutDuration = TimeSpan.FromMinutes(5);
+
     private readonly IAuditLogRepository _auditLogRepository;
     private readonly IUserRepository _userRepository;
     private readonly IPasswordHasher _passwordHasher;
@@ -72,12 +75,30 @@ public class AuthenticateUser
             throw new UnauthorizedAccessException("This account is deactivated.");
         }
 
+        if (IsLockedOut(user))
+        {
+            _logger.LogWarning("Login attempt blocked for locked user {UserId}.", user.Id);
+            throw new UnauthorizedAccessException("Too many failed login attempts. Please try again later.");
+        }
+
         if (!_passwordHasher.VerifyPassword(password, user.PasswordHash))
         {
+            user.FailedLoginAttempts += 1;
+            if (user.FailedLoginAttempts >= MaxFailedLoginAttempts)
+            {
+                user.LockedUntilUtc = DateTime.UtcNow.Add(LockoutDuration);
+                _logger.LogWarning("User {UserId} has reached the max failed login attempts and is temporarily locked out.", user.Id);
+            }
+
+            _userRepository.Save(user);
             await LogFailedLoginAsync(user.Id, cancellationToken);
             _logger.LogWarning("Login failed for user {UserId}.", user.Id);
             throw new UnauthorizedAccessException("Invalid email or password.");
         }
+
+        user.FailedLoginAttempts = 0;
+        user.LockedUntilUtc = null;
+        _userRepository.Save(user);
 
         if (_passwordHasher.NeedsRehash(user.PasswordHash))
         {
@@ -120,6 +141,11 @@ public class AuthenticateUser
                 IsActive = user.IsActive
             }
         };
+    }
+
+    private static bool IsLockedOut(User user)
+    {
+        return user.LockedUntilUtc.HasValue && user.LockedUntilUtc.Value > DateTime.UtcNow;
     }
 
     private Task LogFailedLoginAsync(Guid userId, CancellationToken cancellationToken)

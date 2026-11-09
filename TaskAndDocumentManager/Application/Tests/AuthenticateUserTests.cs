@@ -161,4 +161,40 @@ public class AuthenticateUserTests
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }
+
+    [Fact]
+    public async Task ExecuteAsync_ShouldRateLimitAfterThreeFailedAttempts()
+    {
+        var userId = Guid.NewGuid();
+        var email = "person@example.com";
+        var password = "wrong-password";
+        var workspaceId = Guid.NewGuid();
+
+        var user = new User
+        {
+            Id = userId,
+            Email = email,
+            PasswordHash = "stored.hash",
+            RoleId = Guid.NewGuid(),
+            IsActive = true,
+            FailedLoginAttempts = 3,
+            LockedUntilUtc = DateTime.UtcNow.AddMinutes(5)
+        };
+
+        _userRepositoryMock
+            .Setup(repository => repository.GetByEmail(email))
+            .Returns(user);
+
+        _workspaceMemberRepositoryMock
+            .Setup(repository => repository.GetDefaultMembershipForUser(userId))
+            .Returns(new WorkspaceMember(workspaceId, userId, WorkspaceRoles.Member));
+
+        var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+            _sut.ExecuteAsync(email, password));
+
+        Assert.Equal("Too many failed login attempts. Please try again later.", exception.Message);
+        _passwordHasherMock.Verify(
+            hasher => hasher.VerifyPassword(It.IsAny<string>(), It.IsAny<string>()),
+            Times.Never);
+    }
 }
