@@ -287,6 +287,8 @@ The application expects configuration values for:
 
 Use the appsettings files and local user secrets for environment-specific configuration.
 
+To send password-reset emails through SendGrid, set `Email:Provider` to `SendGrid`, set `Email:From` to a sender verified in SendGrid, and provide the API key through the `Email__SendGrid__ApiKey` environment variable (or .NET user secrets). The default provider is SMTP; when its host is unset, email sending is disabled.
+
 ## Current status
 
 This project is a functional ASP.NET Core backend with a broad set of features and a healthy build/test baseline. It is not yet fully production-hardened, but it is structurally solid and suitable for further feature work, validation, and hardening.

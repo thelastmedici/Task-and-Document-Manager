@@ -87,14 +87,23 @@ builder.Services.AddSingleton<IRoleCatalog, RoleCatalog>();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IEmailValidator, EmailValidator>();
 
-var smtpHost = builder.Configuration["Email:Smtp:Host"];
-if (string.IsNullOrWhiteSpace(smtpHost))
+var emailProvider = builder.Configuration["Email:Provider"] ?? "Smtp";
+if (string.Equals(emailProvider, "SendGrid", StringComparison.OrdinalIgnoreCase))
+{
+    builder.Services.AddHttpClient<IEmailSender, SendGridEmailSender>();
+}
+else if (string.Equals(emailProvider, "Smtp", StringComparison.OrdinalIgnoreCase)
+         && !string.IsNullOrWhiteSpace(builder.Configuration["Email:Smtp:Host"]))
+{
+    builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
+}
+else if (string.Equals(emailProvider, "Smtp", StringComparison.OrdinalIgnoreCase))
 {
     builder.Services.AddScoped<IEmailSender, NoOpEmailSender>();
 }
 else
 {
-    builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
+    throw new InvalidOperationException($"Unsupported email provider '{emailProvider}'. Configure Email:Provider as Smtp or SendGrid.");
 }
 
 builder.Services.AddScoped<AuthenticateUser>();
